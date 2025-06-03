@@ -1,0 +1,21 @@
+{
+  "name": "hill-equation",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run server.ts",
+    "build": "bun run build:ts && bun run build:copy",
+    "build:ts": "bun build ./src/main.ts --outdir ./dist --target browser",
+    "build:copy": "cp index.html dist/ && cp -r src/styles.css dist/ && cp -r node_modules dist/",
+    "preview": "bunx serve dist",
+    "deploy": "bun run build && echo 'Ready for deployment to GitHub Pages'"
+  },
+  "devDependencies": {
+    "@types/three": "^0.160.0",
+    "bun-types": "latest",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  }
+}

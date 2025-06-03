@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヒルの方程式による衛星群の3D相対運動</title>
+    <link rel="stylesheet" href="/src/styles.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "/node_modules/three/build/three.module.js"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div id="container">
+        <h1>🛰️ ヒルの方程式による衛星群の3D相対運動シミュレーション</h1>
+        
+        <div id="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div id="axes-info">
+                <div class="axis-label" style="color: #ff6b6b">X軸: Radial (径方向 - 地心→衛星)</div>
+                <div class="axis-label" style="color: #4ecdc4">Y軸: Along-track (軌道進行方向)</div>
+                <div class="axis-label" style="color: #f7b731">Z軸: Cross-track (軌道面垂直方向)</div>
+                <div class="axis-note">※表示はThree.js座標系に変換済み</div>
+            </div>
+        </div>
+        
+        <div id="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>衛星数:</label>
+                    <input type="number" id="satelliteCount" min="2" max="10" value="10">
+                </div>
+                
+                <div class="control-group">
+                    <label>配置パターン:</label>
+                    <select id="placementPattern">
+                        <option value="circle">円形</option>
+                        <option value="sphere">球形</option>
+                        <option value="random">ランダム</option>
+                        <option value="line">直線</option>
+                        <option value="spiral">螺旋</option>
+                        <option value="periodic">PRO（周期軌道）</option>
+                        <option value="record">レコード盤軌道</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>軌道半径 (km):</label>
+                    <input type="number" id="orbitRadius" min="50" max="500" value="50">
+                </div>
+                
+                <div class="control-group">
+                    <label>Z方向分散 (km):</label>
+                    <input type="number" id="zSpread" min="0" max="100" value="10">
+                </div>
+                
+                <div class="control-group" id="recordPhaseControl" style="display: none;">
+                    <label>レコード盤傾斜角 (度):</label>
+                    <input type="range" id="recordPhase" min="0" max="360" step="15" value="30">
+                    <span id="recordPhaseValue">30°</span>
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <div class="control-group">
+                    <label>時間スケール:</label>
+                    <select id="timeScale">
+                        <option value="1">1x</option>
+                        <option value="2">2x</option>
+                        <option value="5">5x</option>
+                        <option value="10">10x</option>
+                        <option value="20">20x</option>
+                        <option value="50">50x</option>
+                        <option value="100">100x</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>シミュレーション時間:</label>
+                    <span id="simulationTime">0分 0.0秒</span>
+                </div>
+                
+                <div class="control-group">
+                    <label>カメラ自動回転:</label>
+                    <input type="checkbox" id="autoRotate">
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <div class="control-group">
+                    <label>軌跡表示:</label>
+                    <input type="checkbox" id="showTrails" checked>
+                </div>
+                
+                <div class="control-group">
+                    <label>グリッド表示:</label>
+                    <input type="checkbox" id="showGrid" checked>
+                </div>
+                
+                <div class="control-group">
+                    <label>軌跡の長さ:</label>
+                    <input type="range" id="trailLength" min="50" max="500" step="50" value="200">
+                    <span id="trailLengthValue">200</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; text-align: center;">
+                <button onclick="resetSimulation()">🔄 リセット</button>
+                <button onclick="togglePause()">⏯️ 一時停止/再開</button>
+                <button onclick="addPerturbation()">💥 摂動を加える</button>
+                <button onclick="changeView()">👁️ 視点変更</button>
+            </div>
+        </div>
+        
+        <div id="info">
+            <strong>📊 ヒルの方程式について:</strong><br>
+            ヒルの方程式は、円軌道上の主衛星に対する近傍衛星の相対運動を記述します。
+            この3D可視化では、中心の白い衛星を基準とした相対座標系（LVLH座標系）で他の衛星の動きを表示しています。
+            マウスドラッグで視点を回転、スクロールでズームできます。
+            <br><br>
+            <strong>⌨️ キーボードショートカット:</strong> Hキーでヘルプ表示
+            <br><br>
+            <div id="satelliteInfo"></div>
+        </div>
+        
+        <div id="plots-container">
+            <h2>📈 2D投影図</h2>
+            <div class="plots-row">
+                <div class="plot-wrapper">
+                    <h3>XY平面 (動径-進行方向)</h3>
+                    <canvas id="plot-xy" width="300" height="300"></canvas>
+                </div>
+                <div class="plot-wrapper">
+                    <h3>XZ平面 (動径-軌道面垂直)</h3>
+                    <canvas id="plot-xz" width="300" height="300"></canvas>
+                </div>
+                <div class="plot-wrapper">
+                    <h3>YZ平面 (進行-軌道面垂直)</h3>
+                    <canvas id="plot-yz" width="300" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
