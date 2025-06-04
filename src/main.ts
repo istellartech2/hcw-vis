@@ -84,7 +84,6 @@ class HillEquationSimulation {
         orbitRadius: HTMLInputElement;
         orbitAltitude: HTMLInputElement;
         orbitRadiusDisplay: HTMLSpanElement;
-        zSpread: HTMLInputElement;
         timeScale: HTMLSelectElement;
         simulationTime: HTMLSpanElement;
         autoRotate: HTMLInputElement;
@@ -92,8 +91,6 @@ class HillEquationSimulation {
         showGrid: HTMLInputElement;
         trailLength: HTMLInputElement;
         trailLengthValue: HTMLSpanElement;
-        recordPhase: HTMLInputElement;
-        recordPhaseValue: HTMLSpanElement;
     };
     
     constructor() {
@@ -117,16 +114,13 @@ class HillEquationSimulation {
             orbitRadius: document.getElementById('orbitRadius') as HTMLInputElement,
             orbitAltitude: document.getElementById('orbitAltitude') as HTMLInputElement,
             orbitRadiusDisplay: document.getElementById('orbitRadiusDisplay') as HTMLSpanElement,
-            zSpread: document.getElementById('zSpread') as HTMLInputElement,
             timeScale: document.getElementById('timeScale') as HTMLSelectElement,
             simulationTime: document.getElementById('simulationTime') as HTMLSpanElement,
             autoRotate: document.getElementById('autoRotate') as HTMLInputElement,
             showTrails: document.getElementById('showTrails') as HTMLInputElement,
             showGrid: document.getElementById('showGrid') as HTMLInputElement,
             trailLength: document.getElementById('trailLength') as HTMLInputElement,
-            trailLengthValue: document.getElementById('trailLengthValue') as HTMLSpanElement,
-            recordPhase: document.getElementById('recordPhase') as HTMLInputElement,
-            recordPhaseValue: document.getElementById('recordPhaseValue') as HTMLSpanElement
+            trailLengthValue: document.getElementById('trailLengthValue') as HTMLSpanElement
         };
         
         this.setupRenderer();
@@ -293,155 +287,126 @@ class HillEquationSimulation {
         const zSpreadKm = zSpread / 1000;
         
         switch (pattern) {
-            case 'sphere':
-                for (let i = 0; i < count - 1; i++) {
-                    const phi = Math.acos(1 - 2 * (i + 0.5) / (count - 1));
-                    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-                    
-                    const x0 = radiusKm * Math.sin(phi) * Math.cos(theta);
-                    const y0 = radiusKm * Math.sin(phi) * Math.sin(theta);
-                    const z0 = radiusKm * Math.cos(phi) * 0.3;
-                    
-                    const vx0 = -2 * this.n * y0;
-                    const vy0 = this.n * x0;
-                    const vz0 = 0;
-                    
-                    positions.push({ x0, y0, z0, vx0, vy0, vz0 });
-                }
-                break;
+            case 'axis':
+                // 軸上配置：X,Y,Z軸それぞれに衛星数×2個ずつ配置（速度0）
+                // 衛星数=1: 各軸の-X,+X に配置（合計6個）
+                // 衛星数=2: 各軸の-X,-0.5X,+0.5X,+X に配置（合計12個）
+                const axisPositions = [];
+                const eachAxisSatNum = count * 3;
                 
-            case 'random':
-                for (let i = 0; i < count - 1; i++) {
-                    const r = radiusKm * (0.5 + Math.random() * 0.5);
-                    const theta = Math.random() * 2 * Math.PI;
-                    const phi = Math.random() * Math.PI;
-                    
-                    const x0 = r * Math.sin(phi) * Math.cos(theta);
-                    const y0 = r * Math.sin(phi) * Math.sin(theta);
-                    const z0 = (Math.random() - 0.5) * zSpreadKm;
-                    
-                    const vx0 = -2 * this.n * y0;
-                    const vy0 = this.n * x0;
-                    const vz0 = Math.random() * 0.0001 - 0.00005;
-                    
-                    positions.push({ x0, y0, z0, vx0, vy0, vz0 });
+                // 各軸に配置する位置を計算（ゼロ点を除外）
+                // -radiusKm から +radiusKm まで (2*count+1) 等分して、ゼロ点以外を選択
+                for (let i = 1; i <= eachAxisSatNum; i++) {
+                    const position = (radiusKm * i) / eachAxisSatNum;
+                    axisPositions.push(-position); // 負の方向
+                    axisPositions.push(position);  // 正の方向
                 }
-                break;
                 
-            case 'line':
-                for (let i = 0; i < count - 1; i++) {
-                    const t = (i / (count - 2)) * 2 - 1;
-                    const x0 = radiusKm * t;
-                    const y0 = 0;
-                    const z0 = 0;
-                    
-                    const vx0 = 0;
-                    const vy0 = this.n * x0;
-                    const vz0 = 0;
-                    
-                    positions.push({ x0, y0, z0, vx0, vy0, vz0 });
+                // X軸に配置
+                for (let i = 0; i < count * 2; i++) {
+                    positions.push({
+                        x0: axisPositions[i],
+                        y0: 0,
+                        z0: 0,
+                        vx0: 0,
+                        vy0: 0,
+                        vz0: 0
+                    });
                 }
-                break;
                 
-            case 'spiral':
-                for (let i = 0; i < count - 1; i++) {
-                    const t = i / (count - 2);
-                    const angle = t * 4 * Math.PI;
-                    const r = radiusKm * (0.3 + 0.7 * t);
-                    
-                    const x0 = r * Math.cos(angle);
-                    const y0 = r * Math.sin(angle);
-                    const z0 = zSpreadKm * (t - 0.5);
-                    
-                    const vx0 = -2 * this.n * y0;
-                    const vy0 = this.n * x0;
-                    const vz0 = 0;
-                    
-                    positions.push({ x0, y0, z0, vx0, vy0, vz0 });
+                // Y軸に配置
+                for (let i = 0; i < count * 2; i++) {
+                    positions.push({
+                        x0: 0,
+                        y0: axisPositions[i],
+                        z0: 0,
+                        vx0: 0,
+                        vy0: 0,
+                        vz0: 0
+                    });
                 }
-                break;
                 
-            case 'periodic':
-                // PRO (Periodic Relative Orbit) - 理論的に正しい周期軌道
-                // 標準的なFootball orbit解を使用: x(t) = ρcos(nt+φ), y(t) = -2ρsin(nt+φ), z(t) = 0
-                for (let i = 0; i < count - 1; i++) {
-                    const phase = (2 * Math.PI * i) / (count - 1);
-                    const rho = radiusKm;  // km → m
-                    
-                    // 理論的に正しいPRO初期条件 (Hill方程式の解析解)
-                    // x(t) = ρ cos(nt + φ)
-                    // y(t) = -2ρ sin(nt + φ)
-                    // z(t) = 0 (または小さなz成分を追加可能)
-                    
-                    // 初期位置 (t=0)
-                    const x0 = rho * Math.cos(phase);           // Radial
-                    const y0 = -2 * rho * Math.sin(phase);     // Along-track
-                    const z0 = 0;                              // Cross-track (平面軌道)
-                    
-                    // 初期速度 (解析解の微分, t=0)
-                    const vx0 = -rho * this.n * Math.sin(phase);     // ẋ = -ρn sin(nt+φ)
-                    const vy0 = -2 * rho * this.n * Math.cos(phase); // ẏ = -2ρn cos(nt+φ)
-                    const vz0 = 0;                                   // ż = 0
-                    
-                    positions.push({ 
-                        x0: x0,    // Radial（ヒル方程式のx軸）
-                        y0: y0,    // Along-track（ヒル方程式のy軸）
-                        z0: z0,    // Cross-track（ヒル方程式のz軸）
-                        vx0: vx0, 
-                        vy0: vy0, 
-                        vz0: vz0 
+                // Z軸に配置
+                for (let i = 0; i < count * 2; i++) {
+                    positions.push({
+                        x0: 0,
+                        y0: 0,
+                        z0: axisPositions[i],
+                        vx0: 0,
+                        vy0: 0,
+                        vz0: 0
                     });
                 }
                 break;
                 
-            case 'record':
-                // レコード盤軌道（3次元Football orbit）
-                // 面内Football orbit + 面外調和振動の組み合わせ
-                // theory.mdの正しい解析解に基づく安定軌道
+            case 'grid':
+                // 格子配置：3D格子点に配置（速度0）
+                // 衛星数=1: 各軸{-X,0,+X}の3x3x3=27個から原点除いて26個
+                // 衛星数=2: 各軸{-X,-0.5X,0,+0.5X,+X}の5x5x5=125個から原点除いて124個
+                const gridValues = [];
                 
-                // ユーザー指定の位相差を取得（度をラジアンに変換）
-                const userPhaseDiff = (parseInt(this.controls.recordPhase.value) * Math.PI) / 180;
+                // 各軸の格子点を計算
+                for (let i = -count; i <= count; i++) {
+                    const value = (i * radiusKm) / count;
+                    gridValues.push(value);
+                }
                 
+                // 3D格子の全組み合わせを生成（原点を除外）
+                for (let i = 0; i < gridValues.length; i++) {
+                    for (let j = 0; j < gridValues.length; j++) {
+                        for (let k = 0; k < gridValues.length; k++) {
+                            const x = gridValues[i];
+                            const y = gridValues[j];
+                            const z = gridValues[k];
+                            
+                            // 原点は除外
+                            if (x === 0 && y === 0 && z === 0) continue;
+                            
+                            positions.push({
+                                x0: x,
+                                y0: y,
+                                z0: z,
+                                vx0: 0,
+                                vy0: 0,
+                                vz0: 0
+                            });
+                        }
+                    }
+                }
+                break;
+                
+            case 'random_position':
+                // ランダム（位置）: 位置はランダム、速度は0
                 for (let i = 0; i < count - 1; i++) {
-                    const phi = (2 * Math.PI * i) / (count - 1);        // 面内位相
-                    const phi_z = phi + userPhaseDiff;                  // 面外位相（ユーザー指定差）
-                    const rho = radiusKm;                               // 面内半径
-                    const rho_z = rho * 0.5;                            // 面外振幅（可視化重視）
-                    
-                    // theory.mdより: 3次元Football orbitの初期条件
-                    // x(t) = ρ cos(nt + φ)              // 面内Football orbit
-                    // y(t) = -2ρ sin(nt + φ)            // 面内Football orbit  
-                    // z(t) = ρz cos(nt + φz)            // 面外調和振動
-                    
-                    // 初期位置 (t=0)
-                    const x0 = rho * Math.cos(phi);                    // ρ cos(φ)
-                    const y0 = -2 * rho * Math.sin(phi);               // -2ρ sin(φ)
-                    const z0 = rho_z * Math.cos(phi_z);                // ρz cos(φz)
-                    
-                    // 初期速度 (解析解の微分, t=0)
-                    const vx0 = -rho * this.n * Math.sin(phi);         // -ρn sin(φ)
-                    const vy0 = -2 * rho * this.n * Math.cos(phi);     // -2ρn cos(φ)
-                    const vz0 = -rho_z * this.n * Math.sin(phi_z);     // -ρz n sin(φz)
-                    
-                    positions.push({ 
-                        x0: x0,    // Radial（ヒル方程式のx軸）
-                        y0: y0,    // Along-track（ヒル方程式のy軸）
-                        z0: z0,    // Cross-track（ヒル方程式のz軸）
-                        vx0: vx0, 
-                        vy0: vy0, 
-                        vz0: vz0 
+                    positions.push({
+                        x0: (Math.random() * 2 - 1) * radiusKm, // -radiusKm ～ +radiusKm
+                        y0: (Math.random() * 2 - 1) * radiusKm,
+                        z0: (Math.random() * 2 - 1) * radiusKm,
+                        vx0: 0,
+                        vy0: 0,
+                        vz0: 0
                     });
                 }
                 break;
                 
-            case 'circle':
+            case 'random_position_velocity':
+                // ランダム（位置速度）: 位置と速度両方ランダム
+                const maxVelocity = radiusKm * 3 * this.n;
+                for (let i = 0; i < count - 1; i++) {
+                    positions.push({
+                        x0: (Math.random() * 2 - 1) * radiusKm, // -radiusKm ～ +radiusKm
+                        y0: (Math.random() * 2 - 1) * radiusKm,
+                        z0: (Math.random() * 2 - 1) * radiusKm,
+                        vx0: (Math.random() * 2 - 1) * maxVelocity, // -radiusKm*3*n ～ +radiusKm*3*n
+                        vy0: (Math.random() * 2 - 1) * maxVelocity,
+                        vz0: (Math.random() * 2 - 1) * maxVelocity
+                    });
+                }
+                break;
+                
             default:
-                for (let i = 0; i < count - 1; i++) {
-                    const phase = (2 * Math.PI * i) / (count - 1);
-                    const zOffset = zSpreadKm * (Math.random() - 0.5) * 2;
-                    const { x0, y0, z0, vx0, vy0, vz0 } = this.generatePeriodicOrbitInitialConditions(radiusKm, phase, zOffset);
-                    positions.push({ x0, y0, z0, vx0, vy0, vz0 });
-                }
+                // デフォルトは軸上配置
+                return this.generatePlacementPositions('axis', count, radius, zSpread);
                 break;
         }
         
@@ -456,7 +421,6 @@ class HillEquationSimulation {
         
         const count = parseInt(this.controls.satelliteCount.value);
         const radius = parseInt(this.controls.orbitRadius.value);
-        const zSpread = parseInt(this.controls.zSpread.value);
         const pattern = this.controls.placementPattern.value;
         
         this.satellites = [];
@@ -476,7 +440,7 @@ class HillEquationSimulation {
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         const hexColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff'];
         
-        const positions = this.generatePlacementPositions(pattern, count, radius, zSpread);
+        const positions = this.generatePlacementPositions(pattern, count, radius, 0);
         
         positions.forEach((pos, i) => {
             const satGeometry = new THREE.SphereGeometry(6, 32, 32);
@@ -691,21 +655,17 @@ class HillEquationSimulation {
                 const pos = sat.getPosition(this.time, this.n);
                 const r = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
                 
-                // パターン別の理論値との比較を表示
+                // 配置パターン別の情報を表示
                 let extraInfo = '';
-                if (this.controls.placementPattern.value === 'periodic') {
-                    const radius = parseInt(this.controls.orbitRadius.value);
-                    const theoreticalDistance = radius / 1000;  // 理論値 = 2ρ
-                    const error = Math.abs(r - theoreticalDistance) / theoreticalDistance * 100;
-                    extraInfo = ` (理論値: ${theoreticalDistance.toFixed(3)}km, 誤差: ${error.toFixed(2)}%)`;
-                } else if (this.controls.placementPattern.value === 'record') {
-                    const radius = parseInt(this.controls.orbitRadius.value);
-                    const phaseDiff = parseInt(this.controls.recordPhase.value);
-                    // レコード盤軌道（3次元Football orbit）の理論値：時刻により変動
-                    const rho = radius / 1000;  // 面内半径
-                    const minDistance = rho;  // 最小距離（z成分最小時）
-                    const maxDistance = rho * Math.sqrt(5);  // 最大距離（面内最大時）
-                    extraInfo = ` (3D軌道 ${phaseDiff}°: ${minDistance.toFixed(3)}-${maxDistance.toFixed(3)}km)`;
+                const pattern = this.controls.placementPattern.value;
+                if (pattern === 'axis') {
+                    extraInfo = ` (軸上配置)`;
+                } else if (pattern === 'grid') {
+                    extraInfo = ` (格子配置)`;
+                } else if (pattern === 'random_position') {
+                    extraInfo = ` (ランダム位置)`;
+                } else if (pattern === 'random_position_velocity') {
+                    extraInfo = ` (ランダム位置速度)`;
                 }
                 
                 html += `<span class="satellite-info">
@@ -775,26 +735,20 @@ class HillEquationSimulation {
             this.controls.trailLengthValue.textContent = this.controls.trailLength.value;
         });
         
-        // レコード盤軌道の位相差調整
-        this.controls.recordPhase.addEventListener('input', () => {
-            this.controls.recordPhaseValue.textContent = this.controls.recordPhase.value + '°';
-            if (this.controls.placementPattern.value === 'record') {
-                this.resetSimulation();
-            }
-        });
-        
         // リアルタイムパラメータ変更
         this.controls.satelliteCount.addEventListener('change', () => {
             this.resetSimulation();
         });
         
         this.controls.placementPattern.addEventListener('change', () => {
-            // レコード盤軌道選択時のみ位相差スライダーを表示
-            const recordControl = document.getElementById('recordPhaseControl')!;
-            if (this.controls.placementPattern.value === 'record') {
-                recordControl.style.display = 'flex';
+            // 配置パターンに応じて衛星数の上限を調整
+            const pattern = this.controls.placementPattern.value;
+            if (pattern === 'random_position' || pattern === 'random_position_velocity') {
+                this.controls.satelliteCount.max = '100';
+                this.controls.satelliteCount.min = '1';
             } else {
-                recordControl.style.display = 'none';
+                this.controls.satelliteCount.max = '5';
+                this.controls.satelliteCount.min = '1';
             }
             this.resetSimulation();
         });
@@ -810,10 +764,6 @@ class HillEquationSimulation {
         });
         
         this.controls.orbitRadius.addEventListener('change', () => {
-            this.resetSimulation();
-        });
-        
-        this.controls.zSpread.addEventListener('change', () => {
             this.resetSimulation();
         });
         
