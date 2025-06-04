@@ -13,12 +13,22 @@ interface SatelliteData {
 }
 
 class Satellite {
+    // 初期位置・速度
     x0: number;
     y0: number;
     z0: number;
     vx0: number;
     vy0: number;
     vz0: number;
+    
+    // 現在の状態（数値積分用）
+    x: number;
+    y: number;
+    z: number;
+    vx: number;
+    vy: number;
+    vz: number;
+    
     color: string;
     trail: THREE.Vector3[];
     trailLine: THREE.Line | null;
@@ -30,26 +40,42 @@ class Satellite {
         this.vx0 = vx0;
         this.vy0 = vy0;
         this.vz0 = vz0;
+        
+        // 現在の状態を初期化
+        this.x = x0;
+        this.y = y0;
+        this.z = z0;
+        this.vx = vx0;
+        this.vy = vy0;
+        this.vz = vz0;
+        
         this.color = color;
         this.trail = [];
         this.trailLine = null;
     }
     
-    getPosition(t: number, n: number): { x: number; y: number; z: number } {
-        const nt = n * t;
-        const cos_nt = Math.cos(nt);
-        const sin_nt = Math.sin(nt);
-        
-        // x(t) = -(3x₀ + 2ẏ₀/n)cos(nt) + (ẋ₀/n)sin(nt) + (4x₀ + 2ẏ₀/n)
-        const x = -(3 * this.x0 + 2 * this.vy0 / n) * cos_nt + (this.vx0 / n) * sin_nt + (4 * this.x0 + 2 * this.vy0 / n);
-        
-        // y(t) = (6x₀ + 4ẏ₀/n)sin(nt) + (2ẋ₀/n)cos(nt) - (6nx₀ + 3ẏ₀)t + (y₀ - 2ẋ₀/n)
-        const y = (6 * this.x0 + 4 * this.vy0 / n) * sin_nt + (2 * this.vx0 / n) * cos_nt - (6 * n * this.x0 + 3 * this.vy0) * t + (this.y0 - 2 * this.vx0 / n);
-        
-        // z(t) = z₀cos(nt) + (ż₀/n)sin(nt)
-        const z = this.z0 * cos_nt + (this.vz0 / n) * sin_nt;
-        
-        return { x, y, z };
+    getPosition(): { x: number; y: number; z: number } {
+        // 数値積分による現在位置を返す
+        return { x: this.x, y: this.y, z: this.z };
+    }
+    
+    getVelocity(): { vx: number; vy: number; vz: number } {
+        // 現在の速度を返す
+        return { vx: this.vx, vy: this.vy, vz: this.vz };
+    }
+    
+    reset() {
+        // 初期状態にリセット
+        this.x = this.x0;
+        this.y = this.y0;
+        this.z = this.z0;
+        this.vx = this.vx0;
+        this.vy = this.vy0;
+        this.vz = this.vz0;
+        this.trail = [];
+        if (this.trailLine) {
+            this.trailLine = null;
+        }
     }
 }
 
@@ -61,6 +87,7 @@ class HillEquationSimulation {
     private satellites: Satellite[] = [];
     private satelliteMeshes: THREE.Mesh[] = [];
     private time: number = 0;  // 秒単位
+    private dt: number = 0.1;  // 積分時間ステップ（秒）
     private paused: boolean = false;
     private n: number = 1.126e-3;  // rad/s (地球低軌道高度400km, 軌道周期約92.7分)
     private orbitRadius: number = 6778000;  // m (地球半径 + 高度400km)
@@ -69,9 +96,9 @@ class HillEquationSimulation {
     private mouseX: number = 0;
     private mouseY: number = 0;
     private mouseDown: boolean = false;
-    private cameraPhi: number = Math.PI / 4;
-    private cameraTheta: number = 0;
-    private cameraDistance: number = 800;
+    private cameraPhi: number = Math.PI / 3;  // より真上からの視点
+    private cameraTheta: number = Math.PI / 4;
+    private cameraDistance: number = 400;  // より近い距離
     private gridHelper: THREE.GridHelper;
     private plotContexts: {
         xy: CanvasRenderingContext2D;
@@ -140,7 +167,7 @@ class HillEquationSimulation {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         // 新しい座標系に合わせてカメラ位置を調整
         // X=Along-track(進行方向), Y=Radial(動径方向-上), Z=Cross-track(軌道面垂直)
-        this.camera.position.set(300, 500, 400);  // 斜め上から見下ろす視点
+        this.camera.position.set(100, 250, 100);
         this.camera.lookAt(0, 0, 0);
     }
     
@@ -236,6 +263,87 @@ class HillEquationSimulation {
             xz: xzCanvas.getContext('2d')!,
             yz: yzCanvas.getContext('2d')!
         };
+    }
+    
+    // Hill方程式の微分方程式（右辺）
+    private hillEquationDerivatives(state: {x: number, y: number, z: number, vx: number, vy: number, vz: number}): 
+        {dx: number, dy: number, dz: number, dvx: number, dvy: number, dvz: number} {
+        const { x, y, z, vx, vy, vz } = state;
+        const n = this.n;
+        
+        // Hill方程式の加速度項
+        // ẍ = 2nẏ + 3n²x
+        // ÿ = -2nẋ
+        // z̈ = -n²z
+        const ax = 2 * n * vy + 3 * n * n * x;
+        const ay = -2 * n * vx;
+        const az = -n * n * z;
+        
+        return {
+            dx: vx,
+            dy: vy,
+            dz: vz,
+            dvx: ax,
+            dvy: ay,
+            dvz: az
+        };
+    }
+    
+    // 4次ルンゲクッタ法による数値積分
+    private rungeKutta4Step(sat: Satellite, dt: number): void {
+        // 現在の状態
+        const state0 = {
+            x: sat.x,
+            y: sat.y,
+            z: sat.z,
+            vx: sat.vx,
+            vy: sat.vy,
+            vz: sat.vz
+        };
+        
+        // k1
+        const k1 = this.hillEquationDerivatives(state0);
+        
+        // k2
+        const state1 = {
+            x: state0.x + 0.5 * dt * k1.dx,
+            y: state0.y + 0.5 * dt * k1.dy,
+            z: state0.z + 0.5 * dt * k1.dz,
+            vx: state0.vx + 0.5 * dt * k1.dvx,
+            vy: state0.vy + 0.5 * dt * k1.dvy,
+            vz: state0.vz + 0.5 * dt * k1.dvz
+        };
+        const k2 = this.hillEquationDerivatives(state1);
+        
+        // k3
+        const state2 = {
+            x: state0.x + 0.5 * dt * k2.dx,
+            y: state0.y + 0.5 * dt * k2.dy,
+            z: state0.z + 0.5 * dt * k2.dz,
+            vx: state0.vx + 0.5 * dt * k2.dvx,
+            vy: state0.vy + 0.5 * dt * k2.dvy,
+            vz: state0.vz + 0.5 * dt * k2.dvz
+        };
+        const k3 = this.hillEquationDerivatives(state2);
+        
+        // k4
+        const state3 = {
+            x: state0.x + dt * k3.dx,
+            y: state0.y + dt * k3.dy,
+            z: state0.z + dt * k3.dz,
+            vx: state0.vx + dt * k3.dvx,
+            vy: state0.vy + dt * k3.dvy,
+            vz: state0.vz + dt * k3.dvz
+        };
+        const k4 = this.hillEquationDerivatives(state3);
+        
+        // 状態を更新（4次ルンゲクッタ法の公式）
+        sat.x += dt * (k1.dx + 2 * k2.dx + 2 * k3.dx + k4.dx) / 6;
+        sat.y += dt * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy) / 6;
+        sat.z += dt * (k1.dz + 2 * k2.dz + 2 * k3.dz + k4.dz) / 6;
+        sat.vx += dt * (k1.dvx + 2 * k2.dvx + 2 * k3.dvx + k4.dvx) / 6;
+        sat.vy += dt * (k1.dvy + 2 * k2.dvy + 2 * k3.dvy + k4.dvy) / 6;
+        sat.vz += dt * (k1.dvz + 2 * k2.dvz + 2 * k3.dvz + k4.dvz) / 6;
     }
     
     private updateOrbitParameters(): void {
@@ -465,9 +573,9 @@ class HillEquationSimulation {
                     const z0 = z_amplitude * Math.cos(phase);  // z方向振幅はsqrt(3)倍
                     
                     // ドリフト消失条件を満たす初期速度
-                    const vx0 = 0;
+                    const vx0 = -this.n * radius_circular * Math.sin(phase);
                     const vy0 = -2 * this.n * x0;  // ドリフト消失条件: vy0 = -2*n*x0
-                    const vz0 = z_amplitude * this.n * Math.cos(phase);  // z方向の速度
+                    const vz0 = -this.n * z_amplitude * Math.sin(phase);  // z方向の速度
                     
                     positions.push({
                         x0: x0,
@@ -540,7 +648,24 @@ class HillEquationSimulation {
         
         if (!this.paused) {
             const timeScale = parseFloat(this.controls.timeScale.value);
-            this.time += 0.016 * timeScale;  // 16ms = 0.016秒
+            const deltaTime = 0.016 * timeScale;  // 16ms = 0.016秒
+            this.time += deltaTime;
+            
+            // 積分時間ステップを倍速時間に応じて調整
+            // 倍速が大きいほど大きなステップを使用（計算負荷軽減）
+            const adaptiveDt = Math.min(this.dt * Math.max(1, timeScale / 10), deltaTime);
+            
+            // 数値積分の実行
+            const integrationSteps = Math.max(1, Math.ceil(deltaTime / adaptiveDt));
+            const stepDt = deltaTime / integrationSteps;
+            
+            for (let step = 0; step < integrationSteps; step++) {
+                this.satellites.forEach((sat, index) => {
+                    if (index > 0) {  // 中心衛星は動かさない
+                        this.rungeKutta4Step(sat, stepDt);
+                    }
+                });
+            }
             
             if (this.controls.autoRotate.checked) {
                 this.cameraAngle += 0.005;
@@ -557,7 +682,7 @@ class HillEquationSimulation {
             this.camera.lookAt(0, 0, 0);
             
             this.satellites.forEach((sat, index) => {
-                const pos = sat.getPosition(this.time, this.n);
+                const pos = sat.getPosition();
                 const scale = 1000;
                 // ヒル方程式座標系からThree.js座標系への変換
                 // Hill: x=Radial, y=Along-track, z=Cross-track
@@ -663,7 +788,7 @@ class HillEquationSimulation {
                     ctx.fill();
                 });
             } else {
-                const pos = sat.getPosition(this.time, this.n);
+                const pos = sat.getPosition();
                 const color = colors[(index - 1) % colors.length];
                 
                 // XY平面 (動径方向 - 進行方向) - Three.js表示に合わせてX-Y軸を入れ替え
@@ -728,7 +853,7 @@ class HillEquationSimulation {
         
         this.satellites.forEach((sat, index) => {
             if (index > 0) {
-                const pos = sat.getPosition(this.time, this.n);
+                const pos = sat.getPosition();
                 const r = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
                 
                 // 配置パターン別の情報を表示
@@ -750,7 +875,7 @@ class HillEquationSimulation {
                 
                 html += `<span class="satellite-info">
                         <span class="color-indicator" style="background-color: ${sat.color}"></span>
-                        衛星${index}: 距離=${r.toFixed(3)}km${extraInfo}
+                        衛星${index}${extraInfo}
                         </span>`;
             }
         });
@@ -761,7 +886,7 @@ class HillEquationSimulation {
     public resetSimulation(): void {
         this.satellites.forEach(sat => {
             if (sat.trailLine) this.scene.remove(sat.trailLine);
-            sat.trail = [];
+            sat.reset();
         });
         this.initSimulation();
     }
@@ -773,9 +898,10 @@ class HillEquationSimulation {
     public addPerturbation(): void {
         this.satellites.forEach((sat, index) => {
             if (index > 0) {
-                sat.vx0 += (Math.random() - 0.5) * 0.00002;  // 0.0002 → 0.00002 (1桁小さく)
-                sat.vy0 += (Math.random() - 0.5) * 0.00002;
-                sat.vz0 += (Math.random() - 0.5) * 0.00002;
+                // 現在の速度に摂動を加える（数値積分用）
+                sat.vx += (Math.random() - 0.5) * 0.00002;  // 0.0002 → 0.00002 (1桁小さく)
+                sat.vy += (Math.random() - 0.5) * 0.00002;
+                sat.vz += (Math.random() - 0.5) * 0.00002;
             }
         });
     }
@@ -784,17 +910,17 @@ class HillEquationSimulation {
         this.viewMode = (this.viewMode + 1) % 4;
         switch(this.viewMode) {
             case 0:
-                this.cameraDistance = 800;
+                this.cameraDistance = 400;
                 this.cameraPhi = Math.PI / 4;
                 this.cameraTheta = 0;
                 break;
             case 1:
-                this.cameraDistance = 800;
+                this.cameraDistance = 400;
                 this.cameraPhi = 0.1;
                 this.cameraTheta = 0;
                 break;
             case 2:
-                this.cameraDistance = 800;
+                this.cameraDistance = 400;
                 this.cameraPhi = Math.PI / 2;
                 this.cameraTheta = 0;
                 break;
