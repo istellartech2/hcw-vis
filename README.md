@@ -1,20 +1,21 @@
-# ヒルの方程式シミュレーター
+# 🛰️ ヒルの方程式シミュレーター
 
 衛星群の相対運動を3D可視化するWebアプリケーション
 
-## 概要
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-blue)](https://your-username.github.io/hill-equation/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue)](https://www.typescriptlang.org/)
+[![Three.js](https://img.shields.io/badge/Three.js-0.160+-green)](https://threejs.org/)
 
-このアプリケーションは、ヒルの方程式（Hill's Equations）を用いて、円軌道上の主衛星に対する近傍衛星の相対運動をシミュレートし、3D空間で可視化します。LVLH座標系（Local Vertical Local Horizontal）での衛星の動きを観察できます。
+## 📖 概要
 
-## 特徴
+このアプリケーションは、ヒルの方程式（Hill's Equations / Clohessy-Wiltshire方程式）を用いて、円軌道上の主衛星に対する近傍衛星の相対運動をシミュレートし、3D空間で可視化します。LVLH座標系（Local Vertical Local Horizontal）での衛星の動きを観察し、実際の宇宙ミッションで使用される軌道パターンを学習できます。
 
-- 🛰️ リアルタイム3Dシミュレーション
-- 📊 2D投影図（XY、XZ、YZ平面）の同時表示
-- 🎮 インタラクティブなカメラコントロール
-- ⌨️ キーボードショートカット対応
-- 🎨 複数の衛星配置パターン（円形、球形、ランダム、直線、螺旋）
-- 🕐 時間スケールの調整機能
-- 📈 軌跡表示機能
+## ✨ 特徴
+
+- 🛰️ **リアルタイム3Dシミュレーション** - Three.jsによる高品質な3D可視化
+- 🎮 **インタラクティブな操作** - マウス・キーボードによる直感的な制御
+- 🚀 **実用的な軌道パターン** - 実際のミッションで使用される軌道
+- 🎨 **多様な初期配置パターン** - 軸上、格子、楕円軌道、円軌道、ランダム配置など
 
 ## 必要環境
 
@@ -32,32 +33,6 @@ bun run dev
 ```
 
 ブラウザで http://localhost:3000 にアクセスしてください。
-
-## 使い方
-
-### マウス操作
-- **ドラッグ**: カメラを回転
-- **スクロール**: ズームイン/アウト
-
-### キーボードショートカット
-- `Space`: 一時停止/再開
-- `R`: シミュレーションをリセット
-- `P`: ランダムな摂動を加える
-- `V`: 視点を変更
-- `T`: 軌跡表示の切り替え
-- `G`: グリッド表示の切り替え
-- `A`: カメラ自動回転の切り替え
-- `+`/`=`: 時間スケールを増加
-- `-`/`_`: 時間スケールを減少
-- `H`: ヘルプを表示
-
-### コントロールパネル
-- **衛星数**: 2〜10個の衛星を配置
-- **配置パターン**: 初期配置の形状を選択
-- **軌道半径**: 衛星の初期軌道半径
-- **Z方向分散**: 軌道面垂直方向の分散
-- **時間スケール**: シミュレーション速度の調整
-- **軌跡の長さ**: 表示する軌跡の長さ
 
 ## 技術仕様
 
@@ -94,43 +69,39 @@ LVLH座標系（Local Vertical Local Horizontal）を使用：
 - y_display = z_physics  
 - z_display = -y_physics
 
-## プロジェクト構成
+## 🏗️ プロジェクト構成
 
 ```
 hill-equation/
-├── index.html          # メインHTML
+├── index.html                    # メインHTML
 ├── src/
-│   ├── main.ts        # TypeScriptメインファイル
-│   └── styles.css     # スタイルシート
-├── server.ts          # Bunサーバー
-├── package.json       # プロジェクト設定
-├── tsconfig.json      # TypeScript設定
+│   ├── main.ts                  # TypeScriptメインファイル
+│   ├── styles.css               # スタイルシート
+│   ├── models/
+│   │   └── Satellite.ts         # 衛星オブジェクトクラス
+│   ├── physics/
+│   │   ├── HillEquationSolver.ts # ヒルの方程式数値積分
+│   │   └── OrbitInitializer.ts   # 初期配置生成クラス
+│   ├── ui/
+│   │   └── UIControls.ts        # UIコントロール管理
+│   └── visualization/
+│       ├── PlotRenderer.ts      # 2Dプロット描画
+│       └── TrailRenderer.ts     # 軌跡描画
 ├── docs/
-│   └── theory.md     # ヒルの方程式の理論的背景
-├── TODO.md           # 今後の実装予定
-└── README.md         # このファイル
+│   └── theory.md               # ヒルの方程式の理論的背景
+├── server.ts                   # Bun開発サーバー
+├── package.json               # プロジェクト設定
+├── tsconfig.json             # TypeScript設定（開発用）
+├── tsconfig.prod.json        # TypeScript設定（ビルド用）
+├── TODO.md                   # 今後の実装予定
+└── README.md                 # このファイル
 ```
 
-## 使用技術
-
-- **Bun**: JavaScriptランタイム・パッケージマネージャー
-- **TypeScript**: 型安全なJavaScript
-- **Three.js**: 3Dグラフィックスライブラリ
-- **Canvas API**: 2Dプロット描画
-
-## ライセンス
-
-MIT License
-
-## 貢献
-
-Issue報告やプルリクエストを歓迎します。
-
-## 理論的背景
+## 📚 理論的背景
 
 詳細な数学的導出と物理的解釈については、[docs/theory.md](docs/theory.md) を参照してください。
 
-## 参考文献
+## 📖 参考文献
 
 - Clohessy, W. H. and Wiltshire, R. S., "Terminal Guidance System for Satellite Rendezvous," Journal of the Aerospace Sciences, Vol. 27, No. 9, 1960, pp. 653-658.
 - Hill, G. W., "Researches in the Lunar Theory," American Journal of Mathematics, Vol. 1, No. 1, 1878, pp. 5-26.

@@ -1,8 +1,10 @@
-# ヒルの方程式の理論的背景
+# 🛰️ ヒルの方程式の理論的背景
 
-## 概要
+## 📖 概要
 
 ヒルの方程式（Hill's Equations）は、円軌道上を運動する主衛星（ターゲット）に対する、近傍の追跡衛星（チェイサー）の相対運動を記述する線形微分方程式です。これらの方程式は、1960年にClohessyとWiltshireによって衛星のランデブー問題に適用され、Clohessy-Wiltshire（CW）方程式とも呼ばれます。
+
+現代の宇宙ミッションにおいて、国際宇宙ステーション（ISS）への補給ミッション、衛星の編隊飛行、軌道上サービシングなどで広く活用されています。
 
 ## 座標系の定義
 
@@ -137,19 +139,40 @@ z(t) = z₀cos(nt) + (ż₀/n)sin(nt)
    - ドリフトなしで閉軌道を描く特殊な初期条件
    - 条件: ẏ₀ = -2nx₀
 
+2. **V-bar軌道（Velocity Vector Bar）**
+   - 速度ベクトル方向（Y軸、Along-track）からの接近軌道
+   - 宇宙ステーション後方から接近する安全な軌道パターン
+   - 制御失敗時に自然に離れる特性により安全性が高い
+   - SpaceX Dragon、Soyuz宇宙船のISSへの接近で使用
+   - 初期条件例: x₀ = 0, y₀ < 0（後方配置），適切な接近速度vy₀ > 0
+
+3. **R-bar軌道（Radial Bar）**
+   - 径方向（X軸、Radial）からの接近軌道
+   - 宇宙ステーション真下（地球側）からの直接接近
+   - より直接的だが軌道力学的に不安定
+   - 精密な制御と継続的な推力が必要
+   - 初期条件例: x₀ < 0（下方配置）, y₀ = 0, ヒルの方程式結合項を考慮したvy₀ = -2nx₀
+
 ### エネルギーと積分
 
 相対運動系では以下の積分が存在：
 - Jacobi積分: C = n²(3x² - z²) - 2(ẋ² + ẏ² + ż²)
 
-## 応用
+## 🚀 応用
 
 ### 宇宙ミッション
-- 衛星のランデブー・ドッキング
-- 編隊飛行
-- 軌道上サービシング
-- デブリ除去
-- ISS補給ミッション
+- **ISS補給ミッション**: SpaceX Dragon、Northrop Grumman Cygnus
+- **有人宇宙船**: Soyuz、SpaceX Crew Dragon、Boeing Starliner
+- **衛星の編隊飛行**: 地球観測衛星群、GPS衛星
+- **軌道上サービシング**: 衛星の燃料補給、修理、寿命延長
+- **宇宙デブリ除去**: Active Debris Removal (ADR) ミッション
+- **科学ミッション**: 宇宙望遠鏡の精密配置制御
+
+### 実際のミッション事例
+1. **SpaceX Dragon (2012-)**: V-bar軌道でのISS接近
+2. **Soyuz宇宙船 (1967-)**: 高速ランデブーでのV-bar接近
+3. **ESA ATV (2008-2014)**: 自動ランデブー・ドッキングシステム
+4. **日本のHTV/HTV-X**: ロボットアームによるキャプチャ方式
 
 ### 制御への応用
 ヒルの方程式の線形性により、最適制御理論の適用が容易：
@@ -173,12 +196,44 @@ z(t) = z₀cos(nt) + (ż₀/n)sin(nt)
 - 平均運動: n ≈ 1.13 × 10⁻³ rad/s
 - 軌道周期: T ≈ 92.7 分
 
-## 参考文献
+## 💻 本シミュレーターでの実装
 
-1. Clohessy, W. H. and Wiltshire, R. S., "Terminal Guidance System for Satellite Rendezvous," Journal of the Aerospace Sciences, Vol. 27, No. 9, 1960.
+### 数値積分手法
+- **Runge-Kutta 4次法**: 高精度な数値積分
+- **適応的時間ステップ**: 計算負荷とと精度のバランス
+- **リアルタイム可視化**: Three.jsによる60FPSレンダリング
 
-2. Alfriend, K. T., et al., "Spacecraft Formation Flying: Dynamics, Control and Navigation," Elsevier, 2010.
+### 実装されている軌道パターン
+1. **基本パターン**: 軸上、格子、ランダム配置
+2. **解析的パターン**: 楕円軌道、円軌道
+3. **実用パターン**: V-bar軌道、R-bar軌道
+4. **カスタマイズ**: Z軸振幅調整、配置範囲変更
 
-3. Fehse, W., "Automated Rendezvous and Docking of Spacecraft," Cambridge University Press, 2003.
+### 教育的活用
+- **軌道力学の可視化**: 理論を直感的に理解
+- **ミッション設計**: 実際の宇宙ミッションの軌道計画学習
+- **パラメータ感度**: 初期条件変化による軌道への影響観察
+- **制御実験**: 摂動追加による軌道変化の観察
 
-4. Vallado, D. A., "Fundamentals of Astrodynamics and Applications," 4th Edition, Microcosm Press, 2013.
+## 📚 参考文献
+
+### 基礎理論
+1. **Clohessy, W. H. and Wiltshire, R. S.**, "Terminal Guidance System for Satellite Rendezvous," *Journal of the Aerospace Sciences*, Vol. 27, No. 9, 1960, pp. 653-658.
+
+2. **Hill, G. W.**, "Researches in the Lunar Theory," *American Journal of Mathematics*, Vol. 1, No. 1, 1878, pp. 5-26.
+
+3. **Vallado, D. A.**, "Fundamentals of Astrodynamics and Applications," 4th Edition, Microcosm Press, 2013.
+
+### 応用・実装
+4. **Alfriend, K. T., et al.**, "Spacecraft Formation Flying: Dynamics, Control and Navigation," Elsevier, 2010.
+
+5. **Fehse, W.**, "Automated Rendezvous and Docking of Spacecraft," Cambridge University Press, 2003.
+
+6. **Wiesel, W. E.**, "Spaceflight Dynamics," 3rd Edition, Aphelion Press, 2010.
+
+### 実用事例
+7. **NASA**, "International Space Station Familiarization," NASA SSP 50808, 2006.
+
+8. **SpaceX**, "Dragon Spacecraft Overview," SpaceX Mission and Vehicle Overview, 2020.
+
+9. **ESA**, "Automated Transfer Vehicle (ATV) User Manual," ESA-HSO-ESA-MAN-0001, 2008.
