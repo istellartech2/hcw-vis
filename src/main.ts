@@ -303,7 +303,7 @@ class HillEquationSimulation {
                 }
                 
                 // X軸に配置
-                for (let i = 0; i < count * 2; i++) {
+                for (let i = 0; i < count * 2 && positions.length < count; i++) {
                     positions.push({
                         x0: axisPositions[i],
                         y0: 0,
@@ -315,7 +315,7 @@ class HillEquationSimulation {
                 }
                 
                 // Y軸に配置
-                for (let i = 0; i < count * 2; i++) {
+                for (let i = 0; i < count * 2 && positions.length < count; i++) {
                     positions.push({
                         x0: 0,
                         y0: axisPositions[i],
@@ -327,7 +327,7 @@ class HillEquationSimulation {
                 }
                 
                 // Z軸に配置
-                for (let i = 0; i < count * 2; i++) {
+                for (let i = 0; i < count * 2 && positions.length < count; i++) {
                     positions.push({
                         x0: 0,
                         y0: 0,
@@ -377,7 +377,7 @@ class HillEquationSimulation {
                 
             case 'random_position':
                 // ランダム（位置）: 位置はランダム、速度は0
-                for (let i = 0; i < count - 1; i++) {
+                for (let i = 0; i < count; i++) {
                     positions.push({
                         x0: (Math.random() * 2 - 1) * radiusKm, // -radiusKm ～ +radiusKm
                         y0: (Math.random() * 2 - 1) * radiusKm,
@@ -392,7 +392,7 @@ class HillEquationSimulation {
             case 'random_position_velocity':
                 // ランダム（位置速度）: 位置と速度両方ランダム
                 const maxVelocity = radiusKm * 3 * this.n;
-                for (let i = 0; i < count - 1; i++) {
+                for (let i = 0; i < count; i++) {
                     positions.push({
                         x0: (Math.random() * 2 - 1) * radiusKm, // -radiusKm ～ +radiusKm
                         y0: (Math.random() * 2 - 1) * radiusKm,
@@ -400,6 +400,51 @@ class HillEquationSimulation {
                         vx0: (Math.random() * 2 - 1) * maxVelocity, // -radiusKm*3*n ～ +radiusKm*3*n
                         vy0: (Math.random() * 2 - 1) * maxVelocity,
                         vz0: (Math.random() * 2 - 1) * maxVelocity
+                    });
+                }
+                break;
+                
+            case 'random_periodic':
+                // ランダム（周期解）: 位置はランダム、vy0はドリフト消失条件、vx0とvz0はランダム
+                const maxVelocityPeriodic = radiusKm * 3 * this.n;
+                for (let i = 0; i < count; i++) {
+                    const x0 = (Math.random() * 2 - 1) * radiusKm; // -radiusKm ～ +radiusKm
+                    positions.push({
+                        x0: x0,
+                        y0: (Math.random() * 2 - 1) * radiusKm,
+                        z0: (Math.random() * 2 - 1) * radiusKm,
+                        vx0: (Math.random() * 2 - 1) * maxVelocityPeriodic, // ランダム
+                        vy0: -2 * this.n * x0, // ドリフト消失条件: vy0 = -2*n*x0
+                        vz0: (Math.random() * 2 - 1) * maxVelocityPeriodic  // ランダム
+                    });
+                }
+                break;
+                
+            case 'xy_ellipse':
+                // XY平面楕円: Football orbit（2:1楕円軌道）
+                // 初期条件: x0=radiusKm, y0=0 から始まる楕円軌道
+                
+                // Football orbit: x(t) = ρcos(nt+φ), y(t) = -2ρsin(nt+φ)
+                // 初期条件 x0=radiusKm, y0=0 から: φ=0, ρ=radiusKm
+                // 初期速度: vx0=0, vy0=-2*ρ*n
+                const rho = radiusKm;
+                
+                for (let i = 0; i < count; i++) {
+                    // 各衛星を楕円上に等間隔で配置
+                    const phase = (2 * Math.PI * i) / count;
+                    
+                    const x0 = rho * Math.cos(phase);
+                    const y0 = -2 * rho * Math.sin(phase);
+                    const vx0 = -rho * this.n * Math.sin(phase);
+                    const vy0 = -2 * rho * this.n * Math.cos(phase);
+                    
+                    positions.push({
+                        x0: x0,
+                        y0: y0,
+                        z0: 0,
+                        vx0: vx0,
+                        vy0: vy0,
+                        vz0: 0
                     });
                 }
                 break;
@@ -666,6 +711,10 @@ class HillEquationSimulation {
                     extraInfo = ` (ランダム位置)`;
                 } else if (pattern === 'random_position_velocity') {
                     extraInfo = ` (ランダム位置速度)`;
+                } else if (pattern === 'random_periodic') {
+                    extraInfo = ` (ランダム周期解)`;
+                } else if (pattern === 'xy_ellipse') {
+                    extraInfo = ` (XY平面楕円)`;
                 }
                 
                 html += `<span class="satellite-info">
@@ -743,7 +792,7 @@ class HillEquationSimulation {
         this.controls.placementPattern.addEventListener('change', () => {
             // 配置パターンに応じて衛星数の上限を調整
             const pattern = this.controls.placementPattern.value;
-            if (pattern === 'random_position' || pattern === 'random_position_velocity') {
+            if (pattern === 'random_position' || pattern === 'random_position_velocity' || pattern === 'random_periodic') {
                 this.controls.satelliteCount.max = '100';
                 this.controls.satelliteCount.min = '1';
             } else {
