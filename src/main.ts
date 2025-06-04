@@ -32,6 +32,9 @@ class Satellite {
     color: string;
     trail: THREE.Vector3[];
     trailLine: THREE.Line | null;
+    trailGeometry: THREE.BufferGeometry | null;
+    trailMaterial: THREE.LineBasicMaterial | null;
+    frameCounter: number;  // 軌跡更新の間引き用
     
     constructor(x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number, color: string) {
         this.x0 = x0;
@@ -52,6 +55,9 @@ class Satellite {
         this.color = color;
         this.trail = [];
         this.trailLine = null;
+        this.trailGeometry = null;
+        this.trailMaterial = null;
+        this.frameCounter = 0;
     }
     
     getPosition(): { x: number; y: number; z: number } {
@@ -73,8 +79,27 @@ class Satellite {
         this.vy = this.vy0;
         this.vz = this.vz0;
         this.trail = [];
-        if (this.trailLine) {
-            this.trailLine = null;
+        this.frameCounter = 0;
+        
+        // THREE.jsオブジェクトの適切な解放
+        if (this.trailGeometry) {
+            this.trailGeometry.dispose();
+            this.trailGeometry = null;
+        }
+        if (this.trailMaterial) {
+            this.trailMaterial.dispose();
+            this.trailMaterial = null;
+        }
+        this.trailLine = null;
+    }
+    
+    dispose() {
+        // メモリ解放用
+        if (this.trailGeometry) {
+            this.trailGeometry.dispose();
+        }
+        if (this.trailMaterial) {
+            this.trailMaterial.dispose();
         }
     }
 }
@@ -89,6 +114,7 @@ class HillEquationSimulation {
     private time: number = 0;  // 秒単位
     private dt: number = 0.1;  // 積分時間ステップ（秒）
     private paused: boolean = false;
+    private animationFrameCounter: number = 0;  // アニメーションフレームカウンター
     private n: number = 1.126e-3;  // rad/s (地球低軌道高度400km, 軌道周期約92.7分)
     private orbitRadius: number = 6778000;  // m (地球半径 + 高度400km)
     private cameraAngle: number = 0;
@@ -598,9 +624,21 @@ class HillEquationSimulation {
     }
     
     private initSimulation(): void {
-        this.satelliteMeshes.forEach(mesh => this.scene.remove(mesh));
+        // 既存のメッシュを削除
+        this.satelliteMeshes.forEach(mesh => {
+            this.scene.remove(mesh);
+            if (mesh.geometry) mesh.geometry.dispose();
+            if (mesh.material && Array.isArray(mesh.material)) {
+                mesh.material.forEach(mat => mat.dispose());
+            } else if (mesh.material) {
+                (mesh.material as THREE.Material).dispose();
+            }
+        });
+        
+        // 既存の衛星オブジェクトを適切にクリーンアップ
         this.satellites.forEach(sat => {
             if (sat.trailLine) this.scene.remove(sat.trailLine);
+            sat.dispose();
         });
         
         const count = parseInt(this.controls.satelliteCount.value);
@@ -647,6 +685,7 @@ class HillEquationSimulation {
         requestAnimationFrame(this.animate);
         
         if (!this.paused) {
+            this.animationFrameCounter++;
             const timeScale = parseFloat(this.controls.timeScale.value);
             const deltaTime = 0.016 * timeScale;  // 16ms = 0.016秒
             this.time += deltaTime;
@@ -655,16 +694,21 @@ class HillEquationSimulation {
             // 倍速が大きいほど大きなステップを使用（計算負荷軽減）
             const adaptiveDt = Math.min(this.dt * Math.max(1, timeScale / 10), deltaTime);
             
-            // 数値積分の実行
-            const integrationSteps = Math.max(1, Math.ceil(deltaTime / adaptiveDt));
-            const stepDt = deltaTime / integrationSteps;
+            // 数値積分の実行（衛星数が多い場合は計算を間引く）
+            const satelliteCount = this.satellites.length - 1; // 中心衛星を除く
+            const skipIntegration = satelliteCount > 20 && this.animationFrameCounter % 2 !== 0;
             
-            for (let step = 0; step < integrationSteps; step++) {
-                this.satellites.forEach((sat, index) => {
-                    if (index > 0) {  // 中心衛星は動かさない
-                        this.rungeKutta4Step(sat, stepDt);
-                    }
-                });
+            if (!skipIntegration) {
+                const integrationSteps = Math.max(1, Math.ceil(deltaTime / adaptiveDt));
+                const stepDt = deltaTime / integrationSteps;
+                
+                for (let step = 0; step < integrationSteps; step++) {
+                    this.satellites.forEach((sat, index) => {
+                        if (index > 0) {  // 中心衛星は動かさない
+                            this.rungeKutta4Step(sat, stepDt);
+                        }
+                    });
+                }
             }
             
             if (this.controls.autoRotate.checked) {
@@ -690,29 +734,48 @@ class HillEquationSimulation {
                 this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
                 
                 if (this.controls.showTrails.checked && index > 0) {
-                    const trailMax = parseInt(this.controls.trailLength.value);
-                    // 軌跡も同じ座標変換を適用
-                    sat.trail.push(new THREE.Vector3(pos.y * scale, pos.x * scale, pos.z * scale));
-                    if (sat.trail.length > trailMax) sat.trail.shift();
-                    
-                    if (sat.trailLine) this.scene.remove(sat.trailLine);
-                    
-                    if (sat.trail.length > 1) {
-                        const trailGeometry = new THREE.BufferGeometry().setFromPoints(sat.trail);
-                        const trailMaterial = new THREE.LineBasicMaterial({ 
-                            color: (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).color,
-                            opacity: 0.5,
-                            transparent: true
-                        });
-                        sat.trailLine = new THREE.Line(trailGeometry, trailMaterial);
-                        this.scene.add(sat.trailLine);
+                    // 軌跡を5フレームに1回だけ更新（メモリと計算負荷軽減）
+                    sat.frameCounter++;
+                    if (sat.frameCounter % 5 === 0) {
+                        const trailMax = parseInt(this.controls.trailLength.value);
+                        
+                        // 軌跡も同じ座標変換を適用
+                        if (sat.trail.length === 0 || sat.frameCounter % 10 === 0) {
+                            // 10フレームに1回だけVector3を新規作成
+                            sat.trail.push(new THREE.Vector3(pos.y * scale, pos.x * scale, pos.z * scale));
+                            if (sat.trail.length > trailMax) sat.trail.shift();
+                        }
+                        
+                        if (sat.trail.length > 1) {
+                            // 初回のみgeometry/materialを作成、以降は使い回し
+                            if (!sat.trailGeometry) {
+                                sat.trailGeometry = new THREE.BufferGeometry();
+                                sat.trailMaterial = new THREE.LineBasicMaterial({ 
+                                    color: (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).color,
+                                    opacity: 0.5,
+                                    transparent: true
+                                });
+                                sat.trailLine = new THREE.Line(sat.trailGeometry, sat.trailMaterial);
+                                this.scene.add(sat.trailLine);
+                            }
+                            
+                            // 頂点データのみ更新（新規オブジェクト作成なし）
+                            sat.trailGeometry.setFromPoints(sat.trail);
+                        }
                     }
                 }
             });
             
-            this.updateInfo();
-            this.updateTimeDisplay();
-            this.update2DPlots();
+            // 情報表示と2Dプロットは10フレームに1回だけ更新（計算負荷軽減）
+            if (this.animationFrameCounter % 10 === 0) {
+                this.updateInfo();
+                this.update2DPlots();
+            }
+            
+            // 時間表示は5フレームに1回更新
+            if (this.animationFrameCounter % 5 === 0) {
+                this.updateTimeDisplay();
+            }
         }
         
         this.gridHelper.visible = this.controls.showGrid.checked;
@@ -976,12 +1039,22 @@ class HillEquationSimulation {
         // チェックボックスの変更もリアルタイムで反映（すでに動作している）
         this.controls.showTrails.addEventListener('change', () => {
             if (!this.controls.showTrails.checked) {
-                // 軌跡を非表示にする場合はすぐに削除
+                // 軌跡を非表示にする場合は適切にクリーンアップ
                 this.satellites.forEach(sat => {
                     if (sat.trailLine) {
                         this.scene.remove(sat.trailLine);
                         sat.trailLine = null;
                     }
+                    if (sat.trailGeometry) {
+                        sat.trailGeometry.dispose();
+                        sat.trailGeometry = null;
+                    }
+                    if (sat.trailMaterial) {
+                        sat.trailMaterial.dispose();
+                        sat.trailMaterial = null;
+                    }
+                    sat.trail = [];
+                    sat.frameCounter = 0;
                 });
             }
         });
