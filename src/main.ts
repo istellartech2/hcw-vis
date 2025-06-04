@@ -40,10 +40,14 @@ class Satellite {
         const cos_nt = Math.cos(nt);
         const sin_nt = Math.sin(nt);
         
-        const x = (4 - 3 * cos_nt) * this.x0 + sin_nt / n * this.vx0 + 2 / n * (1 - cos_nt) * this.vy0;
-        const y = 6 * (sin_nt - nt) * this.x0 + this.y0 - 2 / n * (1 - cos_nt) * this.vx0 + 
-                 (4 * sin_nt - 3 * nt) / n * this.vy0;
-        const z = this.z0 * cos_nt + this.vz0 / n * sin_nt;
+        // x(t) = -(3x₀ + 2ẏ₀/n)cos(nt) + (ẋ₀/n)sin(nt) + (4x₀ + 2ẏ₀/n)
+        const x = -(3 * this.x0 + 2 * this.vy0 / n) * cos_nt + (this.vx0 / n) * sin_nt + (4 * this.x0 + 2 * this.vy0 / n);
+        
+        // y(t) = (6x₀ + 4ẏ₀/n)sin(nt) + (2ẋ₀/n)cos(nt) - (6nx₀ + 3ẏ₀)t + (y₀ - 2ẋ₀/n)
+        const y = (6 * this.x0 + 4 * this.vy0 / n) * sin_nt + (2 * this.vx0 / n) * cos_nt - (6 * n * this.x0 + 3 * this.vy0) * t + (this.y0 - 2 * this.vx0 / n);
+        
+        // z(t) = z₀cos(nt) + (ż₀/n)sin(nt)
+        const z = this.z0 * cos_nt + (this.vz0 / n) * sin_nt;
         
         return { x, y, z };
     }
@@ -59,6 +63,7 @@ class HillEquationSimulation {
     private time: number = 0;  // 秒単位
     private paused: boolean = false;
     private n: number = 1.126e-3;  // rad/s (地球低軌道高度400km, 軌道周期約92.7分)
+    private orbitRadius: number = 6778000;  // m (地球半径 + 高度400km)
     private cameraAngle: number = 0;
     private viewMode: number = 0;
     private mouseX: number = 0;
@@ -77,6 +82,8 @@ class HillEquationSimulation {
         satelliteCount: HTMLInputElement;
         placementPattern: HTMLSelectElement;
         orbitRadius: HTMLInputElement;
+        orbitAltitude: HTMLInputElement;
+        orbitRadiusDisplay: HTMLSpanElement;
         zSpread: HTMLInputElement;
         timeScale: HTMLSelectElement;
         simulationTime: HTMLSpanElement;
@@ -108,6 +115,8 @@ class HillEquationSimulation {
             satelliteCount: document.getElementById('satelliteCount') as HTMLInputElement,
             placementPattern: document.getElementById('placementPattern') as HTMLSelectElement,
             orbitRadius: document.getElementById('orbitRadius') as HTMLInputElement,
+            orbitAltitude: document.getElementById('orbitAltitude') as HTMLInputElement,
+            orbitRadiusDisplay: document.getElementById('orbitRadiusDisplay') as HTMLSpanElement,
             zSpread: document.getElementById('zSpread') as HTMLInputElement,
             timeScale: document.getElementById('timeScale') as HTMLSelectElement,
             simulationTime: document.getElementById('simulationTime') as HTMLSpanElement,
@@ -127,6 +136,7 @@ class HillEquationSimulation {
         this.gridHelper = this.createGrid();
         this.setupPlotContexts();
         this.setupEventListeners();
+        this.updateOrbitParameters();  // 初期値で軌道パラメータを計算
         this.initSimulation();
         this.animate();
     }
@@ -232,6 +242,29 @@ class HillEquationSimulation {
             xz: xzCanvas.getContext('2d')!,
             yz: yzCanvas.getContext('2d')!
         };
+    }
+    
+    private updateOrbitParameters(): void {
+        // 地球の定数
+        const EARTH_RADIUS = 6378.137;  // km
+        const EARTH_MU = 3.986004418e14;  // m³/s² (地球の重力定数)
+        
+        // 軌道高度から軌道半径を計算
+        const altitude = parseFloat(this.controls.orbitAltitude.value);  // km
+        const radiusKm = EARTH_RADIUS + altitude;  // km
+        this.orbitRadius = radiusKm * 1000;  // m
+        
+        // 平均運動（軌道角速度）を計算
+        // n = √(μ/r³)
+        this.n = Math.sqrt(EARTH_MU / Math.pow(this.orbitRadius, 3));  // rad/s
+        
+        // 軌道周期を計算（参考表示用）
+        const orbitalPeriod = (2 * Math.PI) / this.n;  // 秒
+        const periodMinutes = orbitalPeriod / 60;  // 分
+        
+        // UI表示を更新
+        this.controls.orbitRadiusDisplay.textContent = 
+            `軌道半径: ${radiusKm.toFixed(0)} km (周期: ${periodMinutes.toFixed(1)}分)`;
     }
     
     private generatePeriodicOrbitInitialConditions(radius: number, phase: number, zOffset: number = 0): {
@@ -523,10 +556,18 @@ class HillEquationSimulation {
     }
     
     private updateTimeDisplay(): void {
-        const totalSeconds = this.time;
-        const minutes = Math.floor(totalSeconds / 60);
+        const totalSeconds = Math.floor(this.time);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-        this.controls.simulationTime.textContent = `${minutes}分 ${seconds.toFixed(0)}秒`;
+        
+        if (hours > 0) {
+            this.controls.simulationTime.textContent = `${hours}時間${minutes}分${seconds}秒`;
+        } else if (minutes > 0) {
+            this.controls.simulationTime.textContent = `${minutes}分${seconds}秒`;
+        } else {
+            this.controls.simulationTime.textContent = `${seconds}秒`;
+        }
     }
     
     private update2DPlots(): void {
@@ -635,6 +676,15 @@ class HillEquationSimulation {
     private updateInfo(): void {
         const infoDiv = document.getElementById('satelliteInfo')!;
         let html = '<strong>衛星の状態:</strong><br>';
+        
+        // 現在の軌道パラメータを表示
+        const altitude = parseFloat(this.controls.orbitAltitude.value);
+        const orbitalPeriod = (2 * Math.PI) / this.n / 60;  // 分
+        html += `<div style="margin-bottom: 10px; color: #999;">
+                軌道高度: ${altitude.toFixed(0)} km | 
+                平均運動: ${(this.n * 1000).toFixed(3)} mrad/s | 
+                周期: ${orbitalPeriod.toFixed(1)} 分
+                </div>`;
         
         this.satellites.forEach((sat, index) => {
             if (index > 0) {
@@ -746,6 +796,16 @@ class HillEquationSimulation {
             } else {
                 recordControl.style.display = 'none';
             }
+            this.resetSimulation();
+        });
+        
+        // 軌道高度変更時のイベント
+        this.controls.orbitAltitude.addEventListener('input', () => {
+            this.updateOrbitParameters();
+        });
+        
+        this.controls.orbitAltitude.addEventListener('change', () => {
+            this.updateOrbitParameters();
             this.resetSimulation();
         });
         

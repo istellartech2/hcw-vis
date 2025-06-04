@@ -48,7 +48,13 @@
                 </div>
                 
                 <div class="control-group">
-                    <label>軌道半径 (km):</label>
+                    <label>軌道高度 (km):</label>
+                    <input type="number" id="orbitAltitude" min="200" max="36000" step="50" value="400">
+                    <span id="orbitRadiusDisplay" style="font-size: 0.8em; color: #999;">軌道半径: 6778 km</span>
+                </div>
+                
+                <div class="control-group">
+                    <label>相対軌道半径 (km):</label>
                     <input type="number" id="orbitRadius" min="50" max="500" value="50">
                 </div>
                 
@@ -66,7 +72,7 @@
             
             <div class="control-row">
                 <div class="control-group">
-                    <label>時間スケール:</label>
+                    <label>倍速時間:</label>
                     <select id="timeScale">
                         <option value="1">1x</option>
                         <option value="2">2x</option>
@@ -74,13 +80,16 @@
                         <option value="10">10x</option>
                         <option value="20">20x</option>
                         <option value="50">50x</option>
-                        <option value="100">100x</option>
+                        <option value="100" selected>100x</option>
+                        <option value="200">200x</option>
+                        <option value="500">500x</option>
+                        <option value="1000">1000x</option>
                     </select>
                 </div>
                 
                 <div class="control-group">
                     <label>シミュレーション時間:</label>
-                    <span id="simulationTime">0分 0.0秒</span>
+                    <span id="simulationTime">0秒</span>
                 </div>
                 
                 <div class="control-group">
