@@ -10,9 +10,17 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowJs": true,
+    
+    // 開発時は型チェックのみ、出力はBunサーバーが処理
     "noEmit": true,
+    
+    // 開発体験向上
+    "sourceMap": true,
+    "declaration": false,
+    "removeComments": false,
+    
     "types": ["bun-types"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "server.ts"],
   "exclude": ["node_modules", "dist"]
 }

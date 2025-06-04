@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // 本番ビルド用設定
+    "noEmit": false,
+    "outDir": "./dist",
+    "sourceMap": false,
+    "removeComments": true,
+    "declaration": false
+  },
+  "exclude": ["node_modules", "dist", "server.ts"]
+}

@@ -26,14 +26,26 @@ const server = serve({
       const file = Bun.file(filePath);
       if (await file.exists()) {
         const transpiler = new Bun.Transpiler({
-          loader: "tsx",
+          loader: "ts",
           target: "browser",
+          format: "esm",
+          minifyWhitespace: false,
+          minifyIdentifiers: false,
+          minifySyntax: false,
         });
         const code = await file.text();
-        const result = await transpiler.transform(code);
+        
+        // TypeScriptの相対インポートを処理
+        let result = await transpiler.transform(code);
+        
+        // .js拡張子を.tsに変換（開発サーバー用）
+        result = result.replace(/from\s+['"](\..*?)\.js['"];/g, "from '$1.ts';");
+        result = result.replace(/import\s+['"](\..*?)\.js['"];/g, "import '$1.ts';");
+        
         return new Response(result, {
           headers: {
             "Content-Type": "application/javascript",
+            "Cache-Control": "no-cache",
           },
         });
       }
