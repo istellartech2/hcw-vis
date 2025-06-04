@@ -65,6 +65,7 @@ class HillEquationSimulation {
         this.gridHelper = this.createGrid();
         this.setupEventListeners();
         this.updateOrbitParameters();  // 初期値で軌道パラメータを計算
+        this.uiControls.setupPlacementPatternLimits();  // 初期配置に応じた衛星数の設定
         this.initSimulation();
         this.animate();
     }
@@ -189,8 +190,8 @@ class HillEquationSimulation {
     }
     
     
-    private generatePlacementPositions(pattern: string, count: number, radius: number, zSpread: number): Array<{x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number}> {
-        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread);
+    private generatePlacementPositions(pattern: string, count: number, radius: number, zSpread: number, zAmplitudeMultiplier?: number): Array<{x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number}> {
+        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier);
     }
     
     private initSimulation(): void {
@@ -232,7 +233,8 @@ class HillEquationSimulation {
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         const hexColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff'];
         
-        const positions = this.generatePlacementPositions(pattern, count, radius, 0);
+        const zAmplitudeMultiplier = parseFloat(this.uiControls.elements.zAmplitude.value) || 0;
+        const positions = this.generatePlacementPositions(pattern, count, radius, 0, zAmplitudeMultiplier);
         
         positions.forEach((pos, i) => {
             const satGeometry = new THREE.SphereGeometry(6, 32, 32);
@@ -361,6 +363,12 @@ class HillEquationSimulation {
                     extraInfo = ` (ランダム周期解)`;
                 } else if (pattern === 'xy_ellipse') {
                     extraInfo = ` (XY平面楕円)`;
+                } else if (pattern === 'circular_orbit') {
+                    extraInfo = ` (円軌道)`;
+                } else if (pattern === 'vbar_approach') {
+                    extraInfo = ` (V-bar軌道)`;
+                } else if (pattern === 'rbar_approach') {
+                    extraInfo = ` (R-bar軌道)`;
                 }
                 
                 html += `<span class="satellite-info">
@@ -437,15 +445,7 @@ class HillEquationSimulation {
         });
         
         this.uiControls.elements.placementPattern.addEventListener('change', () => {
-            // 配置パターンに応じて衛星数の上限を調整
-            const pattern = this.uiControls.elements.placementPattern.value;
-            if (pattern === 'random_position' || pattern === 'random_position_velocity' || pattern === 'random_periodic') {
-                this.uiControls.elements.satelliteCount.max = '100';
-                this.uiControls.elements.satelliteCount.min = '1';
-            } else {
-                this.uiControls.elements.satelliteCount.max = '5';
-                this.uiControls.elements.satelliteCount.min = '1';
-            }
+            this.uiControls.setupPlacementPatternLimits();
             this.resetSimulation();
         });
         
@@ -460,6 +460,11 @@ class HillEquationSimulation {
         });
         
         this.uiControls.elements.orbitRadius.addEventListener('change', () => {
+            this.resetSimulation();
+        });
+        
+        this.uiControls.elements.zAmplitude.addEventListener('input', () => {
+            this.uiControls.updateZAmplitudeDisplay();
             this.resetSimulation();
         });
         

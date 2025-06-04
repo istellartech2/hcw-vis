@@ -28,90 +28,119 @@
         </div>
         
         <div id="controls">
-            <div class="control-row">
-                <div class="control-group">
-                    <label>初期配置:</label>
-                    <select id="placementPattern">
-                        <option value="axis">軸上</option>
-                        <option value="grid">格子</option>
-                        <option value="random_position">ランダム（位置）</option>
-                        <option value="random_position_velocity">ランダム（位置速度）</option>
-                        <option value="random_periodic">ランダム（周期解）</option>
-                        <option value="xy_ellipse">XY平面楕円</option>
-                        <option value="circular_orbit">円軌道</option>
-                        <option value="sphere" disabled>球（未実装）</option>
-                        <option value="periodic" disabled>周期解（未実装）</option>
-                    </select>
+            <div class="controls-grid">
+                <!-- 衛星配置設定 -->
+                <div class="control-section">
+                    <h4 class="section-title">🛰️ 衛星配置</h4>
+                    <div class="control-row compact">
+                        <div class="control-group">
+                            <label>配置:</label>
+                            <select id="placementPattern">
+                                <option value="axis">軸上</option>
+                                <option value="grid">格子</option>
+                                <option value="random_position">ランダム（位置）</option>
+                                <option value="random_position_velocity">ランダム（位置速度）</option>
+                                <option value="random_periodic">ランダム（周期解）</option>
+                                <option value="xy_ellipse">楕円軌道</option>
+                                <option value="circular_orbit">円軌道</option>
+                                <option value="vbar_approach">V-bar軌道</option>
+                                <option value="rbar_approach">R-bar軌道</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group" id="satelliteCountControl">
+                            <label>数:</label>
+                            <input type="number" id="satelliteCount" min="1" max="5" value="1">
+                        </div>
+                    </div>
+                    
+                    <div class="control-row compact">
+                        <div class="control-group">
+                            <label>範囲(L):</label>
+                            <input type="number" id="orbitRadius" min="10" max="1000" value="100">
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>高度(km):</label>
+                            <input type="number" id="orbitAltitude" min="200" max="36000" step="50" value="400">
+                        </div>
+                    </div>
+                    
+                    <div class="control-row compact">
+                        <div class="control-group" id="zAmplitudeControl" style="display: none;">
+                            <label>Z振幅:</label>
+                            <input type="range" id="zAmplitude" min="-3" max="3" step="0.1" value="0">
+                            <span id="zAmplitudeValue">0.0</span>A
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="control-group" id="satelliteCountControl">
-                    <label>衛星数:</label>
-                    <input type="number" id="satelliteCount" min="1" max="5" value="1">
+                <!-- シミュレーション制御 -->
+                <div class="control-section">
+                    <h4 class="section-title">⏱️ 制御</h4>
+                    <div class="control-row compact">
+                        <div class="control-group">
+                            <label>倍速:</label>
+                            <select id="timeScale">
+                                <option value="1">1x</option>
+                                <option value="2">2x</option>
+                                <option value="5">5x</option>
+                                <option value="10">10x</option>
+                                <option value="20">20x</option>
+                                <option value="50">50x</option>
+                                <option value="100" selected>100x</option>
+                                <option value="200">200x</option>
+                                <option value="500">500x</option>
+                                <option value="1000">1000x</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <label>時間:</label>
+                            <span id="simulationTime">00分00秒</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-buttons compact">
+                        <button onclick="resetSimulation()">🔄初期化</button>
+                        <button onclick="togglePause()">⏯️一時停止</button>
+                        <button onclick="addPerturbation()">💥＋摂動</button>
+                        <!-- <button onclick="changeView()">👁️視点</button> -->
+                    </div>
                 </div>
                 
-                <div class="control-group">
-                    <label>軌道高度 (km):</label>
-                    <input type="number" id="orbitAltitude" min="200" max="36000" step="50" value="400">
-                    <span id="orbitRadiusDisplay" style="font-size: 0.8em; color: #999;">軌道半径: 6778 km</span>
+                <!-- 表示設定 -->
+                <div class="control-section">
+                    <h4 class="section-title">👁️ 表示</h4>
+                    <div class="control-row compact">                        
+                        <div class="control-group">
+                            <input type="checkbox" id="showGrid" checked>
+                            <label>グリッド</label>
+                        </div>
+                        
+                        <div class="control-group">
+                            <input type="checkbox" id="autoRotate">
+                            <label>自動回転</label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <input type="checkbox" id="showTrails" checked>
+                        <label>軌跡</label>
+                    </div>
+                    
+                    <div class="control-row compact">
+                        <div class="control-group">
+                            <label>軌跡長:</label>
+                            <input type="range" id="trailLength" min="50" max="500" step="50" value="200">
+                            <span id="trailLengthValue">200</span>
+                        </div>
+                    </div>
+                    <div class="control-buttons compact">
+                        <button onclick="changeView()">👁️視点変化</button>
+                    </div>
+
                 </div>
-                
-                <div class="control-group">
-                    <label>配置範囲 (km):</label>
-                    <input type="number" id="orbitRadius" min="10" max="1000" value="100">
-                </div>
-            </div>
-            
-            <div class="control-row">
-                <div class="control-group">
-                    <label>倍速時間:</label>
-                    <select id="timeScale">
-                        <option value="1">1x</option>
-                        <option value="2">2x</option>
-                        <option value="5">5x</option>
-                        <option value="10">10x</option>
-                        <option value="20">20x</option>
-                        <option value="50">50x</option>
-                        <option value="100" selected>100x</option>
-                        <option value="200">200x</option>
-                        <option value="500">500x</option>
-                        <option value="1000">1000x</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label>シミュレーション時間:</label>
-                    <span id="simulationTime">0秒</span>
-                </div>
-                
-                <div class="control-group">
-                    <label>カメラ自動回転:</label>
-                    <input type="checkbox" id="autoRotate">
-                </div>
-            </div>
-            
-            <div class="control-row">
-                <div class="control-group">
-                    <label>軌跡表示:</label>
-                    <input type="checkbox" id="showTrails" checked>
-                </div>
-                
-                <div class="control-group">
-                    <label>グリッド表示:</label>
-                    <input type="checkbox" id="showGrid" checked>
-                </div>
-                
-                <div class="control-group">
-                    <label>軌跡の長さ:</label>
-                    <input type="range" id="trailLength" min="50" max="500" step="50" value="200">
-                    <span id="trailLengthValue">200</span>
-                </div>
-            </div>
-            
-            <div style="margin-top: 15px; text-align: center;">
-                <button onclick="resetSimulation()">🔄 リセット</button>
-                <button onclick="togglePause()">⏯️ 一時停止/再開</button>
-                <button onclick="addPerturbation()">💥 摂動を加える</button>
-                <button onclick="changeView()">👁️ 視点変更</button>
             </div>
         </div>
         
@@ -120,6 +149,10 @@
             ヒルの方程式は、円軌道上の主衛星に対する近傍衛星の相対運動を記述します。
             この3D可視化では、中心の白い衛星を基準とした相対座標系（LVLH座標系）で他の衛星の動きを表示しています。
             マウスドラッグで視点を回転、スクロールでズームできます。
+            <br><br>
+            <strong>🚀 実用軌道パターン:</strong><br>
+            <strong>V-bar軌道:</strong> 宇宙ステーションの後方（速度ベクトル方向）から接近する安全な軌道。SpaceX DragonやSoyuz宇宙船が使用。<br>
+            <strong>R-bar軌道:</strong> 宇宙ステーションの下方（径方向）から接近する直接的な軌道。精密な制御が必要。
             <br><br>
             <strong>⌨️ キーボードショートカット:</strong> Hキーでヘルプ表示
             <br><br>

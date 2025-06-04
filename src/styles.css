@@ -66,6 +66,51 @@ h1 {
     border: 1px solid rgba(74, 158, 255, 0.3);
 }
 
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.control-section {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(74, 158, 255, 0.2);
+}
+
+.section-title {
+    color: #4a9eff;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(74, 158, 255, 0.3);
+}
+
+.control-row.compact {
+    margin-bottom: 6px;
+    gap: 10px;
+}
+
+.control-row.compact:last-child {
+    margin-bottom: 0;
+}
+
+.control-buttons.compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+    justify-content: flex-start;
+}
+
+.control-buttons.compact button {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 35px;
+}
+
 .control-row {
     display: flex;
     flex-wrap: wrap;
@@ -82,29 +127,44 @@ h1 {
 label {
     color: #8ab4f8;
     font-weight: 500;
-    min-width: 120px;
-    font-size: 14px;
+    min-width: 80px;
+    font-size: 13px;
 }
 
 input[type="number"], input[type="range"], select {
-    width: 120px;
-    padding: 6px;
+    width: 100px;
+    padding: 4px;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(74, 158, 255, 0.3);
-    border-radius: 5px;
+    border-radius: 4px;
     color: white;
-    font-size: 13px;
+    font-size: 12px;
     transition: all 0.3s ease;
 }
 
 /* 小画面でのコントロール調整 */
 @media (max-width: 768px) {
     #controls {
-        padding: 15px;
+        padding: 10px;
     }
     
-    .control-row {
-        gap: 15px;
+    .controls-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .control-section {
+        padding: 10px;
+    }
+    
+    .section-title {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+    
+    .control-row.compact {
+        gap: 8px;
+        margin-bottom: 4px;
     }
     
     .control-group {
@@ -114,17 +174,24 @@ input[type="number"], input[type="range"], select {
     
     label {
         min-width: 100%;
-        margin-bottom: 5px;
+        margin-bottom: 3px;
+        font-size: 12px;
     }
     
     input[type="number"], input[type="range"], select {
         width: 100%;
-        max-width: 200px;
+        max-width: 150px;
     }
     
-    button {
-        padding: 10px 20px;
-        font-size: 14px;
+    .control-buttons.compact {
+        justify-content: flex-start;
+        gap: 5px;
+    }
+    
+    .control-buttons.compact button {
+        padding: 6px 8px;
+        font-size: 11px;
+        min-width: 30px;
     }
 }
 

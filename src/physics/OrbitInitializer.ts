@@ -14,7 +14,9 @@ export type PlacementPattern =
     | 'random_position_velocity' 
     | 'random_periodic' 
     | 'xy_ellipse' 
-    | 'circular_orbit';
+    | 'circular_orbit'
+    | 'vbar_approach'
+    | 'rbar_approach';
 
 export class OrbitInitializer {
     private n: number; // 平均運動（軌道角速度）
@@ -31,7 +33,8 @@ export class OrbitInitializer {
         pattern: string, 
         count: number, 
         radius: number, 
-        zSpread: number
+        zSpread: number,
+        zAmplitudeMultiplier?: number
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const radiusKm = radius / 1000;
@@ -54,10 +57,16 @@ export class OrbitInitializer {
                 return this.generateRandomPeriodic(count, radiusKm);
                 
             case 'xy_ellipse':
-                return this.generateXYEllipse(count, radiusKm);
+                return this.generateXYEllipse(count, radiusKm, zAmplitudeMultiplier);
                 
             case 'circular_orbit':
                 return this.generateCircularOrbit(count, radiusKm);
+                
+            case 'vbar_approach':
+                return this.generateVBarApproach(count, radiusKm);
+                
+            case 'rbar_approach':
+                return this.generateRBarApproach(count, radiusKm);
                 
             default:
                 return this.generateAxisPositions(count, radiusKm);
@@ -71,7 +80,7 @@ export class OrbitInitializer {
         
         // 各軸に配置する位置を計算（ゼロ点を除外）
         for (let i = 1; i <= eachAxisSatNum; i++) {
-            const position = (radiusKm * i) / eachAxisSatNum;
+            const position = (radiusKm * i) / count;
             axisPositions.push(-position); // 負の方向
             axisPositions.push(position);  // 正の方向
         }
@@ -205,25 +214,28 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateXYEllipse(count: number, radiusKm: number): InitialCondition[] {
+    private generateXYEllipse(count: number, radiusKm: number, zAmplitudeMultiplier: number = 0): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const rho = radiusKm;
+        const z_amplitude = zAmplitudeMultiplier * radiusKm;
         
         for (let i = 0; i < count; i++) {
             const phase = (2 * Math.PI * i) / count;
             
             const x0 = rho * Math.cos(phase);
             const y0 = -2 * rho * Math.sin(phase);
+            const z0 = z_amplitude * Math.cos(phase);
             const vx0 = -rho * this.n * Math.sin(phase);
             const vy0 = -2 * rho * this.n * Math.cos(phase);
+            const vz0 = -this.n * z_amplitude * Math.sin(phase);
             
             positions.push({
                 x0: x0,
                 y0: y0,
-                z0: 0,
+                z0: z0,
                 vx0: vx0,
                 vy0: vy0,
-                vz0: 0
+                vz0: vz0
             });
         }
         
@@ -245,6 +257,74 @@ export class OrbitInitializer {
             const vx0 = -this.n * radius_circular * Math.sin(phase);
             const vy0 = -2 * this.n * x0;
             const vz0 = -this.n * z_amplitude * Math.sin(phase);
+            
+            positions.push({
+                x0: x0,
+                y0: y0,
+                z0: z0,
+                vx0: vx0,
+                vy0: vy0,
+                vz0: vz0
+            });
+        }
+        
+        return positions;
+    }
+    
+    private generateVBarApproach(count: number, radiusKm: number): InitialCondition[] {
+        const positions: InitialCondition[] = [];
+        
+        // V-bar軌道: 速度ベクトル方向（Y軸、Along-track）からの接近
+        // 宇宙ステーションの後方から接近する安全な軌道
+        for (let i = 0; i < count; i++) {
+            const approachDistance = radiusKm * (1 + i * 0.5); // 段階的に配置
+            
+            // 初期位置: 後方から接近（Y軸負の方向）
+            const x0 = 0; // 径方向は中央
+            const y0 = -approachDistance; // 後方から接近
+            const z0 = 0; // 軌道面内
+            
+            // ヒルの方程式の解析解を考慮した初期速度
+            // V-bar軌道では、適切な接近速度が必要
+            const approachTime = Math.PI / this.n; // 半周期での接近を想定
+            
+            // ターゲットに向かう初期速度を計算
+            // ヒルの方程式の線形解を使用
+            const vx0 = 0; // 径方向初期速度は0
+            const vy0 = this.n * approachDistance * 0.5; // 適切な接近速度
+            const vz0 = 0; // 軌道面内
+            
+            positions.push({
+                x0: x0,
+                y0: y0,
+                z0: z0,
+                vx0: vx0,
+                vy0: vy0,
+                vz0: vz0
+            });
+        }
+        
+        return positions;
+    }
+    
+    private generateRBarApproach(count: number, radiusKm: number): InitialCondition[] {
+        const positions: InitialCondition[] = [];
+        
+        // R-bar軌道: 径方向（X軸、Radial）からの接近
+        // 宇宙ステーションの下方（地球側）から接近する軌道
+        for (let i = 0; i < count; i++) {
+            const approachDistance = radiusKm * (1 + i * 0.5); // 段階的に配置
+            
+            // 初期位置: 下方から接近（X軸負の方向）
+            const x0 = -approachDistance; // 下方から接近
+            const y0 = 0; // 軌道進行方向は中央
+            const z0 = 0; // 軌道面内
+            
+            // R-bar軌道の初期速度
+            // 径方向の運動特性を考慮した速度設定
+            const vx0 = this.n * approachDistance * 0.3; // 径方向接近速度
+            const vy0 = -2 * this.n * x0; // ヒルの方程式による結合項
+            const vz0 = 0; // 軌道面内
             
             positions.push({
                 x0: x0,

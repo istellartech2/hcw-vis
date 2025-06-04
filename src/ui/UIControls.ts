@@ -3,7 +3,6 @@ export interface UIControlElements {
     placementPattern: HTMLSelectElement;
     orbitRadius: HTMLInputElement;
     orbitAltitude: HTMLInputElement;
-    orbitRadiusDisplay: HTMLSpanElement;
     timeScale: HTMLSelectElement;
     simulationTime: HTMLSpanElement;
     autoRotate: HTMLInputElement;
@@ -11,6 +10,9 @@ export interface UIControlElements {
     showGrid: HTMLInputElement;
     trailLength: HTMLInputElement;
     trailLengthValue: HTMLSpanElement;
+    zAmplitude: HTMLInputElement;
+    zAmplitudeValue: HTMLSpanElement;
+    zAmplitudeControl: HTMLDivElement;
 }
 
 export class UIControls {
@@ -22,14 +24,16 @@ export class UIControls {
             placementPattern: document.getElementById('placementPattern') as HTMLSelectElement,
             orbitRadius: document.getElementById('orbitRadius') as HTMLInputElement,
             orbitAltitude: document.getElementById('orbitAltitude') as HTMLInputElement,
-            orbitRadiusDisplay: document.getElementById('orbitRadiusDisplay') as HTMLSpanElement,
             timeScale: document.getElementById('timeScale') as HTMLSelectElement,
             simulationTime: document.getElementById('simulationTime') as HTMLSpanElement,
             autoRotate: document.getElementById('autoRotate') as HTMLInputElement,
             showTrails: document.getElementById('showTrails') as HTMLInputElement,
             showGrid: document.getElementById('showGrid') as HTMLInputElement,
             trailLength: document.getElementById('trailLength') as HTMLInputElement,
-            trailLengthValue: document.getElementById('trailLengthValue') as HTMLSpanElement
+            trailLengthValue: document.getElementById('trailLengthValue') as HTMLSpanElement,
+            zAmplitude: document.getElementById('zAmplitude') as HTMLInputElement,
+            zAmplitudeValue: document.getElementById('zAmplitudeValue') as HTMLSpanElement,
+            zAmplitudeControl: document.getElementById('zAmplitudeControl') as HTMLDivElement
         };
     }
     
@@ -39,34 +43,78 @@ export class UIControls {
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
         
+        const paddedMinutes = minutes.toString().padStart(2, '0');
+        const paddedSeconds = seconds.toString().padStart(2, '0');
+        
         if (hours > 0) {
-            this.elements.simulationTime.textContent = `${hours}時間${minutes}分${seconds}秒`;
-        } else if (minutes > 0) {
-            this.elements.simulationTime.textContent = `${minutes}分${seconds}秒`;
+            this.elements.simulationTime.textContent = `${hours}時間${paddedMinutes}分${paddedSeconds}秒`;
         } else {
-            this.elements.simulationTime.textContent = `${seconds}秒`;
+            this.elements.simulationTime.textContent = `${paddedMinutes}分${paddedSeconds}秒`;
         }
     }
     
     updateOrbitDisplay(radiusKm: number, periodMinutes: number): void {
-        this.elements.orbitRadiusDisplay.textContent = 
-            `軌道半径: ${radiusKm.toFixed(0)} km (周期: ${periodMinutes.toFixed(1)}分)`;
+        // orbitRadiusDisplay element has been removed from HTML
     }
     
     updateTrailLengthDisplay(): void {
         this.elements.trailLengthValue.textContent = this.elements.trailLength.value;
     }
     
+    updateZAmplitudeDisplay(): void {
+        this.elements.zAmplitudeValue.textContent = parseFloat(this.elements.zAmplitude.value).toFixed(1);
+    }
+    
     setupPlacementPatternLimits(): void {
         const pattern = this.elements.placementPattern.value;
-        if (pattern === 'random_position' || 
-            pattern === 'random_position_velocity' || 
-            pattern === 'random_periodic') {
-            this.elements.satelliteCount.max = '100';
-            this.elements.satelliteCount.min = '1';
+        let maxSatellites = 5;
+        let defaultValue = 1;
+        
+        switch (pattern) {
+            case 'random_position':
+            case 'random_position_velocity':
+            case 'random_periodic':
+                maxSatellites = 100;
+                defaultValue = 20;
+                break;
+            case 'axis':
+                maxSatellites = 5;
+                defaultValue = 3;
+                break;
+            case 'grid':
+                maxSatellites = 3;
+                defaultValue = 1;
+                break;
+            case 'xy_ellipse':
+                maxSatellites = 50;
+                defaultValue = 8;
+                break;
+            case 'circular_orbit':
+                maxSatellites = 50;
+                defaultValue = 8;
+                break;
+            case 'vbar_approach':
+                maxSatellites = 10;
+                defaultValue = 3;
+                break;
+            case 'rbar_approach':
+                maxSatellites = 10;
+                defaultValue = 3;
+                break;
+            default:
+                maxSatellites = 5;
+                defaultValue = 1;
+                break;
+        }
+        
+        this.elements.satelliteCount.max = maxSatellites.toString();
+        this.elements.satelliteCount.min = '1';
+        this.elements.satelliteCount.value = defaultValue.toString();
+        
+        if (pattern === 'xy_ellipse') {
+            this.elements.zAmplitudeControl.style.display = 'block';
         } else {
-            this.elements.satelliteCount.max = '5';
-            this.elements.satelliteCount.min = '1';
+            this.elements.zAmplitudeControl.style.display = 'none';
         }
     }
 }
