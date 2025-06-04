@@ -303,7 +303,7 @@ class HillEquationSimulation {
                 }
                 
                 // X軸に配置
-                for (let i = 0; i < count * 2 && positions.length < count; i++) {
+                for (let i = 0; i < count * 2; i++) {
                     positions.push({
                         x0: axisPositions[i],
                         y0: 0,
@@ -315,7 +315,7 @@ class HillEquationSimulation {
                 }
                 
                 // Y軸に配置
-                for (let i = 0; i < count * 2 && positions.length < count; i++) {
+                for (let i = 0; i < count * 2; i++) {
                     positions.push({
                         x0: 0,
                         y0: axisPositions[i],
@@ -327,7 +327,7 @@ class HillEquationSimulation {
                 }
                 
                 // Z軸に配置
-                for (let i = 0; i < count * 2 && positions.length < count; i++) {
+                for (let i = 0; i < count * 2; i++) {
                     positions.push({
                         x0: 0,
                         y0: 0,
@@ -445,6 +445,37 @@ class HillEquationSimulation {
                         vx0: vx0,
                         vy0: vy0,
                         vz0: 0
+                    });
+                }
+                break;
+                
+            case 'circular_orbit':
+                // 円軌道: Football orbitを参考にz方向振幅をsqrt(3)倍した軌道
+                // 初期条件: x0=radiusKm, y0=0, z0=sqrt(3)*radiusKm から始まる円軌道
+                
+                const radius_circular = radiusKm;
+                const z_amplitude = Math.sqrt(3) * radiusKm;
+                
+                for (let i = 0; i < count; i++) {
+                    // 各衛星を円軌道上に等間隔で配置
+                    const phase = (2 * Math.PI * i) / count;
+                    
+                    const x0 = radius_circular * Math.cos(phase);
+                    const y0 = - 2 * radius_circular * Math.sin(phase);  // 円軌道なのでy0は0
+                    const z0 = z_amplitude * Math.cos(phase);  // z方向振幅はsqrt(3)倍
+                    
+                    // ドリフト消失条件を満たす初期速度
+                    const vx0 = 0;
+                    const vy0 = -2 * this.n * x0;  // ドリフト消失条件: vy0 = -2*n*x0
+                    const vz0 = z_amplitude * this.n * Math.cos(phase);  // z方向の速度
+                    
+                    positions.push({
+                        x0: x0,
+                        y0: y0,
+                        z0: z0,
+                        vx0: vx0,
+                        vy0: vy0,
+                        vz0: vz0
                     });
                 }
                 break;
