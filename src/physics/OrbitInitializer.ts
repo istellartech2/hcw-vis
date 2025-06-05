@@ -16,7 +16,8 @@ export type PlacementPattern =
     | 'xy_ellipse' 
     | 'circular_orbit'
     | 'vbar_approach'
-    | 'rbar_approach';
+    | 'rbar_approach'
+    | 'hexagonal_disk';
 
 export class OrbitInitializer {
     private n: number; // 平均運動（軌道角速度）
@@ -67,6 +68,9 @@ export class OrbitInitializer {
                 
             case 'rbar_approach':
                 return this.generateRBarApproach(count, radiusKm);
+                
+            case 'hexagonal_disk':
+                return this.generateHexagonalDisk(count, radiusKm);
                 
             default:
                 return this.generateAxisPositions(count, radiusKm);
@@ -334,6 +338,93 @@ export class OrbitInitializer {
                 vy0: vy0,
                 vz0: vz0
             });
+        }
+        
+        return positions;
+    }
+    
+    private generateHexagonalDisk(count: number, radiusKm: number): InitialCondition[] {
+        const positions: InitialCondition[] = [];
+        
+        // 円盤内の正六角形タイリング
+        // 半径radiusKm内に頂点を配置
+        
+        // まず必要な層数を計算
+        // 総数が指定数に近くなるように層数を決定
+        let totalPoints = 1; // 中心点
+        let layers = 0;
+        
+        while (totalPoints < count) {
+            layers++;
+            totalPoints += 6 * layers;
+        }
+        
+        // 格子間隔を計算（円盤内に収まるように）
+        const latticeSpacing = radiusKm / (layers + 0.5);
+        
+        // z軸の振幅（circular_orbitを参考に）
+        const z_amplitude = Math.sqrt(3) * latticeSpacing;
+        
+        // 中心点を追加
+        positions.push({
+            x0: 0,
+            y0: 0,
+            z0: 0,
+            vx0: 0,
+            vy0: 0,
+            vz0: 0
+        });
+        
+        // 各層の点を追加
+        let pointCount = 1;
+        for (let layer = 1; layer <= layers && pointCount < count; layer++) {
+            const layerRadius = layer * latticeSpacing;
+            
+            // 各層には6*layer個の点がある
+            const pointsInLayer = 6 * layer;
+            
+            for (let i = 0; i < pointsInLayer && pointCount < count; i++) {
+                // 六角形の6つの辺に沿って配置
+                // 各辺にはlayer個の点
+                const side = Math.floor(i / layer);
+                const positionOnSide = i % layer;
+                
+                // 頂点の角度を計算
+                const baseAngle = side * Math.PI / 3; // 60度ずつ
+                const nextAngle = (side + 1) * Math.PI / 3;
+                
+                // 辺に沿った補間
+                const t = positionOnSide / layer;
+                const angle = baseAngle + t * (nextAngle - baseAngle);
+                
+                // xy座標を計算
+                const x = layerRadius * Math.cos(angle);
+                const y = layerRadius * Math.sin(angle);
+                
+                // Hill方程式の周期解を適用
+                // 位相を各点で変える
+                const phase = angle;
+                
+                const x0 = x;
+                const y0 = -2 * x * Math.sin(phase);
+                const z0 = z_amplitude * Math.cos(phase) * (layerRadius / radiusKm);
+                
+                // 速度成分（Hill方程式の周期解）
+                const vx0 = this.n * y0 / 2;
+                const vy0 = -2 * this.n * x0;
+                const vz0 = -this.n * z_amplitude * Math.sin(phase) * (layerRadius / radiusKm);
+                
+                positions.push({
+                    x0: x0,
+                    y0: y0,
+                    z0: z0,
+                    vx0: vx0,
+                    vy0: vy0,
+                    vz0: vz0
+                });
+                
+                pointCount++;
+            }
         }
         
         return positions;

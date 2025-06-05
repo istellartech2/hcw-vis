@@ -164,6 +164,10 @@ export class UIControls {
                 maxSatellites = 10;
                 defaultValue = 3;
                 break;
+            case 'hexagonal_disk':
+                maxSatellites = 91; // 1 + 3*5*6 = 91 (up to 5 layers)
+                defaultValue = 19; // 1 + 6 + 12 = 19 (3 layers)
+                break;
             default:
                 maxSatellites = 5;
                 defaultValue = 1;
