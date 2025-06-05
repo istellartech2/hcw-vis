@@ -535,14 +535,17 @@ class HillEquationSimulation {
             newInfoDiv.id = 'selectedSatelliteInfo';
             newInfoDiv.style.cssText = `
                 position: absolute;
-                top: 10px;
-                left: 10px;
+                top: 70px;
+                left: 20px;
                 background: rgba(0, 0, 0, 0.8);
                 color: white;
-                padding: 10px;
-                border-radius: 5px;
+                padding: 12px;
+                border-radius: 10px;
                 font-size: 12px;
                 display: none;
+                border: 1px solid rgba(74, 158, 255, 0.3);
+                backdrop-filter: blur(10px);
+                max-width: 280px;
             `;
             document.getElementById('canvas-container')!.appendChild(newInfoDiv);
         }

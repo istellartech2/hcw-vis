@@ -286,6 +286,35 @@ button:active {
     border: 1px solid rgba(74, 158, 255, 0.3);
 }
 
+#time-display {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #4a9eff;
+    border: 1px solid rgba(74, 158, 255, 0.3);
+    text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+}
+
+#selectedSatelliteInfo {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    border: 1px solid rgba(74, 158, 255, 0.3);
+    backdrop-filter: blur(10px);
+    max-width: 280px;
+    z-index: 15;
+}
+
 /* 小画面での軸情報表示調整 */
 @media (max-width: 768px) {
     #axes-info {
@@ -293,6 +322,21 @@ button:active {
         right: 10px;
         padding: 10px;
         font-size: 11px;
+    }
+    
+    #time-display {
+        top: 10px;
+        left: 10px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+    
+    #selectedSatelliteInfo {
+        top: 50px;
+        left: 10px;
+        padding: 10px;
+        font-size: 11px;
+        max-width: 200px;
     }
     
     h1 {
