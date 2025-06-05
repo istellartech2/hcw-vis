@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { Satellite } from './models/Satellite.js';
 import { HillEquationSolver } from './physics/HillEquationSolver.js';
 import { OrbitInitializer } from './physics/OrbitInitializer.js';
+import { OrbitElementsCalculator } from './physics/OrbitElements.js';
+import type { OrbitalElements } from './physics/OrbitElements.js';
 import { TrailRenderer } from './visualization/TrailRenderer.js';
 import { PlotRenderer } from './visualization/PlotRenderer.js';
 import { CelestialBodies } from './visualization/CelestialBodies.js';
@@ -45,6 +47,9 @@ class HillEquationSimulation {
     private celestialBodies: CelestialBodies;
     private uiControls: UIControls;
     
+    // 軌道要素
+    private currentOrbitElements: OrbitalElements;
+    
     constructor() {
         this.container = document.getElementById('canvas-container')!;
         this.scene = new THREE.Scene();
@@ -78,6 +83,7 @@ class HillEquationSimulation {
         this.createAxes();
         this.gridHelper = this.createGrid();
         this.setupEventListeners();
+        this.initializeOrbitElements();  // 軌道要素の初期化
         this.updateOrbitParameters();  // 初期値で軌道パラメータを計算
         this.uiControls.setupPlacementPatternLimits();  // 初期配置に応じた衛星数の設定
         this.initSimulation();
@@ -229,38 +235,72 @@ class HillEquationSimulation {
         return gridHelper;
     }
     
+    private initializeOrbitElements(): void {
+        // UIから初期値を読み取り
+        const inclination = parseFloat(this.uiControls.elements.inclination.value);
+        const raan = parseFloat(this.uiControls.elements.raan.value);
+        const eccentricity = parseFloat(this.uiControls.elements.eccentricity.value);
+        const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
+        const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
+        const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);
+        
+        // 軌道要素を計算
+        this.currentOrbitElements = OrbitElementsCalculator.calculateOrbitalElements(
+            inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
+        );
+        
+        // UI表示を更新
+        this.uiControls.updateOrbitInfo(this.currentOrbitElements);
+    }
     
+    private updateOrbitElementsFromUI(): void {
+        const inclination = parseFloat(this.uiControls.elements.inclination.value);
+        const raan = parseFloat(this.uiControls.elements.raan.value);
+        const eccentricity = parseFloat(this.uiControls.elements.eccentricity.value);
+        const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
+        const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
+        const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);
+        
+        // 入力値の妥当性チェック
+        const errors = OrbitElementsCalculator.validateElements({
+            inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
+        });
+        
+        if (errors.length > 0) {
+            console.warn("軌道要素入力エラー:", errors);
+            return;
+        }
+        
+        // 軌道要素を再計算
+        this.currentOrbitElements = OrbitElementsCalculator.calculateOrbitalElements(
+            inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
+        );
+        
+        // UI表示を更新
+        this.uiControls.updateOrbitInfo(this.currentOrbitElements);
+        
+        // 軌道パラメータを更新
+        this.updateOrbitParameters();
+    }
     
     private updateOrbitParameters(): void {
-        // 地球の定数
-        const EARTH_RADIUS = 6378.137;  // km
-        const EARTH_MU = 3.986004418e14;  // m³/s² (地球の重力定数)
+        if (!this.currentOrbitElements) return;
         
-        // 軌道高度から軌道半径を計算
-        const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);  // km
-        const radiusKm = EARTH_RADIUS + altitude;  // km
+        // 軌道要素から軌道半径を取得
+        const radiusKm = this.currentOrbitElements.semiMajorAxis;  // km
         this.orbitRadius = radiusKm * 1000;  // m
         
-        // 平均運動（軌道角速度）を計算
-        // n = √(μ/r³)
-        this.n = Math.sqrt(EARTH_MU / Math.pow(this.orbitRadius, 3));  // rad/s
+        // 平均運動を軌道要素から取得
+        this.n = this.currentOrbitElements.meanMotion;  // rad/s
         
         // ヘルパークラスも更新
         this.hillSolver.updateMeanMotion(this.n);
         this.orbitInitializer.updateMeanMotion(this.n);
         
-        // 軌道周期を計算（参考表示用）
-        const orbitalPeriod = (2 * Math.PI) / this.n;  // 秒
-        const periodMinutes = orbitalPeriod / 60;  // 分
-        
-        // UI表示を更新
-        this.uiControls.updateOrbitDisplay(radiusKm, periodMinutes);
-        
         // 地球の位置とサイズを更新（軌道半径を渡す）
         if (this.celestialBodies) {
             this.celestialBodies.createEarth(radiusKm);
         }
-        
     }
     
     
@@ -457,12 +497,13 @@ class HillEquationSimulation {
         const infoDiv = document.getElementById('satelliteInfo')!;
         let html = '基準衛星の状態:';
         
-        // 現在の軌道パラメータを表示
-        const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);
-        const orbitalPeriod = (2 * Math.PI) / this.n / 60;  // 分
-        html += `<div style="margin-bottom: 5px; color: #999;">
-                周期: ${orbitalPeriod.toFixed(1)} 分
-                </div>`;
+        if (this.currentOrbitElements) {
+            html += `<div style="margin-bottom: 5px; color: #999;">
+                    高度: ${this.currentOrbitElements.altitude.toFixed(1)} km | 
+                    周期: ${this.currentOrbitElements.period.toFixed(1)} 分 | 
+                    傾斜角: ${this.currentOrbitElements.inclination.toFixed(1)}°
+                    </div>`;
+        }
         
         infoDiv.innerHTML = html;
     }
@@ -637,14 +678,25 @@ class HillEquationSimulation {
             this.resetSimulation();
         });
         
-        // 軌道高度変更時のイベント
-        this.uiControls.elements.orbitAltitude.addEventListener('input', () => {
-            this.updateOrbitParameters();
-        });
+        // 軌道要素変更時のイベント
+        const orbitElementInputs = [
+            this.uiControls.elements.inclination,
+            this.uiControls.elements.raan,
+            this.uiControls.elements.eccentricity,
+            this.uiControls.elements.argOfPerigee,
+            this.uiControls.elements.meanAnomaly,
+            this.uiControls.elements.orbitAltitude
+        ];
         
-        this.uiControls.elements.orbitAltitude.addEventListener('change', () => {
-            this.updateOrbitParameters();
-            this.resetSimulation();
+        orbitElementInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                this.updateOrbitElementsFromUI();
+            });
+            
+            input.addEventListener('change', () => {
+                this.updateOrbitElementsFromUI();
+                this.resetSimulation();
+            });
         });
         
         this.uiControls.elements.orbitRadius.addEventListener('change', () => {
@@ -801,4 +853,22 @@ document.addEventListener('DOMContentLoaded', () => {
     (window as any).togglePause = () => simulation.togglePause();
     (window as any).addPerturbation = () => simulation.addPerturbation();
     (window as any).changeView = () => simulation.changeView();
+    
+    // 折りたたみ機能
+    (window as any).toggleSection = (sectionId: string) => {
+        const content = document.getElementById(sectionId);
+        const icon = document.querySelector(`[onclick*="${sectionId}"] .toggle-icon`);
+        
+        if (content && icon) {
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+                icon.classList.add('expanded');
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+                icon.classList.remove('expanded');
+            }
+        }
+    };
 });

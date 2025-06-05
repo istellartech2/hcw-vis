@@ -15,6 +15,12 @@ export interface UIControlElements {
     zAmplitudeControl: HTMLDivElement;
     uniformSatelliteColor: HTMLInputElement;
     satelliteColor: HTMLInputElement;
+    inclination: HTMLInputElement;
+    raan: HTMLInputElement;
+    eccentricity: HTMLInputElement;
+    argOfPerigee: HTMLInputElement;
+    meanAnomaly: HTMLInputElement;
+    orbitInfo: HTMLDivElement;
 }
 
 export class UIControls {
@@ -37,7 +43,13 @@ export class UIControls {
             zAmplitudeValue: document.getElementById('zAmplitudeValue') as HTMLSpanElement,
             zAmplitudeControl: document.getElementById('zAmplitudeControl') as HTMLDivElement,
             uniformSatelliteColor: document.getElementById('uniformSatelliteColor') as HTMLInputElement,
-            satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement
+            satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement,
+            inclination: document.getElementById('inclination') as HTMLInputElement,
+            raan: document.getElementById('raan') as HTMLInputElement,
+            eccentricity: document.getElementById('eccentricity') as HTMLInputElement,
+            argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,
+            meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement,
+            orbitInfo: document.getElementById('orbitInfo') as HTMLDivElement
         };
     }
     
@@ -67,6 +79,27 @@ export class UIControls {
     
     updateZAmplitudeDisplay(): void {
         this.elements.zAmplitudeValue.textContent = parseFloat(this.elements.zAmplitude.value).toFixed(1);
+    }
+    
+    updateOrbitInfo(orbitElements: {
+        inclination: number;
+        raan: number;
+        eccentricity: number;
+        argOfPerigee: number;
+        meanAnomaly: number;
+        altitude: number;
+        period: number;
+        semiMajorAxis: number;
+    }): void {
+        this.elements.orbitInfo.innerHTML = `
+            <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                <div><strong>軌道情報:</strong></div>
+                <div>長半径: ${orbitElements.semiMajorAxis.toFixed(1)} km</div>
+                <div>周期: ${orbitElements.period.toFixed(1)} 分</div>
+                <div>離心率: ${orbitElements.eccentricity.toFixed(3)}</div>
+                <div>傾斜角: ${orbitElements.inclination.toFixed(1)}°</div>
+            </div>
+        `;
     }
     
     setupPlacementPatternLimits(): void {

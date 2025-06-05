@@ -18,6 +18,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "satellite.js": "^6.0.0",
     "three": "^0.160.0"
   }
 }

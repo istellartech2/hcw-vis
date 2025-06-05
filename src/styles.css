@@ -380,3 +380,48 @@ button:active {
     border: 1px solid rgba(74, 158, 255, 0.3);
     border-radius: 10px;
 }
+
+/* 軌道情報表示 */
+.orbit-info {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(74, 158, 255, 0.1);
+    border: 1px solid rgba(74, 158, 255, 0.3);
+    border-radius: 5px;
+    font-size: 11px;
+}
+
+.orbit-info div {
+    margin: 2px 0;
+    color: #8ab4f8;
+}
+
+.orbit-info strong {
+    color: #ffffff;
+}
+
+/* 折りたたみ機能 */
+.collapsible {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.collapsible:hover {
+    color: #8ab4f8;
+}
+
+.collapsible-content {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.toggle-icon {
+    float: right;
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.toggle-icon.expanded {
+    transform: rotate(180deg);
+}
