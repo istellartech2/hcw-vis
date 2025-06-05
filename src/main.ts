@@ -28,6 +28,8 @@ class HillEquationSimulation {
     private cameraPhi: number = Math.PI / 3;  // より真上からの視点
     private cameraTheta: number = Math.PI / 4;
     private cameraDistance: number = 400;  // より近い距離
+    private pinchStartDistance: number | null = null;
+    private initialCameraDistance: number = 400;
     private gridHelper: THREE.GridHelper;
     
     // 衛星選択関連
@@ -116,7 +118,19 @@ class HillEquationSimulation {
             this.mouseX = e.clientX;
             this.mouseY = e.clientY;
         });
-        
+
+        this.container.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                this.mouseDown = true;
+                this.mouseX = e.touches[0].clientX;
+                this.mouseY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                this.mouseDown = false;
+                this.pinchStartDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+                this.initialCameraDistance = this.cameraDistance;
+            }
+        });
+
         this.container.addEventListener('mousemove', (e) => {
             if (this.mouseDown) {
                 const deltaX = e.clientX - this.mouseX;
@@ -127,11 +141,32 @@ class HillEquationSimulation {
                 this.mouseY = e.clientY;
             }
         });
-        
+
+        this.container.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && this.mouseDown) {
+                const deltaX = e.touches[0].clientX - this.mouseX;
+                const deltaY = e.touches[0].clientY - this.mouseY;
+                this.cameraTheta -= deltaX * 0.01;
+                this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
+                this.mouseX = e.touches[0].clientX;
+                this.mouseY = e.touches[0].clientY;
+            } else if (e.touches.length === 2 && this.pinchStartDistance !== null) {
+                const newDist = this.getTouchDistance(e.touches[0], e.touches[1]);
+                const scale = this.pinchStartDistance / newDist;
+                this.cameraDistance = this.initialCameraDistance * scale;
+                this.cameraDistance = Math.max(200, Math.min(2000, this.cameraDistance));
+            }
+        }, { passive: false });
+
         this.container.addEventListener('mouseup', () => {
             this.mouseDown = false;
         });
-        
+
+        this.container.addEventListener('touchend', () => {
+            this.mouseDown = false;
+            this.pinchStartDistance = null;
+        });
+
         // 衛星選択のためのクリックイベント
         this.container.addEventListener('click', (e) => {
             const rect = this.container.getBoundingClientRect();
@@ -145,6 +180,12 @@ class HillEquationSimulation {
             this.cameraDistance *= (1 + e.deltaY * 0.001);
             this.cameraDistance = Math.max(200, Math.min(2000, this.cameraDistance));
         });
+    }
+
+    private getTouchDistance(t1: Touch, t2: Touch): number {
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        return Math.sqrt(dx * dx + dy * dy);
     }
     
     private createAxes(): void {
