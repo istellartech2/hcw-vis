@@ -315,6 +315,40 @@ button:active {
     z-index: 15;
 }
 
+#fullscreen-toggle {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #4a9eff;
+    border: 1px solid rgba(74, 158, 255, 0.3);
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    z-index: 20;
+}
+
+#fullscreen-toggle:hover {
+    background: rgba(74, 158, 255, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(74, 158, 255, 0.5);
+}
+
+/* 全画面モード */
+.fullscreen-mode {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: #000 !important;
+}
+
 /* 小画面での軸情報表示調整 */
 @media (max-width: 768px) {
     #axes-info {
@@ -337,6 +371,14 @@ button:active {
         padding: 10px;
         font-size: 11px;
         max-width: 200px;
+    }
+    
+    #fullscreen-toggle {
+        bottom: 10px;
+        right: 10px;
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
     }
     
     h1 {

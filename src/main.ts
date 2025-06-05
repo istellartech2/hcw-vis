@@ -50,6 +50,10 @@ class HillEquationSimulation {
     // 軌道要素
     private currentOrbitElements: OrbitalElements;
     
+    // 全画面モード
+    private isFullscreen: boolean = false;
+    private originalContainerStyle: string = '';
+    
     constructor() {
         this.container = document.getElementById('canvas-container')!;
         this.scene = new THREE.Scene();
@@ -638,6 +642,34 @@ class HillEquationSimulation {
         }
     }
     
+    public toggleFullscreen(): void {
+        const container = this.container;
+        const button = document.getElementById('fullscreen-toggle')!;
+        
+        if (!this.isFullscreen) {
+            // 全画面モードに切り替え
+            this.originalContainerStyle = container.style.cssText;
+            container.classList.add('fullscreen-mode');
+            button.textContent = '⛶';
+            button.title = '全画面を終了';
+            this.isFullscreen = true;
+        } else {
+            // 通常モードに戻る
+            container.classList.remove('fullscreen-mode');
+            container.style.cssText = this.originalContainerStyle;
+            button.textContent = '⛶';
+            button.title = '全画面表示';
+            this.isFullscreen = false;
+        }
+        
+        // レンダラーサイズを更新
+        setTimeout(() => {
+            this.camera.aspect = container.clientWidth / container.clientHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(container.clientWidth, container.clientHeight);
+        }, 100);
+    }
+    
     private applyThrustToSelected(axis: string, dv: number): void {
         if (this.selectedSatelliteIndex < 0 || this.selectedSatelliteIndex >= this.satellites.length) {
             return;
@@ -787,8 +819,12 @@ class HillEquationSimulation {
                     this.showHelp();
                     break;
                 case 'escape':
-                    this.selectedSatelliteIndex = -1;
-                    this.updateSelectedSatelliteInfo();
+                    if (this.isFullscreen) {
+                        this.toggleFullscreen();
+                    } else {
+                        this.selectedSatelliteIndex = -1;
+                        this.updateSelectedSatelliteInfo();
+                    }
                     break;
                 // 推力制御キーボードショートカット
                 case 'arrowup':
@@ -829,7 +865,7 @@ V: 視点変更
 T: 軌跡表示切り替え
 G: グリッド表示切り替え
 E: 地球表示切り替え
-Escape: 選択解除
+Escape: 選択解除/全画面終了
 +/=: 時間スケール増加
 -/_: 時間スケール減少
 H: このヘルプを表示
@@ -842,7 +878,10 @@ Shift+矢印キー上/下: Z軸方向推力
 マウス操作:
 クリック: 衛星を選択
 ドラッグ: カメラ回転
-スクロール: ズーム`);
+スクロール: ズーム
+
+画面操作:
+右下ボタン: 全画面切り替え`);
     }
 }
 
@@ -856,6 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
     (window as any).togglePause = () => simulation.togglePause();
     (window as any).addPerturbation = () => simulation.addPerturbation();
     (window as any).changeView = () => simulation.changeView();
+    (window as any).toggleFullscreen = () => simulation.toggleFullscreen();
     
     // 折りたたみ機能
     (window as any).toggleSection = (sectionId: string) => {
