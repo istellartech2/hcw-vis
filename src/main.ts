@@ -227,6 +227,32 @@ class HillEquationSimulation {
         return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier);
     }
     
+    private updateAllSatelliteColors(): void {
+        const isUniform = this.uiControls.elements.uniformSatelliteColor.checked;
+        const uniformColor = this.uiControls.elements.satelliteColor.value;
+        const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
+        const hexColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff'];
+        
+        for (let i = 1; i < this.satellites.length; i++) { // Skip center satellite (index 0)
+            const satellite = this.satellites[i];
+            const mesh = this.satelliteMeshes[i];
+            
+            if (isUniform) {
+                // Use uniform color
+                const uniformColorInt = parseInt(uniformColor.replace('#', ''), 16);
+                satellite.color = uniformColor;
+                (mesh.material as THREE.MeshPhongMaterial).color.setHex(uniformColorInt);
+                (mesh.material as THREE.MeshPhongMaterial).emissive.setHex(uniformColorInt);
+            } else {
+                // Use default color array
+                const colorIndex = (i - 1) % colors.length; // Adjust index for non-center satellites
+                satellite.color = hexColors[colorIndex];
+                (mesh.material as THREE.MeshPhongMaterial).color.setHex(colors[colorIndex]);
+                (mesh.material as THREE.MeshPhongMaterial).emissive.setHex(colors[colorIndex]);
+            }
+        }
+    }
+    
     private initSimulation(): void {
         // 既存のメッシュを削除
         this.satelliteMeshes.forEach(mesh => {
@@ -263,6 +289,8 @@ class HillEquationSimulation {
         this.satelliteMeshes.push(centerMesh);
         this.satellites.push(new Satellite(0, 0, 0, 0, 0, 0, '#ffffff'));
         
+        const useUniformColor = this.uiControls.elements.uniformSatelliteColor.checked;
+        const uniformColor = this.uiControls.elements.satelliteColor.value;
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         const hexColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff'];
         
@@ -271,16 +299,28 @@ class HillEquationSimulation {
         
         positions.forEach((pos, i) => {
             const satGeometry = new THREE.SphereGeometry(6, 32, 32);
+            
+            let materialColor: number;
+            let satelliteColor: string;
+            
+            if (useUniformColor) {
+                materialColor = parseInt(uniformColor.replace('#', ''), 16);
+                satelliteColor = uniformColor;
+            } else {
+                materialColor = colors[i % colors.length];
+                satelliteColor = hexColors[i % hexColors.length];
+            }
+            
             const satMaterial = new THREE.MeshPhongMaterial({ 
-                color: colors[i % colors.length],
-                emissive: colors[i % colors.length],
+                color: materialColor,
+                emissive: materialColor,
                 emissiveIntensity: 0.2
             });
             const satMesh = new THREE.Mesh(satGeometry, satMaterial);
             this.scene.add(satMesh);
             this.satelliteMeshes.push(satMesh);
             
-            this.satellites.push(new Satellite(pos.x0, pos.y0, pos.z0, pos.vx0, pos.vy0, pos.vz0, hexColors[i % hexColors.length]));
+            this.satellites.push(new Satellite(pos.x0, pos.y0, pos.z0, pos.vx0, pos.vy0, pos.vz0, satelliteColor));
         });
         
         this.time = 0;
@@ -587,6 +627,17 @@ class HillEquationSimulation {
         
         this.uiControls.elements.showEarth.addEventListener('change', () => {
             this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
+        });
+        
+        // Satellite color controls
+        this.uiControls.elements.uniformSatelliteColor.addEventListener('change', () => {
+            this.updateAllSatelliteColors();
+        });
+        
+        this.uiControls.elements.satelliteColor.addEventListener('input', () => {
+            if (this.uiControls.elements.uniformSatelliteColor.checked) {
+                this.updateAllSatelliteColors();
+            }
         });
         
         

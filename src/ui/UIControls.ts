@@ -13,6 +13,8 @@ export interface UIControlElements {
     zAmplitude: HTMLInputElement;
     zAmplitudeValue: HTMLSpanElement;
     zAmplitudeControl: HTMLDivElement;
+    uniformSatelliteColor: HTMLInputElement;
+    satelliteColor: HTMLInputElement;
 }
 
 export class UIControls {
@@ -33,7 +35,9 @@ export class UIControls {
             trailLengthValue: document.getElementById('trailLengthValue') as HTMLSpanElement,
             zAmplitude: document.getElementById('zAmplitude') as HTMLInputElement,
             zAmplitudeValue: document.getElementById('zAmplitudeValue') as HTMLSpanElement,
-            zAmplitudeControl: document.getElementById('zAmplitudeControl') as HTMLDivElement
+            zAmplitudeControl: document.getElementById('zAmplitudeControl') as HTMLDivElement,
+            uniformSatelliteColor: document.getElementById('uniformSatelliteColor') as HTMLInputElement,
+            satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement
         };
     }
     
