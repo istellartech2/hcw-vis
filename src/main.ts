@@ -4,6 +4,8 @@ import { HillEquationSolver } from './physics/HillEquationSolver.js';
 import { OrbitInitializer } from './physics/OrbitInitializer.js';
 import { TrailRenderer } from './visualization/TrailRenderer.js';
 import { PlotRenderer } from './visualization/PlotRenderer.js';
+import { CelestialBodies } from './visualization/CelestialBodies.js';
+import { OrbitalPlane } from './visualization/OrbitalPlane.js';
 import { UIControls } from './ui/UIControls.js';
 
 class HillEquationSimulation {
@@ -29,11 +31,18 @@ class HillEquationSimulation {
     private cameraDistance: number = 400;  // より近い距離
     private gridHelper: THREE.GridHelper;
     
+    // 衛星選択関連
+    private selectedSatelliteIndex: number = -1;
+    private raycaster: THREE.Raycaster;
+    private mouse: THREE.Vector2;
+    
     // ヘルパークラス
     private hillSolver: HillEquationSolver;
     private orbitInitializer: OrbitInitializer;
     private trailRenderer: TrailRenderer;
     private plotRenderer: PlotRenderer;
+    private celestialBodies: CelestialBodies;
+    private orbitalPlane: OrbitalPlane;
     private uiControls: UIControls;
     
     constructor() {
@@ -56,7 +65,13 @@ class HillEquationSimulation {
         this.orbitInitializer = new OrbitInitializer(this.n);
         this.trailRenderer = new TrailRenderer(this.scene);
         this.plotRenderer = new PlotRenderer();
+        this.celestialBodies = new CelestialBodies(this.scene);
+        this.orbitalPlane = new OrbitalPlane(this.scene);
         this.uiControls = new UIControls();
+        
+        // レイキャスター初期化
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
         
         this.setupRenderer();
         this.setupLighting();
@@ -67,6 +82,17 @@ class HillEquationSimulation {
         this.updateOrbitParameters();  // 初期値で軌道パラメータを計算
         this.uiControls.setupPlacementPatternLimits();  // 初期配置に応じた衛星数の設定
         this.initSimulation();
+        
+        // 地球を作成（軌道半径をkmで渡す）
+        this.celestialBodies.createEarth(this.orbitRadius / 1000); // kmに変換
+        this.celestialBodies.setEarthVisibility(true);
+        
+        // 軌道面を作成
+        this.orbitalPlane.createOrbitalPlane(this.orbitRadius / 1000); // kmに変換
+        this.orbitalPlane.createLVLHAxes();
+        this.orbitalPlane.setPlaneVisibility(false);
+        this.orbitalPlane.setLVLHAxesVisibility(false);
+        
         this.animate();
     }
     
@@ -112,6 +138,15 @@ class HillEquationSimulation {
         
         this.container.addEventListener('mouseup', () => {
             this.mouseDown = false;
+        });
+        
+        // 衛星選択のためのクリックイベント
+        this.container.addEventListener('click', (e) => {
+            const rect = this.container.getBoundingClientRect();
+            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            
+            this.checkSatelliteSelection();
         });
         
         this.container.addEventListener('wheel', (e) => {
@@ -187,6 +222,17 @@ class HillEquationSimulation {
         
         // UI表示を更新
         this.uiControls.updateOrbitDisplay(radiusKm, periodMinutes);
+        
+        // 地球の位置とサイズを更新（軌道半径を渡す）
+        if (this.celestialBodies) {
+            this.celestialBodies.createEarth(radiusKm);
+        }
+        
+        // 軌道面のサイズを更新
+        if (this.orbitalPlane) {
+            this.orbitalPlane.createOrbitalPlane(radiusKm);
+            this.orbitalPlane.createLVLHAxes();
+        }
     }
     
     
@@ -289,13 +335,14 @@ class HillEquationSimulation {
                 this.camera.position.x = Math.cos(this.cameraAngle) * this.cameraDistance * 0.6;
                 this.camera.position.z = Math.sin(this.cameraAngle) * this.cameraDistance * 0.6;
                 this.camera.position.y = this.cameraDistance * 0.8;  // Radial方向（上）から見下ろす
+                this.camera.lookAt(0, 0, 0);
             } else {
                 // 手動カメラ操作も新しい座標系に対応
                 this.camera.position.x = Math.sin(this.cameraTheta) * Math.sin(this.cameraPhi) * this.cameraDistance;
                 this.camera.position.y = Math.cos(this.cameraPhi) * this.cameraDistance;
                 this.camera.position.z = Math.cos(this.cameraTheta) * Math.sin(this.cameraPhi) * this.cameraDistance;
+                this.camera.lookAt(0, 0, 0);
             }
-            this.camera.lookAt(0, 0, 0);
             
             this.satellites.forEach((sat, index) => {
                 const pos = sat.getPosition();
@@ -304,6 +351,13 @@ class HillEquationSimulation {
                 // Hill: x=Radial, y=Along-track, z=Cross-track
                 // Three.js: X=Along-track(右), Y=Radial(上), Z=Cross-track(手前)
                 this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
+                
+                // 選択された衛星をハイライト
+                if (index === this.selectedSatelliteIndex) {
+                    (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).emissiveIntensity = 0.8;
+                } else {
+                    (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).emissiveIntensity = 0.2;
+                }
                 
                 if (this.uiControls.elements.showTrails.checked && index > 0) {
                     const trailMax = parseInt(this.uiControls.elements.trailLength.value);
@@ -318,10 +372,19 @@ class HillEquationSimulation {
                 this.plotRenderer.update(this.satellites);
             }
             
+            // 選択衛星の情報を毎フレーム更新（リアルタイム表示）
+            if (this.selectedSatelliteIndex >= 0) {
+                this.updateSelectedSatelliteInfo();
+            }
+            
             // 時間表示は5フレームに1回更新
             if (this.animationFrameCounter % 5 === 0) {
                 this.uiControls.updateTimeDisplay(this.time);
             }
+            
+            // 天体の更新
+            this.celestialBodies.update(this.time);
+            this.orbitalPlane.update(this.time);
         }
         
         this.gridHelper.visible = this.uiControls.elements.showGrid.checked;
@@ -381,11 +444,89 @@ class HillEquationSimulation {
         infoDiv.innerHTML = html;
     }
     
+    private checkSatelliteSelection(): void {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        const intersects = this.raycaster.intersectObjects(this.satelliteMeshes);
+        
+        if (intersects.length > 0) {
+            const clickedMesh = intersects[0].object;
+            const index = this.satelliteMeshes.indexOf(clickedMesh as THREE.Mesh);
+            
+            if (index >= 0) {
+                this.selectedSatelliteIndex = index;
+                this.updateSelectedSatelliteInfo();
+            }
+        } else {
+            // 空いた場所をクリックしたら選択解除
+            this.selectedSatelliteIndex = -1;
+            this.updateSelectedSatelliteInfo();
+        }
+    }
+    
+    private updateSelectedSatelliteInfo(): void {
+        const infoDiv = document.getElementById('selectedSatelliteInfo');
+        if (!infoDiv) {
+            // 選択衛星情報表示エリアを作成
+            const newInfoDiv = document.createElement('div');
+            newInfoDiv.id = 'selectedSatelliteInfo';
+            newInfoDiv.style.cssText = `
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-size: 12px;
+                display: none;
+            `;
+            document.getElementById('canvas-container')!.appendChild(newInfoDiv);
+        }
+        
+        const selectedInfoDiv = document.getElementById('selectedSatelliteInfo')!;
+        
+        if (this.selectedSatelliteIndex >= 0) {
+            const sat = this.satellites[this.selectedSatelliteIndex];
+            const pos = sat.getPosition();
+            const vel = sat.getVelocity();
+            
+            const r = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
+            const v = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
+            
+            selectedInfoDiv.innerHTML = `
+                <strong>選択衛星: ${this.selectedSatelliteIndex === 0 ? '主衛星' : `衛星${this.selectedSatelliteIndex}`}</strong><br>
+                位置: X=${(pos.x*1000).toFixed(0)}, Y=${(pos.y*1000).toFixed(0)}, Z=${(pos.z*1000).toFixed(0)} L<br>
+                速度: ${(v*1000).toFixed(2)} L/s<br>
+                距離: ${(r*1000).toFixed(0)} L<br>
+                <div style="margin-top: 10px;">
+                    <strong>推力制御:</strong><br>
+                    <button onclick="applyThrust('x', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+X</button>
+                    <button onclick="applyThrust('x', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-X</button><br>
+                    <button onclick="applyThrust('y', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+Y</button>
+                    <button onclick="applyThrust('y', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-Y</button><br>
+                    <button onclick="applyThrust('z', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+Z</button>
+                    <button onclick="applyThrust('z', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-Z</button>
+                </div>
+            `;
+            selectedInfoDiv.style.display = 'block';
+            
+            
+            // 推力印加関数をグローバルに登録
+            (window as any).applyThrust = (axis: string, dv: number) => {
+                this.applyThrustToSelected(axis, dv);
+            };
+        } else {
+            selectedInfoDiv.style.display = 'none';
+        }
+    }
+    
     public resetSimulation(): void {
         this.satellites.forEach(sat => {
             if (sat.trailLine) this.scene.remove(sat.trailLine);
             sat.reset();
         });
+        this.selectedSatelliteIndex = -1;
+        this.updateSelectedSatelliteInfo();
         this.initSimulation();
     }
     
@@ -428,6 +569,30 @@ class HillEquationSimulation {
                 this.cameraTheta = Math.PI / 4;
                 break;
         }
+    }
+    
+    private applyThrustToSelected(axis: string, dv: number): void {
+        if (this.selectedSatelliteIndex < 0 || this.selectedSatelliteIndex >= this.satellites.length) {
+            return;
+        }
+        
+        const sat = this.satellites[this.selectedSatelliteIndex];
+        
+        // 速度変化を適用（km/s単位）
+        switch (axis) {
+            case 'x':
+                sat.vx += dv;
+                break;
+            case 'y':
+                sat.vy += dv;
+                break;
+            case 'z':
+                sat.vz += dv;
+                break;
+        }
+        
+        // 情報表示を更新
+        this.updateSelectedSatelliteInfo();
     }
     
     private setupEventListeners(): void {
@@ -478,6 +643,18 @@ class HillEquationSimulation {
             }
         });
         
+        this.uiControls.elements.showEarth.addEventListener('change', () => {
+            this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
+        });
+        
+        this.uiControls.elements.showOrbitalPlane.addEventListener('change', () => {
+            this.orbitalPlane.setPlaneVisibility(this.uiControls.elements.showOrbitalPlane.checked);
+        });
+        
+        this.uiControls.elements.showLVLHAxes.addEventListener('change', () => {
+            this.orbitalPlane.setLVLHAxesVisibility(this.uiControls.elements.showLVLHAxes.checked);
+        });
+        
         window.addEventListener('resize', () => {
             this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
             this.camera.updateProjectionMatrix();
@@ -510,6 +687,18 @@ class HillEquationSimulation {
                 case 'a':
                     this.uiControls.elements.autoRotate.checked = !this.uiControls.elements.autoRotate.checked;
                     break;
+                case 'e':
+                    this.uiControls.elements.showEarth.checked = !this.uiControls.elements.showEarth.checked;
+                    this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
+                    break;
+                case 'o':
+                    this.uiControls.elements.showOrbitalPlane.checked = !this.uiControls.elements.showOrbitalPlane.checked;
+                    this.orbitalPlane.setPlaneVisibility(this.uiControls.elements.showOrbitalPlane.checked);
+                    break;
+                case 'l':
+                    this.uiControls.elements.showLVLHAxes.checked = !this.uiControls.elements.showLVLHAxes.checked;
+                    this.orbitalPlane.setLVLHAxesVisibility(this.uiControls.elements.showLVLHAxes.checked);
+                    break;
                 case '+':
                 case '=':
                     const currentScale = parseFloat(this.uiControls.elements.timeScale.value);
@@ -525,6 +714,35 @@ class HillEquationSimulation {
                 case 'h':
                     this.showHelp();
                     break;
+                case 'escape':
+                    this.selectedSatelliteIndex = -1;
+                    this.updateSelectedSatelliteInfo();
+                    break;
+                // 推力制御キーボードショートカット
+                case 'arrowup':
+                    if (e.shiftKey) {
+                        this.applyThrustToSelected('z', 0.001);
+                    } else {
+                        this.applyThrustToSelected('y', 0.001);
+                    }
+                    e.preventDefault();
+                    break;
+                case 'arrowdown':
+                    if (e.shiftKey) {
+                        this.applyThrustToSelected('z', -0.001);
+                    } else {
+                        this.applyThrustToSelected('y', -0.001);
+                    }
+                    e.preventDefault();
+                    break;
+                case 'arrowleft':
+                    this.applyThrustToSelected('x', -0.001);
+                    e.preventDefault();
+                    break;
+                case 'arrowright':
+                    this.applyThrustToSelected('x', 0.001);
+                    e.preventDefault();
+                    break;
             }
         });
     }
@@ -538,12 +756,22 @@ P: 摂動を加える
 V: 視点変更
 T: 軌跡表示切り替え
 G: グリッド表示切り替え
+E: 地球表示切り替え
+O: 軌道面表示切り替え
+L: LVLH軸表示切り替え
 A: カメラ自動回転切り替え
+Escape: 選択解除
 +/=: 時間スケール増加
 -/_: 時間スケール減少
 H: このヘルプを表示
 
+推力制御（衛星選択時）:
+矢印キー上/下: Y軸方向推力
+矢印キー左/右: X軸方向推力
+Shift+矢印キー上/下: Z軸方向推力
+
 マウス操作:
+クリック: 衛星を選択
 ドラッグ: カメラ回転
 スクロール: ズーム`);
     }

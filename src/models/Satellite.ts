@@ -65,9 +65,9 @@ export class Satellite {
         return { x: this.x, y: this.y, z: this.z };
     }
     
-    getVelocity(): { vx: number; vy: number; vz: number } {
-        // 現在の速度を返す
-        return { vx: this.vx, vy: this.vy, vz: this.vz };
+    getVelocity(): { x: number; y: number; z: number } {
+        // 現在の速度を返す（位置と同じ形式で返す）
+        return { x: this.vx, y: this.vy, z: this.vz };
     }
     
     reset() {
