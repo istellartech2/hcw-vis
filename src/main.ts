@@ -32,7 +32,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private renderingSystem: RenderingSystem;
     
     // Orbital elements
-    private currentOrbitElements: OrbitalElements;
+    private currentOrbitElements!: OrbitalElements;
     
     // Fullscreen mode
     private isFullscreen: boolean = false;
@@ -75,8 +75,9 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     }
     
     private setupSatelliteSelectionListener(): void {
-        this.container.addEventListener('satelliteSelected', (e: CustomEvent) => {
-            this.updateSelectedSatelliteInfo(e.detail.index);
+        this.container.addEventListener('satelliteSelected', (e: Event) => {
+            const customEvent = e as CustomEvent;
+            this.updateSelectedSatelliteInfo(customEvent.detail.index);
         });
     }
     
@@ -283,24 +284,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
     }
     
-    private checkSatelliteSelection(): void {
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.satelliteMeshes);
-        
-        if (intersects.length > 0) {
-            const clickedMesh = intersects[0].object;
-            const index = this.satelliteMeshes.indexOf(clickedMesh as THREE.Mesh);
-            
-            if (index >= 0) {
-                this.selectedSatelliteIndex = index;
-                this.updateSelectedSatelliteInfo();
-            }
-        } else {
-            // 空いた場所をクリックしたら選択解除
-            this.selectedSatelliteIndex = -1;
-            this.updateSelectedSatelliteInfo();
-        }
-    }
+    // この機能はRenderingSystemに移譲済みのため削除
     
     public updateSelectedSatelliteInfo(index?: number): void {
         if (index !== undefined) {
@@ -372,7 +356,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             if (sat.trailLine) this.scene.remove(sat.trailLine);
             sat.reset();
         });
-        this.selectedSatelliteIndex = -1;
+        this.renderingSystem.setSelectedSatelliteIndex(-1);
         this.updateSelectedSatelliteInfo();
         this.initSimulation();
     }
@@ -393,29 +377,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     }
     
     public changeView(): void {
-        this.viewMode = (this.viewMode + 1) % 4;
-        switch(this.viewMode) {
-            case 0:
-                this.cameraDistance = 400;
-                this.cameraPhi = Math.PI / 4;
-                this.cameraTheta = 0;
-                break;
-            case 1:
-                this.cameraDistance = 400;
-                this.cameraPhi = 0.1;
-                this.cameraTheta = 0;
-                break;
-            case 2:
-                this.cameraDistance = 400;
-                this.cameraPhi = Math.PI / 2;
-                this.cameraTheta = 0;
-                break;
-            case 3:
-                this.cameraDistance = 400;
-                this.cameraPhi = Math.PI / 3;
-                this.cameraTheta = Math.PI / 4;
-                break;
-        }
+        this.cameraController.changeView();
     }
     
     public toggleFullscreen(): void {
@@ -508,7 +470,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     }
     
     public clearTrails(): void {
-        this.renderingSystem.clearAllTrails();
+        this.renderingSystem.clearTrails(this.satellites);
     }
     
 }
