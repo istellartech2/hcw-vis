@@ -58,68 +58,128 @@ export class CelestialBodies {
     }
     
     private addLatitudeLongitudeLines(earthRadius: number): void {
-        const lineMaterial = new THREE.LineBasicMaterial({
-            color: 0x4444aa,
+        // 線を地球表面から少し浮かせて見やすくする
+        const lineRadius = earthRadius * 1.005;
+        
+        // 一般的な緯度経度線
+        const normalLineMaterial = new THREE.LineBasicMaterial({
+            color: 0x88aaff,
             transparent: true,
-            opacity: 0.3
+            opacity: 0.7,
+            linewidth: 1
         });
         
-        // 経度線（縦線）を追加
+        // 経度線（縦線）を追加 - ECEF座標系準拠（Z軸が北極）
         for (let longitude = 0; longitude < 360; longitude += 15) {
-            const points: THREE.Vector3[] = [];
-            for (let latitude = -90; latitude <= 90; latitude += 5) {
-                const phi = (90 - latitude) * Math.PI / 180;
-                const theta = longitude * Math.PI / 180;
+            // 本初子午線以外
+            if (longitude !== 0) {
+                const points: THREE.Vector3[] = [];
+                for (let latitude = -90; latitude <= 90; latitude += 3) {
+                    const phi = (90 - latitude) * Math.PI / 180;
+                    const theta = longitude * Math.PI / 180;
+                    
+                    const x = lineRadius * Math.sin(phi) * Math.cos(theta);
+                    const y = lineRadius * Math.sin(phi) * Math.sin(theta);
+                    const z = lineRadius * Math.cos(phi);
+                    
+                    points.push(new THREE.Vector3(x, y, z));
+                }
                 
-                const x = earthRadius * Math.sin(phi) * Math.cos(theta);
-                const y = earthRadius * Math.cos(phi);
-                const z = earthRadius * Math.sin(phi) * Math.sin(theta);
-                
-                points.push(new THREE.Vector3(x, y, z));
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(geometry, normalLineMaterial.clone());
+                this.earth!.add(line);
             }
-            
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(geometry, lineMaterial.clone());
-            this.earth!.add(line);
         }
         
         // 緯度線（横線）を追加
-        for (let latitude = -75; latitude <= 75; latitude += 15) {
-            const points: THREE.Vector3[] = [];
-            for (let longitude = 0; longitude <= 360; longitude += 5) {
-                const phi = (90 - latitude) * Math.PI / 180;
-                const theta = longitude * Math.PI / 180;
+        for (let latitude = -60; latitude <= 60; latitude += 15) {
+            // 赤道以外
+            if (latitude !== 0) {
+                const points: THREE.Vector3[] = [];
+                for (let longitude = 0; longitude <= 360; longitude += 3) {
+                    const phi = (90 - latitude) * Math.PI / 180;
+                    const theta = longitude * Math.PI / 180;
+                    
+                    const x = lineRadius * Math.sin(phi) * Math.cos(theta);
+                    const y = lineRadius * Math.sin(phi) * Math.sin(theta);
+                    const z = lineRadius * Math.cos(phi);
+                    
+                    points.push(new THREE.Vector3(x, y, z));
+                }
                 
-                const x = earthRadius * Math.sin(phi) * Math.cos(theta);
-                const y = earthRadius * Math.cos(phi);
-                const z = earthRadius * Math.sin(phi) * Math.sin(theta);
-                
-                points.push(new THREE.Vector3(x, y, z));
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(geometry, normalLineMaterial.clone());
+                this.earth!.add(line);
             }
-            
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(geometry, lineMaterial.clone());
-            this.earth!.add(line);
         }
         
-        // 赤道線を特別に強調
+        // 赤道線を特別に強調（青色）
         const equatorPoints: THREE.Vector3[] = [];
-        for (let longitude = 0; longitude <= 360; longitude += 2) {
+        for (let longitude = 0; longitude <= 360; longitude += 1) {
             const theta = longitude * Math.PI / 180;
-            const x = earthRadius * Math.cos(theta);
-            const y = 0;
-            const z = earthRadius * Math.sin(theta);
+            const x = lineRadius * Math.cos(theta);
+            const y = lineRadius * Math.sin(theta);
+            const z = 0;
             equatorPoints.push(new THREE.Vector3(x, y, z));
         }
         
         const equatorGeometry = new THREE.BufferGeometry().setFromPoints(equatorPoints);
         const equatorMaterial = new THREE.LineBasicMaterial({
-            color: 0x6666ff,
-            transparent: true,
-            opacity: 0.6
+            color: 0x0099ff,
+            transparent: false,
+            opacity: 1.0,
+            linewidth: 3
         });
         const equatorLine = new THREE.Line(equatorGeometry, equatorMaterial);
         this.earth!.add(equatorLine);
+        
+        // グリニッジ子午線を特別に強調（赤色）
+        const greenwichPoints: THREE.Vector3[] = [];
+        for (let latitude = -90; latitude <= 90; latitude += 1) {
+            const phi = (90 - latitude) * Math.PI / 180;
+            const x = lineRadius * Math.sin(phi);
+            const y = 0;
+            const z = lineRadius * Math.cos(phi);
+            greenwichPoints.push(new THREE.Vector3(x, y, z));
+        }
+        
+        const greenwichGeometry = new THREE.BufferGeometry().setFromPoints(greenwichPoints);
+        const greenwichMaterial = new THREE.LineBasicMaterial({
+            color: 0xff3333,
+            transparent: false,
+            opacity: 1.0,
+            linewidth: 3
+        });
+        const greenwichLine = new THREE.Line(greenwichGeometry, greenwichMaterial);
+        this.earth!.add(greenwichLine);
+        
+        // 北極点マーカー（赤い球）
+        const northPoleGeometry = new THREE.SphereGeometry(earthRadius * 0.03, 16, 16);
+        const northPoleMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const northPole = new THREE.Mesh(northPoleGeometry, northPoleMaterial);
+        northPole.position.set(0, 0, lineRadius);
+        this.earth!.add(northPole);
+        
+        // 南極点マーカー（青い球）
+        const southPoleGeometry = new THREE.SphereGeometry(earthRadius * 0.03, 16, 16);
+        const southPoleMaterial = new THREE.MeshBasicMaterial({ color: 0x0066ff });
+        const southPole = new THREE.Mesh(southPoleGeometry, southPoleMaterial);
+        southPole.position.set(0, 0, -lineRadius);
+        this.earth!.add(southPole);
+        
+        // 回転軸を表示（薄い線で北極-南極を結ぶ）
+        const axisGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, -lineRadius * 1.2),
+            new THREE.Vector3(0, 0, lineRadius * 1.2)
+        ]);
+        const axisMaterial = new THREE.LineBasicMaterial({
+            color: 0x666666,
+            transparent: true,
+            opacity: 0.5,
+            linewidth: 2
+        });
+        const axisLine = new THREE.Line(axisGeometry, axisMaterial);
+        this.earth!.add(axisLine);
     }
     
     
