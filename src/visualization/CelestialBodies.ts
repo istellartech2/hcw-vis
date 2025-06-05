@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { Satellite } from '../models/Satellite.js';
+import * as satellite from 'satellite.js';
 
 export class CelestialBodies {
     private scene: THREE.Scene;
@@ -184,7 +186,54 @@ export class CelestialBodies {
     
     
     update(time: number): void {
-        // 地球は固定（自転なし、太陽位置変更なし）
+        // 地球の姿勢を基準衛星から計算
+        const ref = Satellite.getReferenceECIPosition(new Date(Date.now() + time * 1000));
+        if (!ref) return;
+
+        const r0 = new THREE.Vector3(ref.position.x, ref.position.y, ref.position.z);
+        const v0 = new THREE.Vector3(ref.velocity.x, ref.velocity.y, ref.velocity.z);
+
+        // === ECI → RSW ===
+        const Rhat = r0.clone().normalize();
+        const What = r0.clone().cross(v0).normalize();
+        const Shat = What.clone().cross(Rhat);
+        const Te2r = new THREE.Matrix3().set(
+            Rhat.x, Rhat.y, Rhat.z,
+            Shat.x, Shat.y, Shat.z,
+            What.x, What.y, What.z
+        );
+
+        // === GMST and ECI ↔︎ ECEF ===
+        const gmst = satellite.gstime(new Date(Date.now() + time * 1000));
+        const c = Math.cos(gmst), s = Math.sin(gmst);
+        const R3 = new THREE.Matrix3().set(
+             c,  s, 0,
+            -s,  c, 0,
+             0,  0, 1
+        );
+
+        // === ECEF → RSW ===
+        const Tecef2rsw = new THREE.Matrix3();
+        Tecef2rsw.multiplyMatrices(Te2r, R3.clone().transpose());
+
+        // === Convert to Three.js coordinates ===
+        const physToThree = new THREE.Matrix3().set(
+            1, 0, 0,
+            0, 0, 1,
+            0, -1, 0
+        );
+
+        const Tecef2three = new THREE.Matrix3();
+        Tecef2three.multiplyMatrices(physToThree, Tecef2rsw);
+
+        const m4 = new THREE.Matrix4().set(
+            Tecef2three.elements[0], Tecef2three.elements[3], Tecef2three.elements[6], 0,
+            Tecef2three.elements[1], Tecef2three.elements[4], Tecef2three.elements[7], 0,
+            Tecef2three.elements[2], Tecef2three.elements[5], Tecef2three.elements[8], 0,
+            0, 0, 0, 1
+        );
+
+        this.earthGroup.setRotationFromMatrix(m4);
     }
     
     setEarthVisibility(visible: boolean): void {
