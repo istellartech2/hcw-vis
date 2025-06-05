@@ -21,6 +21,6 @@
     
     "types": ["bun-types"]
   },
-  "include": ["src/**/*", "server.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "server.ts"]
 }
