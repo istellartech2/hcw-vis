@@ -5,12 +5,9 @@ export interface UIControlElements {
     orbitAltitude: HTMLInputElement;
     timeScale: HTMLSelectElement;
     simulationTime: HTMLSpanElement;
-    autoRotate: HTMLInputElement;
     showTrails: HTMLInputElement;
     showGrid: HTMLInputElement;
     showEarth: HTMLInputElement;
-    showOrbitalPlane: HTMLInputElement;
-    showLVLHAxes: HTMLInputElement;
     trailLength: HTMLInputElement;
     trailLengthValue: HTMLSpanElement;
     zAmplitude: HTMLInputElement;
@@ -29,13 +26,10 @@ export class UIControls {
             orbitAltitude: document.getElementById('orbitAltitude') as HTMLInputElement,
             timeScale: document.getElementById('timeScale') as HTMLSelectElement,
             simulationTime: document.getElementById('simulationTime') as HTMLSpanElement,
-            autoRotate: document.getElementById('autoRotate') as HTMLInputElement,
-            showTrails: document.getElementById('showTrails') as HTMLInputElement,
+                showTrails: document.getElementById('showTrails') as HTMLInputElement,
             showGrid: document.getElementById('showGrid') as HTMLInputElement,
             showEarth: document.getElementById('showEarth') as HTMLInputElement,
-            showOrbitalPlane: document.getElementById('showOrbitalPlane') as HTMLInputElement,
-            showLVLHAxes: document.getElementById('showLVLHAxes') as HTMLInputElement,
-            trailLength: document.getElementById('trailLength') as HTMLInputElement,
+                    trailLength: document.getElementById('trailLength') as HTMLInputElement,
             trailLengthValue: document.getElementById('trailLengthValue') as HTMLSpanElement,
             zAmplitude: document.getElementById('zAmplitude') as HTMLInputElement,
             zAmplitudeValue: document.getElementById('zAmplitudeValue') as HTMLSpanElement,

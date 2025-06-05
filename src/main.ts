@@ -5,7 +5,6 @@ import { OrbitInitializer } from './physics/OrbitInitializer.js';
 import { TrailRenderer } from './visualization/TrailRenderer.js';
 import { PlotRenderer } from './visualization/PlotRenderer.js';
 import { CelestialBodies } from './visualization/CelestialBodies.js';
-import { OrbitalPlane } from './visualization/OrbitalPlane.js';
 import { UIControls } from './ui/UIControls.js';
 
 class HillEquationSimulation {
@@ -42,7 +41,6 @@ class HillEquationSimulation {
     private trailRenderer: TrailRenderer;
     private plotRenderer: PlotRenderer;
     private celestialBodies: CelestialBodies;
-    private orbitalPlane: OrbitalPlane;
     private uiControls: UIControls;
     
     constructor() {
@@ -66,7 +64,6 @@ class HillEquationSimulation {
         this.trailRenderer = new TrailRenderer(this.scene);
         this.plotRenderer = new PlotRenderer();
         this.celestialBodies = new CelestialBodies(this.scene);
-        this.orbitalPlane = new OrbitalPlane(this.scene);
         this.uiControls = new UIControls();
         
         // レイキャスター初期化
@@ -87,11 +84,6 @@ class HillEquationSimulation {
         this.celestialBodies.createEarth(this.orbitRadius / 1000); // kmに変換
         this.celestialBodies.setEarthVisibility(true);
         
-        // 軌道面を作成
-        this.orbitalPlane.createOrbitalPlane(this.orbitRadius / 1000); // kmに変換
-        this.orbitalPlane.createLVLHAxes();
-        this.orbitalPlane.setPlaneVisibility(false);
-        this.orbitalPlane.setLVLHAxesVisibility(false);
         
         this.animate();
     }
@@ -126,7 +118,7 @@ class HillEquationSimulation {
         });
         
         this.container.addEventListener('mousemove', (e) => {
-            if (this.mouseDown && !this.uiControls.elements.autoRotate.checked) {
+            if (this.mouseDown) {
                 const deltaX = e.clientX - this.mouseX;
                 const deltaY = e.clientY - this.mouseY;
                 this.cameraTheta -= deltaX * 0.01;
@@ -228,11 +220,6 @@ class HillEquationSimulation {
             this.celestialBodies.createEarth(radiusKm);
         }
         
-        // 軌道面のサイズを更新
-        if (this.orbitalPlane) {
-            this.orbitalPlane.createOrbitalPlane(radiusKm);
-            this.orbitalPlane.createLVLHAxes();
-        }
     }
     
     
@@ -329,14 +316,7 @@ class HillEquationSimulation {
                 }
             }
             
-            if (this.uiControls.elements.autoRotate.checked) {
-                this.cameraAngle += 0.005;
-                // 新しい座標系でのカメラ自動回転: XZ平面で回転し、Y軸（Radial）を上から見下ろす
-                this.camera.position.x = Math.cos(this.cameraAngle) * this.cameraDistance * 0.6;
-                this.camera.position.z = Math.sin(this.cameraAngle) * this.cameraDistance * 0.6;
-                this.camera.position.y = this.cameraDistance * 0.8;  // Radial方向（上）から見下ろす
-                this.camera.lookAt(0, 0, 0);
-            } else {
+            {
                 // 手動カメラ操作も新しい座標系に対応
                 this.camera.position.x = Math.sin(this.cameraTheta) * Math.sin(this.cameraPhi) * this.cameraDistance;
                 this.camera.position.y = Math.cos(this.cameraPhi) * this.cameraDistance;
@@ -384,7 +364,6 @@ class HillEquationSimulation {
             
             // 天体の更新
             this.celestialBodies.update(this.time);
-            this.orbitalPlane.update(this.time);
         }
         
         this.gridHelper.visible = this.uiControls.elements.showGrid.checked;
@@ -647,13 +626,7 @@ class HillEquationSimulation {
             this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
         });
         
-        this.uiControls.elements.showOrbitalPlane.addEventListener('change', () => {
-            this.orbitalPlane.setPlaneVisibility(this.uiControls.elements.showOrbitalPlane.checked);
-        });
         
-        this.uiControls.elements.showLVLHAxes.addEventListener('change', () => {
-            this.orbitalPlane.setLVLHAxesVisibility(this.uiControls.elements.showLVLHAxes.checked);
-        });
         
         window.addEventListener('resize', () => {
             this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
@@ -684,20 +657,9 @@ class HillEquationSimulation {
                 case 'g':
                     this.uiControls.elements.showGrid.checked = !this.uiControls.elements.showGrid.checked;
                     break;
-                case 'a':
-                    this.uiControls.elements.autoRotate.checked = !this.uiControls.elements.autoRotate.checked;
-                    break;
                 case 'e':
                     this.uiControls.elements.showEarth.checked = !this.uiControls.elements.showEarth.checked;
                     this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
-                    break;
-                case 'o':
-                    this.uiControls.elements.showOrbitalPlane.checked = !this.uiControls.elements.showOrbitalPlane.checked;
-                    this.orbitalPlane.setPlaneVisibility(this.uiControls.elements.showOrbitalPlane.checked);
-                    break;
-                case 'l':
-                    this.uiControls.elements.showLVLHAxes.checked = !this.uiControls.elements.showLVLHAxes.checked;
-                    this.orbitalPlane.setLVLHAxesVisibility(this.uiControls.elements.showLVLHAxes.checked);
                     break;
                 case '+':
                 case '=':
@@ -757,9 +719,6 @@ V: 視点変更
 T: 軌跡表示切り替え
 G: グリッド表示切り替え
 E: 地球表示切り替え
-O: 軌道面表示切り替え
-L: LVLH軸表示切り替え
-A: カメラ自動回転切り替え
 Escape: 選択解除
 +/=: 時間スケール増加
 -/_: 時間スケール減少

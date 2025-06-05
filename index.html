@@ -36,11 +36,11 @@
                         <div class="control-group">
                             <label>配置:</label>
                             <select id="placementPattern">
-                                <option value="axis">軸上</option>
-                                <option value="grid">格子</option>
-                                <option value="random_position">ランダム（位置）</option>
-                                <option value="random_position_velocity">ランダム（位置速度）</option>
-                                <option value="random_periodic">ランダム（周期解）</option>
+                                <option value="axis">軸上-位置</option>
+                                <option value="grid">格子-位置</option>
+                                <option value="random_position">ランダム-位置</option>
+                                <option value="random_position_velocity">ランダム-位置速度</option>
+                                <option value="random_periodic">ランダム-周期解</option>
                                 <option value="xy_ellipse">楕円軌道</option>
                                 <option value="circular_orbit">円軌道</option>
                                 <option value="vbar_approach">V-bar軌道</option>
@@ -118,10 +118,6 @@
                             <label>グリッド</label>
                         </div>
                         
-                        <div class="control-group">
-                            <input type="checkbox" id="autoRotate">
-                            <label>自動回転</label>
-                        </div>
                         
                         <div class="control-group">
                             <input type="checkbox" id="showEarth" checked>
@@ -130,15 +126,7 @@
                     </div>
 
                     <div class="control-row compact">
-                        <div class="control-group">
-                            <input type="checkbox" id="showOrbitalPlane">
-                            <label>軌道面</label>
-                        </div>
                         
-                        <div class="control-group">
-                            <input type="checkbox" id="showLVLHAxes">
-                            <label>LVLH軸</label>
-                        </div>
                     </div>
 
                     <div class="control-group">
