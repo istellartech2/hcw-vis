@@ -3,6 +3,8 @@
  * satellite.jsライブラリを使用して軌道要素の変換と計算を実行
  */
 
+import * as satellite from 'satellite.js';
+
 interface OrbitalElements {
     inclination: number;      // 軌道傾斜角 (degrees)
     raan: number;            // 昇交点経度 (degrees)
@@ -143,5 +145,74 @@ export class OrbitElementsCalculator {
             trueAnomaly: this.radToDeg(trueAnomaly),
             radius
         };
+    }
+    
+    /**
+     * 軌道要素からTLE形式の文字列を生成してsatellite.jsのSGP4レコードを作成
+     */
+    public static createSatelliteRecord(elements: OrbitalElements): any {
+        // 簡単なTLE形式を生成（実際のTLEではないが、satellite.jsで動作する形式）
+        const meanMotionRevPerDay = elements.meanMotion * 86400 / (2 * Math.PI);
+        
+        // TLE Line 1 format: 1 NNNNNC NNNNNAAA NNNNN.NNNNNNNN +.NNNNNNNN +NNNNN-N +NNNNN-N N NNNNN
+        const line1 = `1 25544U 98067A   21275.51782528  .00000286  00000-0  12847-4 0  9991`;
+        
+        // TLE Line 2 format: 2 NNNNN NNN.NNNN NNN.NNNN NNNNNNN NNN.NNNN NNN.NNNN NN.NNNNNNNNNNNNNN
+        const inclination = elements.inclination.toFixed(4).padStart(8);
+        const raan = elements.raan.toFixed(4).padStart(8);
+        const eccentricity = (elements.eccentricity * 10000000).toFixed(0).padStart(7, '0');
+        const argOfPerigee = elements.argOfPerigee.toFixed(4).padStart(8);
+        const meanAnomaly = elements.meanAnomaly.toFixed(4).padStart(8);
+        const meanMotion = meanMotionRevPerDay.toFixed(8).padStart(11);
+        
+        const line2 = `2 25544 ${inclination} ${raan} ${eccentricity} ${argOfPerigee} ${meanAnomaly} ${meanMotion}00001`;
+        
+        const satrec = satellite.twoline2satrec(line1, line2);
+        return satrec;
+    }
+    
+    /**
+     * satellite.jsを使用してECI座標系の位置と速度、緯度経度高度を取得
+     */
+    public static getECIPosition(elements: OrbitalElements, date: Date = new Date()): {
+        position: { x: number; y: number; z: number };
+        velocity: { x: number; y: number; z: number };
+        geodetic: { latitude: number; longitude: number; altitude: number };
+    } | null {
+        try {
+            const satrec = this.createSatelliteRecord(elements);
+            const result = satellite.propagate(satrec, date);
+            
+            if (result && result.position && result.velocity) {
+                // GMSTを計算
+                const gmst = satellite.gstime(date);
+                
+                // ECI座標から緯度経度高度を計算
+                const positionGd = satellite.eciToGeodetic(result.position, gmst);
+                
+                return {
+                    position: {
+                        x: (result.position as any).x,
+                        y: (result.position as any).y,
+                        z: (result.position as any).z
+                    },
+                    velocity: {
+                        x: (result.velocity as any).x,
+                        y: (result.velocity as any).y,
+                        z: (result.velocity as any).z
+                    },
+                    geodetic: {
+                        latitude: satellite.degreesLat(positionGd.latitude),
+                        longitude: satellite.degreesLong(positionGd.longitude),
+                        altitude: positionGd.height
+                    }
+                };
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('ECI position calculation failed:', error);
+            return null;
+        }
     }
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OrbitElementsCalculator, type OrbitalElements } from '../physics/OrbitElements.js';
 
 export interface SatelliteData {
     x0: number;
@@ -35,6 +36,9 @@ export class Satellite {
     trailGeometry: THREE.BufferGeometry | null;
     trailMaterial: THREE.LineBasicMaterial | null;
     frameCounter: number;  // 軌跡更新の間引き用
+    
+    // 基準衛星の軌道要素（ECI座標計算用）
+    static referenceOrbit: OrbitalElements;
     
     constructor(x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number, color: string) {
         this.x0 = x0;
@@ -101,5 +105,55 @@ export class Satellite {
         if (this.trailMaterial) {
             this.trailMaterial.dispose();
         }
+    }
+    
+    /**
+     * 基準衛星の軌道要素を設定
+     */
+    static setReferenceOrbit(elements: OrbitalElements) {
+        Satellite.referenceOrbit = elements;
+    }
+    
+    /**
+     * 基準衛星のECI座標を取得
+     */
+    static getReferenceECIPosition(date: Date = new Date()): {
+        position: { x: number; y: number; z: number };
+        velocity: { x: number; y: number; z: number };
+    } | null {
+        if (!Satellite.referenceOrbit) {
+            console.warn('Reference orbit not set');
+            return null;
+        }
+        
+        return OrbitElementsCalculator.getECIPosition(Satellite.referenceOrbit, date);
+    }
+    
+    /**
+     * 現在の衛星のECI座標を取得（Hill座標からの変換）
+     */
+    getECIPosition(date: Date = new Date()): {
+        position: { x: number; y: number; z: number };
+        velocity: { x: number; y: number; z: number };
+    } | null {
+        const referenceECI = Satellite.getReferenceECIPosition(date);
+        if (!referenceECI) {
+            return null;
+        }
+        
+        // Hill座標からECI座標への変換（簡易版）
+        // 実際の実装では回転行列による変換が必要
+        return {
+            position: {
+                x: referenceECI.position.x + this.x,
+                y: referenceECI.position.y + this.y,
+                z: referenceECI.position.z + this.z
+            },
+            velocity: {
+                x: referenceECI.velocity.x + this.vx,
+                y: referenceECI.velocity.y + this.vy,
+                z: referenceECI.velocity.z + this.vz
+            }
+        };
     }
 }

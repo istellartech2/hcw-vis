@@ -90,7 +90,31 @@ export class UIControls {
         altitude: number;
         period: number;
         semiMajorAxis: number;
-    }): void {
+    }, eciPosition?: { x: number; y: number; z: number } | null, geodetic?: { latitude: number; longitude: number; altitude: number } | null): void {
+        let eciInfo = '';
+        if (eciPosition) {
+            eciInfo = `
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
+                    <div><strong>ECI座標系 (km):</strong></div>
+                    <div>X: ${eciPosition.x.toFixed(2)}</div>
+                    <div>Y: ${eciPosition.y.toFixed(2)}</div>
+                    <div>Z: ${eciPosition.z.toFixed(2)}</div>
+                </div>
+            `;
+        }
+        
+        let geodeticInfo = '';
+        if (geodetic) {
+            geodeticInfo = `
+                <div style="margin-top: 8px;">
+                    <div><strong>緯度経度高度:</strong></div>
+                    <div>緯度: ${geodetic.latitude.toFixed(4)}°</div>
+                    <div>経度: ${geodetic.longitude.toFixed(4)}°</div>
+                    <div>高度: ${geodetic.altitude.toFixed(1)} km</div>
+                </div>
+            `;
+        }
+        
         this.elements.orbitInfo.innerHTML = `
             <div style="font-size: 12px; color: #666; margin-top: 10px;">
                 <div><strong>軌道情報:</strong></div>
@@ -98,6 +122,8 @@ export class UIControls {
                 <div>周期: ${orbitElements.period.toFixed(1)} 分</div>
                 <div>離心率: ${orbitElements.eccentricity.toFixed(3)}</div>
                 <div>傾斜角: ${orbitElements.inclination.toFixed(1)}°</div>
+                ${eciInfo}
+                ${geodeticInfo}
             </div>
         `;
     }

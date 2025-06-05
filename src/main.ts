@@ -96,8 +96,14 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
         );
         
+        // 基準衛星の軌道要素を設定
+        Satellite.setReferenceOrbit(this.currentOrbitElements);
+        
+        // ECI座標を取得
+        const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements);
+        
         // UI表示を更新
-        this.uiControls.updateOrbitInfo(this.currentOrbitElements);
+        this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
     }
     
     
@@ -213,6 +219,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             // Update info and plots
             if (this.animationFrameCounter % 10 === 0) {
                 this.updateInfo();
+                this.updateOrbitInfoRealtime();
                 this.renderingSystem.updatePlots(this.satellites);
             }
             
@@ -244,9 +251,36 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                     周期: ${this.currentOrbitElements.period.toFixed(1)} 分 | 
                     傾斜角: ${this.currentOrbitElements.inclination.toFixed(1)}°
                     </div>`;
+            
+            // ECI座標を取得して表示（現在時刻で計算）
+            const currentDate = new Date(Date.now() + this.time * 1000);
+            const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements, currentDate);
+            if (eciData) {
+                html += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; color: #666;">
+                        <strong>ECI座標系 (km):</strong><br>
+                        X: ${eciData.position.x.toFixed(2)} | 
+                        Y: ${eciData.position.y.toFixed(2)} | 
+                        Z: ${eciData.position.z.toFixed(2)}<br>
+                        <strong>緯度経度高度:</strong><br>
+                        緯度: ${eciData.geodetic.latitude.toFixed(4)}° | 
+                        経度: ${eciData.geodetic.longitude.toFixed(4)}° | 
+                        高度: ${eciData.geodetic.altitude.toFixed(1)} km
+                        </div>`;
+            }
         }
         
         infoDiv.innerHTML = html;
+    }
+    
+    private updateOrbitInfoRealtime(): void {
+        if (!this.currentOrbitElements) return;
+        
+        // 現在時刻でECI座標と緯度経度高度を計算
+        const currentDate = new Date(Date.now() + this.time * 1000);
+        const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements, currentDate);
+        
+        // UIの軌道情報エリアを更新
+        this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
     }
     
     private checkSatelliteSelection(): void {
@@ -460,8 +494,14 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
         );
         
+        // 基準衛星の軌道要素を更新
+        Satellite.setReferenceOrbit(this.currentOrbitElements);
+        
+        // ECI座標を取得
+        const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements);
+        
         // UI表示を更新
-        this.uiControls.updateOrbitInfo(this.currentOrbitElements);
+        this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
         
         // 軌道パラメータを更新
         this.updateOrbitParameters();
@@ -477,4 +517,5 @@ let simulation: HillEquationSimulation;
 
 document.addEventListener('DOMContentLoaded', () => {
     simulation = new HillEquationSimulation();
+    (window as any).simulation = simulation;
 });
