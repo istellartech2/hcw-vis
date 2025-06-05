@@ -101,10 +101,10 @@ function nearest_hex_points_in_polar(X):
 
 極座標がわかっていれば以下の条件の初期状態で座標が得られる。
 - x0  = (r / √5) * cos(θ)         
-- dx0/dt  = (r * n / √5) * sin(θ)
 - y0  = (2r / √5) * sin(θ)
-- dy0/dt  = -(2r * n / √5) * cos(θ)
 - z0  = (√3 * r / √5) * cos(θ),    
+- dx0/dt  = (r * n / √5) * sin(θ)
+- dy0/dt  = -(2r * n / √5) * cos(θ)
 - dz0/dt  = (√3 * r * n / √5) * sin(θ)
 
 ---

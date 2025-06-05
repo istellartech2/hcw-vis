@@ -346,85 +346,86 @@ export class OrbitInitializer {
     private generateHexagonalDisk(count: number, radiusKm: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         
-        // 円盤内の正六角形タイリング
-        // 半径radiusKm内に頂点を配置
+        // docs/diskOrbit.mdに基づいた実装
+        // 正六角形タイル張り（ハニカム格子）を使用
         
-        // まず必要な層数を計算
-        // 総数が指定数に近くなるように層数を決定
-        let totalPoints = 1; // 中心点
-        let layers = 0;
+        // Step 1: 必要な最小リング数kを計算
+        const k = Math.ceil((-3 + Math.sqrt(12 * count - 3)) / 6);
         
-        while (totalPoints < count) {
-            layers++;
-            totalPoints += 6 * layers;
+        // Step 2: 軸座標(m, n)の点を生成し、半径の二乗を計算
+        interface HexPoint {
+            m: number;
+            n: number;
+            r_sq: number;
+            x: number;
+            y: number;
         }
         
-        // 格子間隔を計算（円盤内に収まるように）
-        const latticeSpacing = radiusKm / (layers + 0.5);
+        const points: HexPoint[] = [];
         
-        // z軸の振幅（circular_orbitを参考に）
-        const z_amplitude = Math.sqrt(3) * latticeSpacing;
+        // 範囲 m = -k ... k でループ
+        for (let m = -k; m <= k; m++) {
+            // n の有効範囲を d ≤ k 条件で絞る
+            const n_min = Math.max(-k, -m - k);
+            const n_max = Math.min(k, -m + k);
+            
+            for (let n = n_min; n <= n_max; n++) {
+                // 距離条件をチェック
+                const d = (Math.abs(m) + Math.abs(n) + Math.abs(m + n)) / 2;
+                if (d <= k) {
+                    // 直交座標への変換
+                    const x = m + 0.5 * n;
+                    const y = (Math.sqrt(3) / 2) * n;
+                    
+                    // 半径の二乗
+                    const r_sq = m * m + m * n + n * n;
+                    
+                    points.push({ m, n, r_sq, x, y });
+                }
+            }
+        }
         
-        // 中心点を追加
-        positions.push({
-            x0: 0,
-            y0: 0,
-            z0: 0,
-            vx0: 0,
-            vy0: 0,
-            vz0: 0
+        // Step 3: r_sq昇順 → theta昇順にソート
+        points.sort((a, b) => {
+            if (a.r_sq !== b.r_sq) {
+                return a.r_sq - b.r_sq;
+            }
+            // r_sqが同じ場合はthetaでソート
+            const theta_a = Math.atan2(a.y, a.x);
+            const theta_b = Math.atan2(b.y, b.x);
+            return theta_a - theta_b;
         });
         
-        // 各層の点を追加
-        let pointCount = 1;
-        for (let layer = 1; layer <= layers && pointCount < count; layer++) {
-            const layerRadius = layer * latticeSpacing;
+        // Step 4: 先頭count個を取得し、円軌道の初期条件に変換
+        const sqrt5 = Math.sqrt(5);
+        
+        for (let i = 0; i < Math.min(count, points.length); i++) {
+            const point = points[i];
             
-            // 各層には6*layer個の点がある
-            const pointsInLayer = 6 * layer;
+            // 極座標に変換
+            const r_normalized = Math.sqrt(point.r_sq);
+            const theta = Math.atan2(point.y, point.x);
             
-            for (let i = 0; i < pointsInLayer && pointCount < count; i++) {
-                // 六角形の6つの辺に沿って配置
-                // 各辺にはlayer個の点
-                const side = Math.floor(i / layer);
-                const positionOnSide = i % layer;
-                
-                // 頂点の角度を計算
-                const baseAngle = side * Math.PI / 3; // 60度ずつ
-                const nextAngle = (side + 1) * Math.PI / 3;
-                
-                // 辺に沿った補間
-                const t = positionOnSide / layer;
-                const angle = baseAngle + t * (nextAngle - baseAngle);
-                
-                // xy座標を計算
-                const x = layerRadius * Math.cos(angle);
-                const y = layerRadius * Math.sin(angle);
-                
-                // Hill方程式の周期解を適用
-                // 位相を各点で変える
-                const phase = angle;
-                
-                const x0 = x;
-                const y0 = -2 * x * Math.sin(phase);
-                const z0 = z_amplitude * Math.cos(phase) * (layerRadius / radiusKm);
-                
-                // 速度成分（Hill方程式の周期解）
-                const vx0 = this.n * y0 / 2;
-                const vy0 = -2 * this.n * x0;
-                const vz0 = -this.n * z_amplitude * Math.sin(phase) * (layerRadius / radiusKm);
-                
-                positions.push({
-                    x0: x0,
-                    y0: y0,
-                    z0: z0,
-                    vx0: vx0,
-                    vy0: vy0,
-                    vz0: vz0
-                });
-                
-                pointCount++;
-            }
+            // 実際の半径にスケール
+            const r = (r_normalized / k) * radiusKm;
+            
+            // 円軌道の初期条件（docs/diskOrbit.mdの式を使用）
+            const x0 = (r / sqrt5) * Math.cos(theta);
+            const y0 = (2 * r / sqrt5) * Math.sin(theta);
+            const z0 = (Math.sqrt(3) * r / sqrt5) * Math.cos(theta);
+            
+            const vx0 = (r * this.n / sqrt5) * Math.sin(theta);
+            const vy0 = -(2 * r * this.n / sqrt5) * Math.cos(theta);
+            const vz0 = (Math.sqrt(3) * r * this.n / sqrt5) * Math.sin(theta);
+            
+            positions.push({
+                x0: x0,
+                y0: y0,
+                z0: z0,
+                vx0: vx0,
+                vy0: vy0,
+                vz0: vz0
+            });
         }
         
         return positions;
