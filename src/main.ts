@@ -374,51 +374,14 @@ class HillEquationSimulation {
     
     private updateInfo(): void {
         const infoDiv = document.getElementById('satelliteInfo')!;
-        let html = '<strong>衛星の状態:</strong><br>';
+        let html = '基準衛星の状態:';
         
         // 現在の軌道パラメータを表示
         const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);
         const orbitalPeriod = (2 * Math.PI) / this.n / 60;  // 分
-        html += `<div style="margin-bottom: 10px; color: #999;">
-                軌道高度: ${altitude.toFixed(0)} km | 
-                平均運動: ${(this.n * 1000).toFixed(3)} mrad/s | 
+        html += `<div style="margin-bottom: 5px; color: #999;">
                 周期: ${orbitalPeriod.toFixed(1)} 分
                 </div>`;
-        
-        this.satellites.forEach((sat, index) => {
-            if (index > 0) {
-                const pos = sat.getPosition();
-                const r = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
-                
-                // 配置パターン別の情報を表示
-                let extraInfo = '';
-                const pattern = this.uiControls.elements.placementPattern.value;
-                if (pattern === 'axis') {
-                    extraInfo = ` (軸上配置)`;
-                } else if (pattern === 'grid') {
-                    extraInfo = ` (格子配置)`;
-                } else if (pattern === 'random_position') {
-                    extraInfo = ` (ランダム位置)`;
-                } else if (pattern === 'random_position_velocity') {
-                    extraInfo = ` (ランダム位置速度)`;
-                } else if (pattern === 'random_periodic') {
-                    extraInfo = ` (ランダム周期解)`;
-                } else if (pattern === 'xy_ellipse') {
-                    extraInfo = ` (XY平面楕円)`;
-                } else if (pattern === 'circular_orbit') {
-                    extraInfo = ` (円軌道)`;
-                } else if (pattern === 'vbar_approach') {
-                    extraInfo = ` (V-bar軌道)`;
-                } else if (pattern === 'rbar_approach') {
-                    extraInfo = ` (R-bar軌道)`;
-                }
-                
-                html += `<span class="satellite-info">
-                        <span class="color-indicator" style="background-color: ${sat.color}"></span>
-                        衛星${index}${extraInfo}
-                        </span>`;
-            }
-        });
         
         infoDiv.innerHTML = html;
     }
