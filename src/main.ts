@@ -4,53 +4,37 @@ import { HillEquationSolver } from './physics/HillEquationSolver.js';
 import { OrbitInitializer } from './physics/OrbitInitializer.js';
 import { OrbitElementsCalculator } from './physics/OrbitElements.js';
 import type { OrbitalElements } from './physics/OrbitElements.js';
-import { TrailRenderer } from './visualization/TrailRenderer.js';
-import { PlotRenderer } from './visualization/PlotRenderer.js';
-import { CelestialBodies } from './visualization/CelestialBodies.js';
 import { UIControls } from './ui/UIControls.js';
+import { CameraController } from './controls/CameraController.js';
+import { EventHandler } from './controls/EventHandler.js';
+import type { EventHandlerCallbacks } from './controls/EventHandler.js';
+import { RenderingSystem } from './rendering/RenderingSystem.js';
 
-class HillEquationSimulation {
+class HillEquationSimulation implements EventHandlerCallbacks {
     private container: HTMLElement;
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
     private satellites: Satellite[] = [];
-    private satelliteMeshes: THREE.Mesh[] = [];
-    private time: number = 0;  // 秒単位
-    private dt: number = 0.1;  // 積分時間ステップ（秒）
+    private time: number = 0;
+    private dt: number = 0.1;
     private paused: boolean = false;
-    private animationFrameCounter: number = 0;  // アニメーションフレームカウンター
-    private n: number = 1.126e-3;  // rad/s (地球低軌道高度400km, 軌道周期約92.7分)
-    private orbitRadius: number = 6778000;  // m (地球半径 + 高度400km)
-    private cameraAngle: number = 0;
-    private viewMode: number = 0;
-    private mouseX: number = 0;
-    private mouseY: number = 0;
-    private mouseDown: boolean = false;
-    private cameraPhi: number = Math.PI / 3;  // より真上からの視点
-    private cameraTheta: number = Math.PI / 4;
-    private cameraDistance: number = 400;  // より近い距離
-    private pinchStartDistance: number | null = null;
-    private initialCameraDistance: number = 400;
-    private gridHelper: THREE.GridHelper;
+    private animationFrameCounter: number = 0;
+    private n: number = 1.126e-3;
+    private orbitRadius: number = 6778000;
     
-    // 衛星選択関連
-    private selectedSatelliteIndex: number = -1;
-    private raycaster: THREE.Raycaster;
-    private mouse: THREE.Vector2;
-    
-    // ヘルパークラス
+    // System components
     private hillSolver: HillEquationSolver;
     private orbitInitializer: OrbitInitializer;
-    private trailRenderer: TrailRenderer;
-    private plotRenderer: PlotRenderer;
-    private celestialBodies: CelestialBodies;
     private uiControls: UIControls;
+    private cameraController: CameraController;
+    private eventHandler: EventHandler;
+    private renderingSystem: RenderingSystem;
     
-    // 軌道要素
+    // Orbital elements
     private currentOrbitElements: OrbitalElements;
     
-    // 全画面モード
+    // Fullscreen mode
     private isFullscreen: boolean = false;
     private originalContainerStyle: string = '';
     
@@ -69,175 +53,34 @@ class HillEquationSimulation {
             alpha: true 
         });
         
-        // ヘルパークラスの初期化
+        // System components initialization
         this.hillSolver = new HillEquationSolver(this.n);
         this.orbitInitializer = new OrbitInitializer(this.n);
-        this.trailRenderer = new TrailRenderer(this.scene);
-        this.plotRenderer = new PlotRenderer();
-        this.celestialBodies = new CelestialBodies(this.scene);
         this.uiControls = new UIControls();
+        this.cameraController = new CameraController(this.camera, this.container);
+        this.renderingSystem = new RenderingSystem(this.scene, this.camera, this.renderer, this.container, this.uiControls);
+        this.eventHandler = new EventHandler(this.uiControls, this.renderingSystem.getCelestialBodies(), this, this.container);
         
-        // レイキャスター初期化
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
-        
-        this.setupRenderer();
-        this.setupLighting();
-        this.setupMouseControls();
-        this.createAxes();
-        this.gridHelper = this.createGrid();
-        this.setupEventListeners();
-        this.initializeOrbitElements();  // 軌道要素の初期化
-        this.updateOrbitParameters();  // 初期値で軌道パラメータを計算
-        this.uiControls.setupPlacementPatternLimits();  // 初期配置に応じた衛星数の設定
+        this.setupSatelliteSelectionListener();
+        this.initializeOrbitElements();
+        this.updateOrbitParameters();
+        this.uiControls.setupPlacementPatternLimits();
         this.initSimulation();
         
-        // 地球を作成（軌道半径をkmで渡す）
-        this.celestialBodies.createEarth(this.orbitRadius / 1000); // kmに変換
-        this.celestialBodies.setEarthVisibility(true);
-        
+        // Create Earth
+        this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius / 1000);
+        this.renderingSystem.getCelestialBodies().setEarthVisibility(true);
         
         this.animate();
     }
     
-    private setupRenderer(): void {
-        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        // 新しい座標系に合わせてカメラ位置を調整
-        // X=Along-track(進行方向), Y=Radial(動径方向-上), Z=Cross-track(軌道面垂直)
-        this.camera.position.set(100, 250, 100);
-        this.camera.lookAt(0, 0, 0);
+    private setupSatelliteSelectionListener(): void {
+        this.container.addEventListener('satelliteSelected', (e: CustomEvent) => {
+            this.updateSelectedSatelliteInfo(e.detail.index);
+        });
     }
     
-    private setupLighting(): void {
-        const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
-        this.scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(100, 100, 50);
-        this.scene.add(directionalLight);
-        
-        const pointLight = new THREE.PointLight(0x4a9eff, 0.5);
-        pointLight.position.set(0, 0, 0);
-        this.scene.add(pointLight);
-    }
     
-    private setupMouseControls(): void {
-        this.container.addEventListener('mousedown', (e) => {
-            this.mouseDown = true;
-            this.mouseX = e.clientX;
-            this.mouseY = e.clientY;
-        });
-
-        this.container.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                this.mouseDown = true;
-                this.mouseX = e.touches[0].clientX;
-                this.mouseY = e.touches[0].clientY;
-            } else if (e.touches.length === 2) {
-                this.mouseDown = false;
-                this.pinchStartDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
-                this.initialCameraDistance = this.cameraDistance;
-            }
-        });
-
-        this.container.addEventListener('mousemove', (e) => {
-            if (this.mouseDown) {
-                const deltaX = e.clientX - this.mouseX;
-                const deltaY = e.clientY - this.mouseY;
-                this.cameraTheta -= deltaX * 0.01;
-                this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
-                this.mouseX = e.clientX;
-                this.mouseY = e.clientY;
-            }
-        });
-
-        this.container.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1 && this.mouseDown) {
-                const deltaX = e.touches[0].clientX - this.mouseX;
-                const deltaY = e.touches[0].clientY - this.mouseY;
-                this.cameraTheta -= deltaX * 0.01;
-                this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
-                this.mouseX = e.touches[0].clientX;
-                this.mouseY = e.touches[0].clientY;
-            } else if (e.touches.length === 2 && this.pinchStartDistance !== null) {
-                const newDist = this.getTouchDistance(e.touches[0], e.touches[1]);
-                const scale = this.pinchStartDistance / newDist;
-                this.cameraDistance = this.initialCameraDistance * scale;
-                this.cameraDistance = Math.max(200, Math.min(2000, this.cameraDistance));
-            }
-        }, { passive: false });
-
-        this.container.addEventListener('mouseup', () => {
-            this.mouseDown = false;
-        });
-
-        this.container.addEventListener('touchend', () => {
-            this.mouseDown = false;
-            this.pinchStartDistance = null;
-        });
-
-        // 衛星選択のためのクリックイベント
-        this.container.addEventListener('click', (e) => {
-            const rect = this.container.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-            
-            this.checkSatelliteSelection();
-        });
-        
-        this.container.addEventListener('wheel', (e) => {
-            this.cameraDistance *= (1 + e.deltaY * 0.001);
-            this.cameraDistance = Math.max(200, Math.min(2000, this.cameraDistance));
-        });
-    }
-
-    private getTouchDistance(t1: Touch, t2: Touch): number {
-        const dx = t1.clientX - t2.clientX;
-        const dy = t1.clientY - t2.clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-    
-    private createAxes(): void {
-        const axesGroup = new THREE.Group();
-        
-        // Three.js座標系での軸表示（ヒル方程式座標系に対応）
-        // Three.js X軸 = Along-track（進行方向）
-        const xGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(300, 0, 0)
-        ]);
-        const xMaterial = new THREE.LineBasicMaterial({ color: 0x4ecdc4 }); // 青緑（進行方向）
-        const xAxis = new THREE.Line(xGeometry, xMaterial);
-        axesGroup.add(xAxis);
-        
-        // Three.js Y軸 = Radial（動径方向）
-        const yGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 300, 0)
-        ]);
-        const yMaterial = new THREE.LineBasicMaterial({ color: 0xff6b6b }); // 赤（動径方向）
-        const yAxis = new THREE.Line(yGeometry, yMaterial);
-        axesGroup.add(yAxis);
-        
-        // Three.js Z軸 = Cross-track（軌道面垂直）
-        const zGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 0, 300)
-        ]);
-        const zMaterial = new THREE.LineBasicMaterial({ color: 0xf7b731 }); // 黄（軌道面垂直）
-        const zAxis = new THREE.Line(zGeometry, zMaterial);
-        axesGroup.add(zAxis);
-        
-        this.scene.add(axesGroup);
-    }
-    
-    private createGrid(): THREE.GridHelper {
-        const gridHelper = new THREE.GridHelper(1000, 20, 0x444444, 0x222222);
-        gridHelper.position.y = -200;
-        this.scene.add(gridHelper);
-        return gridHelper;
-    }
     
     private initializeOrbitElements(): void {
         // UIから初期値を読み取り
@@ -257,53 +100,19 @@ class HillEquationSimulation {
         this.uiControls.updateOrbitInfo(this.currentOrbitElements);
     }
     
-    private updateOrbitElementsFromUI(): void {
-        const inclination = parseFloat(this.uiControls.elements.inclination.value);
-        const raan = parseFloat(this.uiControls.elements.raan.value);
-        const eccentricity = parseFloat(this.uiControls.elements.eccentricity.value);
-        const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
-        const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
-        const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);
-        
-        // 入力値の妥当性チェック
-        const errors = OrbitElementsCalculator.validateElements({
-            inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
-        });
-        
-        if (errors.length > 0) {
-            console.warn("軌道要素入力エラー:", errors);
-            return;
-        }
-        
-        // 軌道要素を再計算
-        this.currentOrbitElements = OrbitElementsCalculator.calculateOrbitalElements(
-            inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
-        );
-        
-        // UI表示を更新
-        this.uiControls.updateOrbitInfo(this.currentOrbitElements);
-        
-        // 軌道パラメータを更新
-        this.updateOrbitParameters();
-    }
     
     private updateOrbitParameters(): void {
         if (!this.currentOrbitElements) return;
         
-        // 軌道要素から軌道半径を取得
-        const radiusKm = this.currentOrbitElements.semiMajorAxis;  // km
-        this.orbitRadius = radiusKm * 1000;  // m
+        const radiusKm = this.currentOrbitElements.semiMajorAxis;
+        this.orbitRadius = radiusKm * 1000;
+        this.n = this.currentOrbitElements.meanMotion;
         
-        // 平均運動を軌道要素から取得
-        this.n = this.currentOrbitElements.meanMotion;  // rad/s
-        
-        // ヘルパークラスも更新
         this.hillSolver.updateMeanMotion(this.n);
         this.orbitInitializer.updateMeanMotion(this.n);
         
-        // 地球の位置とサイズを更新（軌道半径を渡す）
-        if (this.celestialBodies) {
-            this.celestialBodies.createEarth(radiusKm);
+        if (this.renderingSystem) {
+            this.renderingSystem.getCelestialBodies().createEarth(radiusKm);
         }
     }
     
@@ -312,47 +121,27 @@ class HillEquationSimulation {
         return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier);
     }
     
-    private updateAllSatelliteColors(): void {
+    public updateAllSatelliteColors(): void {
         const isUniform = this.uiControls.elements.uniformSatelliteColor.checked;
         const uniformColor = this.uiControls.elements.satelliteColor.value;
-        const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         const hexColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff'];
         
-        for (let i = 1; i < this.satellites.length; i++) { // Skip center satellite (index 0)
+        for (let i = 1; i < this.satellites.length; i++) {
             const satellite = this.satellites[i];
-            const mesh = this.satelliteMeshes[i];
-            
             if (isUniform) {
-                // Use uniform color
-                const uniformColorInt = parseInt(uniformColor.replace('#', ''), 16);
                 satellite.color = uniformColor;
-                (mesh.material as THREE.MeshPhongMaterial).color.setHex(uniformColorInt);
-                (mesh.material as THREE.MeshPhongMaterial).emissive.setHex(uniformColorInt);
             } else {
-                // Use default color array
-                const colorIndex = (i - 1) % colors.length; // Adjust index for non-center satellites
+                const colorIndex = (i - 1) % hexColors.length;
                 satellite.color = hexColors[colorIndex];
-                (mesh.material as THREE.MeshPhongMaterial).color.setHex(colors[colorIndex]);
-                (mesh.material as THREE.MeshPhongMaterial).emissive.setHex(colors[colorIndex]);
             }
         }
+        
+        this.renderingSystem.updateAllSatelliteColors();
     }
     
     private initSimulation(): void {
-        // 既存のメッシュを削除
-        this.satelliteMeshes.forEach(mesh => {
-            this.scene.remove(mesh);
-            if (mesh.geometry) mesh.geometry.dispose();
-            if (mesh.material && Array.isArray(mesh.material)) {
-                mesh.material.forEach(mat => mat.dispose());
-            } else if (mesh.material) {
-                (mesh.material as THREE.Material).dispose();
-            }
-        });
-        
-        // 既存の衛星オブジェクトを適切にクリーンアップ
+        // Clean up existing satellites
         this.satellites.forEach(sat => {
-            if (sat.trailLine) this.scene.remove(sat.trailLine);
             sat.dispose();
         });
         
@@ -361,52 +150,31 @@ class HillEquationSimulation {
         const pattern = this.uiControls.elements.placementPattern.value;
         
         this.satellites = [];
-        this.satelliteMeshes = [];
         
-        const centerGeometry = new THREE.SphereGeometry(8, 32, 32);
-        const centerMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xffffff,
-            emissive: 0xffffff,
-            emissiveIntensity: 0.3
-        });
-        const centerMesh = new THREE.Mesh(centerGeometry, centerMaterial);
-        this.scene.add(centerMesh);
-        this.satelliteMeshes.push(centerMesh);
+        // Create center satellite
         this.satellites.push(new Satellite(0, 0, 0, 0, 0, 0, '#ffffff'));
         
         const useUniformColor = this.uiControls.elements.uniformSatelliteColor.checked;
         const uniformColor = this.uiControls.elements.satelliteColor.value;
-        const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         const hexColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff'];
         
         const zAmplitudeMultiplier = parseFloat(this.uiControls.elements.zAmplitude.value) || 0;
         const positions = this.generatePlacementPositions(pattern, count, radius, 0, zAmplitudeMultiplier);
         
         positions.forEach((pos, i) => {
-            const satGeometry = new THREE.SphereGeometry(6, 32, 32);
-            
-            let materialColor: number;
             let satelliteColor: string;
             
             if (useUniformColor) {
-                materialColor = parseInt(uniformColor.replace('#', ''), 16);
                 satelliteColor = uniformColor;
             } else {
-                materialColor = colors[i % colors.length];
                 satelliteColor = hexColors[i % hexColors.length];
             }
             
-            const satMaterial = new THREE.MeshPhongMaterial({ 
-                color: materialColor,
-                emissive: materialColor,
-                emissiveIntensity: 0.2
-            });
-            const satMesh = new THREE.Mesh(satGeometry, satMaterial);
-            this.scene.add(satMesh);
-            this.satelliteMeshes.push(satMesh);
-            
             this.satellites.push(new Satellite(pos.x0, pos.y0, pos.z0, pos.vx0, pos.vy0, pos.vz0, satelliteColor));
         });
+        
+        // Create meshes in rendering system
+        this.renderingSystem.createSatelliteMeshes(this.satellites);
         
         this.time = 0;
     }
@@ -417,15 +185,12 @@ class HillEquationSimulation {
         if (!this.paused) {
             this.animationFrameCounter++;
             const timeScale = parseFloat(this.uiControls.elements.timeScale.value);
-            const deltaTime = 0.016 * timeScale;  // 16ms = 0.016秒
+            const deltaTime = 0.016 * timeScale;
             this.time += deltaTime;
             
-            // 積分時間ステップを倍速時間に応じて調整
-            // 倍速が大きいほど大きなステップを使用（計算負荷軽減）
+            // Physics integration
             const adaptiveDt = Math.min(this.dt * Math.max(1, timeScale / 10), deltaTime);
-            
-            // 数値積分の実行（衛星数が多い場合は計算を間引く）
-            const satelliteCount = this.satellites.length - 1; // 中心衛星を除く
+            const satelliteCount = this.satellites.length - 1;
             const skipIntegration = satelliteCount > 20 && this.animationFrameCounter % 2 !== 0;
             
             if (!skipIntegration) {
@@ -434,66 +199,38 @@ class HillEquationSimulation {
                 
                 for (let step = 0; step < integrationSteps; step++) {
                     this.satellites.forEach((sat, index) => {
-                        if (index > 0) {  // 中心衛星は動かさない
+                        if (index > 0) {
                             this.hillSolver.rungeKutta4Step(sat, stepDt);
                         }
                     });
                 }
             }
             
-            {
-                // 手動カメラ操作も新しい座標系に対応
-                this.camera.position.x = Math.sin(this.cameraTheta) * Math.sin(this.cameraPhi) * this.cameraDistance;
-                this.camera.position.y = Math.cos(this.cameraPhi) * this.cameraDistance;
-                this.camera.position.z = Math.cos(this.cameraTheta) * Math.sin(this.cameraPhi) * this.cameraDistance;
-                this.camera.lookAt(0, 0, 0);
-            }
+            // Update camera and rendering
+            this.cameraController.updateCameraPosition();
+            this.renderingSystem.updateSatellitePositions(this.satellites);
             
-            this.satellites.forEach((sat, index) => {
-                const pos = sat.getPosition();
-                const scale = 1000;
-                // ヒル方程式座標系からThree.js座標系への変換
-                // Hill: x=Radial, y=Along-track, z=Cross-track
-                // Three.js: X=Along-track(右), Y=Radial(上), Z=Cross-track(手前)
-                this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
-                
-                // 選択された衛星をハイライト
-                if (index === this.selectedSatelliteIndex) {
-                    (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).emissiveIntensity = 0.8;
-                } else {
-                    (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).emissiveIntensity = 0.2;
-                }
-                
-                if (this.uiControls.elements.showTrails.checked && index > 0) {
-                    const trailMax = parseInt(this.uiControls.elements.trailLength.value);
-                    const color = (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).color;
-                    this.trailRenderer.updateTrail(sat, pos, scale, color, trailMax);
-                }
-            });
-            
-            // 情報表示と2Dプロットは10フレームに1回だけ更新（計算負荷軽減）
+            // Update info and plots
             if (this.animationFrameCounter % 10 === 0) {
                 this.updateInfo();
-                this.plotRenderer.update(this.satellites);
+                this.renderingSystem.updatePlots(this.satellites);
             }
             
-            // 選択衛星の情報を毎フレーム更新（リアルタイム表示）
-            if (this.selectedSatelliteIndex >= 0) {
-                this.updateSelectedSatelliteInfo();
+            // Update selected satellite info
+            if (this.renderingSystem.getSelectedSatelliteIndex() >= 0) {
+                this.updateSelectedSatelliteInfo(this.renderingSystem.getSelectedSatelliteIndex());
             }
             
-            // 時間表示は5フレームに1回更新
+            // Update time display
             if (this.animationFrameCounter % 5 === 0) {
                 this.uiControls.updateTimeDisplay(this.time);
             }
             
-            // 天体の更新
-            this.celestialBodies.update(this.time);
+            // Update celestial bodies
+            this.renderingSystem.updateCelestialBodies(this.time);
         }
         
-        this.gridHelper.visible = this.uiControls.elements.showGrid.checked;
-        
-        this.renderer.render(this.scene, this.camera);
+        this.renderingSystem.render();
     }
     
     
@@ -531,7 +268,12 @@ class HillEquationSimulation {
         }
     }
     
-    private updateSelectedSatelliteInfo(): void {
+    public updateSelectedSatelliteInfo(index?: number): void {
+        if (index !== undefined) {
+            this.renderingSystem.setSelectedSatelliteIndex(index);
+        }
+        
+        const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
         const infoDiv = document.getElementById('selectedSatelliteInfo');
         if (!infoDiv) {
             // 選択衛星情報表示エリアを作成
@@ -556,8 +298,8 @@ class HillEquationSimulation {
         
         const selectedInfoDiv = document.getElementById('selectedSatelliteInfo')!;
         
-        if (this.selectedSatelliteIndex >= 0) {
-            const sat = this.satellites[this.selectedSatelliteIndex];
+        if (selectedIndex >= 0) {
+            const sat = this.satellites[selectedIndex];
             const pos = sat.getPosition();
             const vel = sat.getVelocity();
             
@@ -565,7 +307,7 @@ class HillEquationSimulation {
             const v = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
             
             selectedInfoDiv.innerHTML = `
-                <strong>選択衛星: ${this.selectedSatelliteIndex === 0 ? '主衛星' : `衛星${this.selectedSatelliteIndex}`}</strong><br>
+                <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
                 位置: X=${(pos.x*1000).toFixed(0)}, Y=${(pos.y*1000).toFixed(0)}, Z=${(pos.z*1000).toFixed(0)} L<br>
                 速度: ${(v*1000).toFixed(2)} L/s<br>
                 距離: ${(r*1000).toFixed(0)} L<br>
@@ -670,12 +412,13 @@ class HillEquationSimulation {
         }, 100);
     }
     
-    private applyThrustToSelected(axis: string, dv: number): void {
-        if (this.selectedSatelliteIndex < 0 || this.selectedSatelliteIndex >= this.satellites.length) {
+    public applyThrustToSelected(axis: string, dv: number): void {
+        const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
+        if (selectedIndex < 0 || selectedIndex >= this.satellites.length) {
             return;
         }
         
-        const sat = this.satellites[this.selectedSatelliteIndex];
+        const sat = this.satellites[selectedIndex];
         
         // 速度変化を適用（km/s単位）
         switch (axis) {
@@ -694,224 +437,44 @@ class HillEquationSimulation {
         this.updateSelectedSatelliteInfo();
     }
     
-    private setupEventListeners(): void {
-        this.uiControls.elements.timeScale.addEventListener('change', () => {
-            // No need to update display since it's a dropdown
+    public updateOrbitElementsFromUI(): void {
+        const inclination = parseFloat(this.uiControls.elements.inclination.value);
+        const raan = parseFloat(this.uiControls.elements.raan.value);
+        const eccentricity = parseFloat(this.uiControls.elements.eccentricity.value);
+        const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
+        const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
+        const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);
+        
+        // 入力値の妥当性チェック
+        const errors = OrbitElementsCalculator.validateElements({
+            inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
         });
         
-        this.uiControls.elements.trailLength.addEventListener('input', () => {
-            this.uiControls.elements.trailLengthValue.textContent = this.uiControls.elements.trailLength.value;
-        });
+        if (errors.length > 0) {
+            console.warn("軌道要素入力エラー:", errors);
+            return;
+        }
         
-        // リアルタイムパラメータ変更
-        this.uiControls.elements.satelliteCount.addEventListener('change', () => {
-            this.resetSimulation();
-        });
+        // 軌道要素を再計算
+        this.currentOrbitElements = OrbitElementsCalculator.calculateOrbitalElements(
+            inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
+        );
         
-        this.uiControls.elements.placementPattern.addEventListener('change', () => {
-            this.uiControls.setupPlacementPatternLimits();
-            this.resetSimulation();
-        });
+        // UI表示を更新
+        this.uiControls.updateOrbitInfo(this.currentOrbitElements);
         
-        // 軌道要素変更時のイベント
-        const orbitElementInputs = [
-            this.uiControls.elements.inclination,
-            this.uiControls.elements.raan,
-            this.uiControls.elements.eccentricity,
-            this.uiControls.elements.argOfPerigee,
-            this.uiControls.elements.meanAnomaly,
-            this.uiControls.elements.orbitAltitude
-        ];
-        
-        orbitElementInputs.forEach(input => {
-            input.addEventListener('input', () => {
-                this.updateOrbitElementsFromUI();
-            });
-            
-            input.addEventListener('change', () => {
-                this.updateOrbitElementsFromUI();
-                this.resetSimulation();
-            });
-        });
-        
-        this.uiControls.elements.orbitRadius.addEventListener('change', () => {
-            this.resetSimulation();
-        });
-        
-        this.uiControls.elements.zAmplitude.addEventListener('input', () => {
-            this.uiControls.updateZAmplitudeDisplay();
-            this.resetSimulation();
-        });
-        
-        // チェックボックスの変更もリアルタイムで反映（すでに動作している）
-        this.uiControls.elements.showTrails.addEventListener('change', () => {
-            if (!this.uiControls.elements.showTrails.checked) {
-                // 軌跡を非表示にする場合は適切にクリーンアップ
-                this.satellites.forEach(sat => {
-                    this.trailRenderer.clearTrail(sat);
-                });
-            }
-        });
-        
-        this.uiControls.elements.showEarth.addEventListener('change', () => {
-            this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
-        });
-        
-        // Satellite color controls
-        this.uiControls.elements.uniformSatelliteColor.addEventListener('change', () => {
-            this.updateAllSatelliteColors();
-        });
-        
-        this.uiControls.elements.satelliteColor.addEventListener('input', () => {
-            if (this.uiControls.elements.uniformSatelliteColor.checked) {
-                this.updateAllSatelliteColors();
-            }
-        });
-        
-        
-        
-        window.addEventListener('resize', () => {
-            this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
-            this.camera.updateProjectionMatrix();
-            this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-        });
-        
-        // キーボードショートカット
-        window.addEventListener('keydown', (e) => {
-            switch(e.key.toLowerCase()) {
-                case ' ':
-                    e.preventDefault();
-                    this.togglePause();
-                    break;
-                case 'r':
-                    this.resetSimulation();
-                    break;
-                case 'p':
-                    this.addPerturbation();
-                    break;
-                case 'v':
-                    this.changeView();
-                    break;
-                case 't':
-                    this.uiControls.elements.showTrails.checked = !this.uiControls.elements.showTrails.checked;
-                    this.uiControls.elements.showTrails.dispatchEvent(new Event('change'));
-                    break;
-                case 'g':
-                    this.uiControls.elements.showGrid.checked = !this.uiControls.elements.showGrid.checked;
-                    break;
-                case 'e':
-                    this.uiControls.elements.showEarth.checked = !this.uiControls.elements.showEarth.checked;
-                    this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
-                    break;
-                case '+':
-                case '=':
-                    const currentScale = parseFloat(this.uiControls.elements.timeScale.value);
-                    this.uiControls.elements.timeScale.value = Math.min(10, currentScale + 0.5).toString();
-                    // timeScale is a dropdown, no need for value display
-                    break;
-                case '-':
-                case '_':
-                    const currentScale2 = parseFloat(this.uiControls.elements.timeScale.value);
-                    this.uiControls.elements.timeScale.value = Math.max(0, currentScale2 - 0.5).toString();
-                    // timeScale is a dropdown, no need for value display
-                    break;
-                case 'h':
-                    this.showHelp();
-                    break;
-                case 'escape':
-                    if (this.isFullscreen) {
-                        this.toggleFullscreen();
-                    } else {
-                        this.selectedSatelliteIndex = -1;
-                        this.updateSelectedSatelliteInfo();
-                    }
-                    break;
-                // 推力制御キーボードショートカット
-                case 'arrowup':
-                    if (e.shiftKey) {
-                        this.applyThrustToSelected('z', 0.001);
-                    } else {
-                        this.applyThrustToSelected('y', 0.001);
-                    }
-                    e.preventDefault();
-                    break;
-                case 'arrowdown':
-                    if (e.shiftKey) {
-                        this.applyThrustToSelected('z', -0.001);
-                    } else {
-                        this.applyThrustToSelected('y', -0.001);
-                    }
-                    e.preventDefault();
-                    break;
-                case 'arrowleft':
-                    this.applyThrustToSelected('x', -0.001);
-                    e.preventDefault();
-                    break;
-                case 'arrowright':
-                    this.applyThrustToSelected('x', 0.001);
-                    e.preventDefault();
-                    break;
-            }
-        });
+        // 軌道パラメータを更新
+        this.updateOrbitParameters();
     }
     
-    private showHelp(): void {
-        alert(`キーボードショートカット:
-        
-スペース: 一時停止/再開
-R: リセット
-P: 摂動を加える
-V: 視点変更
-T: 軌跡表示切り替え
-G: グリッド表示切り替え
-E: 地球表示切り替え
-Escape: 選択解除/全画面終了
-+/=: 時間スケール増加
--/_: 時間スケール減少
-H: このヘルプを表示
-
-推力制御（衛星選択時）:
-矢印キー上/下: Y軸方向推力
-矢印キー左/右: X軸方向推力
-Shift+矢印キー上/下: Z軸方向推力
-
-マウス操作:
-クリック: 衛星を選択
-ドラッグ: カメラ回転
-スクロール: ズーム
-
-画面操作:
-右下ボタン: 全画面切り替え`);
+    public clearTrails(): void {
+        this.renderingSystem.clearAllTrails();
     }
+    
 }
 
 let simulation: HillEquationSimulation;
 
 document.addEventListener('DOMContentLoaded', () => {
     simulation = new HillEquationSimulation();
-    
-    // Attach functions to window object after simulation is created
-    (window as any).resetSimulation = () => simulation.resetSimulation();
-    (window as any).togglePause = () => simulation.togglePause();
-    (window as any).addPerturbation = () => simulation.addPerturbation();
-    (window as any).changeView = () => simulation.changeView();
-    (window as any).toggleFullscreen = () => simulation.toggleFullscreen();
-    
-    // 折りたたみ機能
-    (window as any).toggleSection = (sectionId: string) => {
-        const content = document.getElementById(sectionId);
-        const icon = document.querySelector(`[onclick*="${sectionId}"] .toggle-icon`);
-        
-        if (content && icon) {
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                icon.textContent = '▲';
-                icon.classList.add('expanded');
-            } else {
-                content.style.display = 'none';
-                icon.textContent = '▼';
-                icon.classList.remove('expanded');
-            }
-        }
-    };
 });
