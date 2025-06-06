@@ -115,7 +115,7 @@ export class CelestialBodies {
             }
         }
         
-        // 赤道線を特別に強調（青色）
+        // 赤道線を特別に強調（オレンジ）
         const equatorPoints: THREE.Vector3[] = [];
         for (let longitude = 0; longitude <= 360; longitude += 1) {
             const theta = longitude * Math.PI / 180;
@@ -127,7 +127,7 @@ export class CelestialBodies {
         
         const equatorGeometry = new THREE.BufferGeometry().setFromPoints(equatorPoints);
         const equatorMaterial = new THREE.LineBasicMaterial({
-            color: 0x0099ff,
+            color: 0xff4500,
             transparent: false,
             opacity: 1.0,
             linewidth: 3
@@ -185,56 +185,76 @@ export class CelestialBodies {
     }
     
     
-    update(time: number): void {
-        // 地球の姿勢を基準衛星から計算
-        const ref = Satellite.getReferenceECIPosition(new Date(Date.now() + time * 1000));
+    update(time: number, simulationStartTime?: Date): void {
+        const baseTime = simulationStartTime ? simulationStartTime.getTime()
+                                            : Date.now();
+        const t         = new Date(baseTime + time * 1000);
+        const ref       = Satellite.getReferenceECIPosition(t);
         if (!ref) return;
 
-        const r0 = new THREE.Vector3(ref.position.x, ref.position.y, ref.position.z);
-        const v0 = new THREE.Vector3(ref.velocity.x, ref.velocity.y, ref.velocity.z);
+        const r0 = new THREE.Vector3(ref.position.x,  ref.position.y,  ref.position.z);
+        const v0 = new THREE.Vector3(ref.velocity.x,  ref.velocity.y,  ref.velocity.z);
 
-        // === ECI → RSW ===
-        const Rhat = r0.clone().normalize();
-        const What = r0.clone().cross(v0).normalize();
-        const Shat = What.clone().cross(Rhat);
+        // --- 1.  ECEF → RSW 変換行列を生成
+        const gmst = satellite.gstime(t);
+        const { m4: ecefToRsw } = this.buildEcefToLvlhTransform(gmst, r0, v0);
+
+        // --- 2.  RSW → Three.js 変換（行列は row-major で記入）
+        const rswToThree = new THREE.Matrix4().set(
+            /* row 1 */ 0, 0, 1, 0,   // W → +X
+            /* row 2 */-1, 0, 0, 0,   // R → -Y
+            /* row 3 */ 0,-1, 0, 0,   // S → -Z
+            /* row 4 */ 0, 0, 0, 1
+        );
+
+        // --- 3.  ECEF → Three.js の複合行列
+        const finalTransform = new THREE.Matrix4()
+            .multiplyMatrices(rswToThree, ecefToRsw);
+
+        // --- 4.  地球オブジェクトの姿勢だけ更新
+        if (this.earth) this.earth.setRotationFromMatrix(finalTransform);
+    }
+
+    /**
+     * ECEF → RSW の 3×3・4×4・Quaternion を返す
+     */
+    private buildEcefToLvlhTransform(
+        gmstRad: number,
+        rECI: THREE.Vector3,
+        vECI: THREE.Vector3
+    ) {
+        /* --- 1. ECI → RSW 基底 --- */s
+        const Rhat = rECI.clone().normalize();            // +R (inward)
+        const What = rECI.clone().cross(vECI).normalize(); // +W
+        const Shat = What.clone().cross(Rhat);             // +S
+
         const Te2r = new THREE.Matrix3().set(
             Rhat.x, Rhat.y, Rhat.z,
             Shat.x, Shat.y, Shat.z,
             What.x, What.y, What.z
-        );
+        ); // ECI → RSW
 
-        // === GMST and ECI ↔︎ ECEF ===
-        const gmst = satellite.gstime(new Date(Date.now() + time * 1000));
-        const c = Math.cos(gmst), s = Math.sin(gmst);
-        const R3 = new THREE.Matrix3().set(
-             c,  s, 0,
-            -s,  c, 0,
-             0,  0, 1
-        );
+        /* --- 2. ECI ↔ ECEF --- */
+        const c = Math.cos(gmstRad), s = Math.sin(gmstRad);
+        const Re2f = new THREE.Matrix3().set(  c,  s, 0,
+                                            -s,  c, 0,
+                                            0,  0, 1 ); // ECI → ECEF
+        const Rf2e = Re2f.clone().transpose();             // ECEF → ECI
 
-        // === ECEF → RSW ===
-        const Tecef2rsw = new THREE.Matrix3();
-        Tecef2rsw.multiplyMatrices(Te2r, R3.clone().transpose());
+        /* --- 3. 合成 (ECEF → RSW) --- */
+        const Tf2r = Te2r.clone().multiply(Rf2e);          // RSW ← ECEF
 
-        // === Convert to Three.js coordinates ===
-        const physToThree = new THREE.Matrix3().set(
-            1, 0, 0,
-            0, 0, 1,
-            0, -1, 0
-        );
-
-        const Tecef2three = new THREE.Matrix3();
-        Tecef2three.multiplyMatrices(physToThree, Tecef2rsw);
-
+        /* --- 4. 型変換 --- */
         const m4 = new THREE.Matrix4().set(
-            Tecef2three.elements[0], Tecef2three.elements[3], Tecef2three.elements[6], 0,
-            Tecef2three.elements[1], Tecef2three.elements[4], Tecef2three.elements[7], 0,
-            Tecef2three.elements[2], Tecef2three.elements[5], Tecef2three.elements[8], 0,
-            0, 0, 0, 1
+            Tf2r.elements[0], Tf2r.elements[3], Tf2r.elements[6], 0,
+            Tf2r.elements[1], Tf2r.elements[4], Tf2r.elements[7], 0,
+            Tf2r.elements[2], Tf2r.elements[5], Tf2r.elements[8], 0,
+            0,                 0,                 0,              1
         );
-
-        this.earthGroup.setRotationFromMatrix(m4);
+        const q = new THREE.Quaternion().setFromRotationMatrix(m4);
+        return { m3: Tf2r, m4, q };
     }
+
     
     setEarthVisibility(visible: boolean): void {
         this.showEarth = visible;

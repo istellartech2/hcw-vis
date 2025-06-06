@@ -21,10 +21,12 @@ export class TrailRenderer {
             // 軌跡も座標変換を適用
             if (sat.trail.length === 0 || sat.frameCounter % 10 === 0) {
                 // 10フレームに1回だけVector3を新規作成
+                // position.x = R (Radial), position.y = S (Along-track), position.z = W (Cross-track)
+                // Three.js: X = W (Cross-track), Y = R (Radial), Z = S (Along-track)
                 sat.trail.push(new THREE.Vector3(
-                    position.y * scale, 
+                    position.z * scale, 
                     position.x * scale, 
-                    position.z * scale
+                    position.y * scale
                 ));
                 if (sat.trail.length > trailMax) {
                     sat.trail.shift();

@@ -6,8 +6,8 @@ export class CameraController {
     private mouseX: number = 0;
     private mouseY: number = 0;
     private mouseDown: boolean = false;
-    private cameraPhi: number = Math.PI / 3;
-    private cameraTheta: number = Math.PI / 4;
+    private cameraPhi: number = -Math.PI / 3;
+    private cameraTheta: number = -Math.PI / 5;
     private cameraDistance: number = 400;
     private pinchStartDistance: number | null = null;
     private initialCameraDistance: number = 400;

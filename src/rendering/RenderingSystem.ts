@@ -176,7 +176,10 @@ export class RenderingSystem {
             const pos = sat.getPosition();
             const scale = 1000;
             // Convert Hill coordinates to Three.js coordinates
-            this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
+            // pos.x = R (Radial), pos.y = S (Along-track), pos.z = W (Cross-track)
+            // Three.js: X = S (Along-track), Y = R (Radial), Z = W (Cross-track)
+            // this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
+            this.satelliteMeshes[index].position.set(pos.z * scale, pos.x * scale, pos.y * scale);
             
             // Highlight selected satellite
             if (index === this.selectedSatelliteIndex) {
@@ -258,8 +261,8 @@ export class RenderingSystem {
         }
     }
 
-    public updateCelestialBodies(time: number): void {
-        this.celestialBodies.update(time);
+    public updateCelestialBodies(time: number, simulationStartTime?: Date): void {
+        this.celestialBodies.update(time, simulationStartTime);
     }
 
     public getCelestialBodies(): CelestialBodies {

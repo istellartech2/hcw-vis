@@ -17,6 +17,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private renderer: THREE.WebGLRenderer;
     private satellites: Satellite[] = [];
     private time: number = 0;
+    private simulationStartTime: Date = new Date();
     private dt: number = 0.1;
     private paused: boolean = false;
     private animationFrameCounter: number = 0;
@@ -184,6 +185,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.renderingSystem.createSatelliteMeshes(this.satellites);
         
         this.time = 0;
+        this.simulationStartTime = new Date();
     }
     
     private animate = (): void => {
@@ -235,7 +237,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             }
             
             // Update celestial bodies
-            this.renderingSystem.updateCelestialBodies(this.time);
+            this.renderingSystem.updateCelestialBodies(this.time, this.simulationStartTime);
         }
         
         this.renderingSystem.render();

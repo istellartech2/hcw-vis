@@ -167,33 +167,88 @@ ECEF→RSW変換行列は、先に示した二つの行列の積で得られる�
 ## 実装例 (TypeScript)
 
 ```ts
+import * as THREE from 'three';
+
 /**
- * gmst: グリニッジ平均恒星時 [rad]
- * r0, v0: 基準衛星のECI位置・速度 (Vector3)
+ * Build the ECEF → LVLH (RSW) attitude transform.
+ *
+ * @param gmstRad  Greenwich Mean Sidereal Time [rad] at the current epoch
+ * @param r0       Chief-satellite **ECI** position (km)            – THREE.Vector3
+ * @param v0       Chief-satellite **ECI** velocity (km s⁻¹)        – THREE.Vector3
+ * @returns        {
+ *                   m3 : THREE.Matrix3   // ECEF basis → LVLH basis
+ *                   m4 : THREE.Matrix4   // same, but 4×4 (for Object3D.matrix)
+ *                   q  : THREE.Quaternion// same, as quaternion (for Object3D.quaternion)
+ *                 }
  */
-function buildTransformMatrices(gmst: number, r0: Vector3, v0: Vector3) {
-    // === ECI→RSW ===
-    const Rhat = r0.normalize();
-    const What = r0.clone().cross(v0).normalize();
-    const Shat = What.clone().cross(Rhat);
-    const Te2r = new Matrix3().set(
-        Rhat.x, Rhat.y, Rhat.z,
-        Shat.x, Shat.y, Shat.z,
-        What.x, What.y, What.z
-    );
+export function buildEcefToLvlhTransform(
+  gmstRad: number,
+  r0: THREE.Vector3,
+  v0: THREE.Vector3
+) {
+  /* ---------- 1.  ECI → LVLH basis ---------- */
+  const Rhat = r0.clone().normalize();            //   x_RSW  (R̂)
+  const What = r0.clone().cross(v0).normalize();  //   z_RSW  (Ŵ)
+  const Shat = What.clone().cross(Rhat);          //   y_RSW  (Ŝ)
 
-    // === ECI→ECEF (Z軸回転) ===
-    const c = Math.cos(gmst), s = Math.sin(gmst);
-    const R3 = new Matrix3().set(
-         c,  s, 0,
-        -s,  c, 0,
-         0,  0, 1
-    );
+  const Te2r = new THREE.Matrix3().set(
+    Rhat.x, Rhat.y, Rhat.z,   // first  row
+    Shat.x, Shat.y, Shat.z,   // second row
+    What.x, What.y, What.z    // third  row
+  ); // (ECI → RSW)
 
-    // === ECEF→RSW ===
-    const Tecef2rsw = Te2r.clone().multiply(R3.transpose()); // R3^T = R3(-gmst)
-    return { Te2r, Tecef2rsw };
+  /* ---------- 2.  ECI ↔︎ ECEF rotation ---------- */
+  const c = Math.cos(gmstRad);
+  const s = Math.sin(gmstRad);
+
+  // ECI → ECEF, rotation about Z
+  const Re2f = new THREE.Matrix3().set(
+     c,  s, 0,
+    -s,  c, 0,
+     0,  0, 1
+  );
+
+  // We need the opposite direction: ECEF → ECI
+  const Rf2e = Re2f.clone().transpose(); // == R3(−gmst)
+
+  /* ---------- 3.  Compose:  ECEF → LVLH ---------- */
+  const Tf2r = Te2r.clone().multiply(Rf2e); // (ECI→RSW)·(ECEF→ECI)
+
+  /* ---------- 4.  Export as Matrix3, Matrix4, Quaternion ---------- */
+  const m3 = Tf2r;
+
+  const m4 = new THREE.Matrix4().set(
+    m3.elements[0], m3.elements[3], m3.elements[6], 0,
+    m3.elements[1], m3.elements[4], m3.elements[7], 0,
+    m3.elements[2], m3.elements[5], m3.elements[8], 0,
+    0,              0,              0,              1
+  );
+
+  const q = new THREE.Quaternion().setFromRotationMatrix(m4);
+
+  return { m3, m4, q };
 }
+```
+
+## How to use it
+
+```ts
+// 1. Compute GMST for now (any method you like)
+const gmst = currentGmstRad(/* UTC Date */);
+
+// 2. Chief-satellite state in ECI
+const r0 = new THREE.Vector3(x_km, y_km, z_km);
+const v0 = new THREE.Vector3(vx_kms, vy_kms, vz_kms);
+
+// 3. Build transform
+const { m4, q } = buildEcefToLvlhTransform(gmst, r0, v0);
+
+// 4-A. Apply with a matrix:
+earthMesh.matrix.copy(m4);
+earthMesh.matrixAutoUpdate = false;
+
+// 4-B. …or, if you prefer quaternions:
+earthMesh.quaternion.copy(q);
 ```
 
 ---
