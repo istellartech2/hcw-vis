@@ -78,7 +78,7 @@ export class RenderingSystem {
             new THREE.Vector3(0, 0, 0),
             new THREE.Vector3(300, 0, 0)
         ]);
-        const xMaterial = new THREE.LineBasicMaterial({ color: 0x4ecdc4 });
+        const xMaterial = new THREE.LineBasicMaterial({ color: 0x00BFFF });
         const xAxis = new THREE.Line(xGeometry, xMaterial);
         axesGroup.add(xAxis);
         
@@ -87,7 +87,7 @@ export class RenderingSystem {
             new THREE.Vector3(0, 0, 0),
             new THREE.Vector3(0, 300, 0)
         ]);
-        const yMaterial = new THREE.LineBasicMaterial({ color: 0xff6b6b });
+        const yMaterial = new THREE.LineBasicMaterial({ color: 0xFF6B6B });
         const yAxis = new THREE.Line(yGeometry, yMaterial);
         axesGroup.add(yAxis);
         
@@ -96,7 +96,7 @@ export class RenderingSystem {
             new THREE.Vector3(0, 0, 0),
             new THREE.Vector3(0, 0, 300)
         ]);
-        const zMaterial = new THREE.LineBasicMaterial({ color: 0xf7b731 });
+        const zMaterial = new THREE.LineBasicMaterial({ color: 0x2ECC71 });
         const zAxis = new THREE.Line(zGeometry, zMaterial);
         axesGroup.add(zAxis);
         
