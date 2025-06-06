@@ -38,12 +38,23 @@ export class CelestialBodies {
         // 地球の球体ジオメトリ（現実的なサイズ）
         const earthGeometry = new THREE.SphereGeometry(earthRadiusInScene, 64, 64);
         
-        // 地球のマテリアル（シンプルな青い球体）
+        // 地球のテクスチャを読み込み
+        const textureLoader = new THREE.TextureLoader();
+        const earthTexture = textureLoader.load('/public/asset/earth00.webp', 
+            // 読み込み成功時
+            () => console.log('Earth texture loaded successfully'),
+            // 読み込み進行中
+            undefined,
+            // エラー時
+            (error) => console.error('Error loading earth texture:', error)
+        );
+        
+        // 地球のマテリアル（テクスチャ付き）
         const earthMaterial = new THREE.MeshPhongMaterial({
-            color: 0xe0ffff,
+            map: earthTexture,
             emissive: 0x000033,
             emissiveIntensity: 0.05,
-            shininess: 5
+            shininess: 10,
         });
         
         this.earth = new THREE.Mesh(earthGeometry, earthMaterial);
