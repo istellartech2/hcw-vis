@@ -6,8 +6,8 @@ export class CameraController {
     private mouseX: number = 0;
     private mouseY: number = 0;
     private mouseDown: boolean = false;
-    private cameraPhi: number = -Math.PI / 3;
-    private cameraTheta: number = -Math.PI / 5;
+    private cameraPhi: number = Math.PI / 3;
+    private cameraTheta: number = Math.PI / 4;
     private cameraDistance: number = 400;
     private pinchStartDistance: number | null = null;
     private initialCameraDistance: number = 400;
@@ -84,6 +84,14 @@ export class CameraController {
         const dx = t1.clientX - t2.clientX;
         const dy = t1.clientY - t2.clientY;
         return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    public syncWithCameraPosition(): void {
+        const { x, y, z } = this.camera.position;
+        this.cameraDistance = Math.sqrt(x * x + y * y + z * z);
+        if (this.cameraDistance === 0) return;
+        this.cameraPhi = Math.acos(y / this.cameraDistance);
+        this.cameraTheta = Math.atan2(x, z);
     }
 
     public updateCameraPosition(): void {

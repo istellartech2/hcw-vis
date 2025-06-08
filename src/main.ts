@@ -60,6 +60,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.uiControls = new UIControls();
         this.cameraController = new CameraController(this.camera, this.container);
         this.renderingSystem = new RenderingSystem(this.scene, this.camera, this.renderer, this.container, this.uiControls);
+        this.cameraController.syncWithCameraPosition();
         this.eventHandler = new EventHandler(this.uiControls, this.renderingSystem.getCelestialBodies(), this, this.container);
         
         this.setupSatelliteSelectionListener();
