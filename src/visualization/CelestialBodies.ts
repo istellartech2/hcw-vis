@@ -73,11 +73,11 @@ export class CelestialBodies {
     
     private addLatitudeLongitudeLines(earthRadius: number): void {
         // 線を地球表面から少し浮かせて見やすくする
-        const lineRadius = earthRadius * 1.005;
+        const lineRadius = earthRadius * 1.002;
         
         // 一般的な緯度経度線
         const normalLineMaterial = new THREE.LineBasicMaterial({
-            color: 0x88aaff,
+            color: 0xffffff,
             transparent: true,
             opacity: 0.7,
             linewidth: 1
@@ -127,7 +127,7 @@ export class CelestialBodies {
             }
         }
         
-        // 赤道線を特別に強調（オレンジ）
+        // 赤道線を特別に強調（赤色）
         const equatorPoints: THREE.Vector3[] = [];
         for (let longitude = 0; longitude <= 360; longitude += 1) {
             const theta = longitude * Math.PI / 180;
@@ -139,7 +139,7 @@ export class CelestialBodies {
         
         const equatorGeometry = new THREE.BufferGeometry().setFromPoints(equatorPoints);
         const equatorMaterial = new THREE.LineBasicMaterial({
-            color: 0xff4500,
+            color: 0xff0000,
             transparent: false,
             opacity: 1.0,
             linewidth: 3
@@ -147,7 +147,7 @@ export class CelestialBodies {
         const equatorLine = new THREE.Line(equatorGeometry, equatorMaterial);
         this.earth!.add(equatorLine);
         
-        // グリニッジ子午線を特別に強調（赤色）
+        // グリニッジ子午線を特別に強調（青色）
         const greenwichPoints: THREE.Vector3[] = [];
         for (let latitude = -90; latitude <= 90; latitude += 1) {
             const phi = (90 - latitude) * Math.PI / 180;
@@ -159,7 +159,7 @@ export class CelestialBodies {
         
         const greenwichGeometry = new THREE.BufferGeometry().setFromPoints(greenwichPoints);
         const greenwichMaterial = new THREE.LineBasicMaterial({
-            color: 0xff3333,
+            color: 0x0000ff,
             transparent: false,
             opacity: 1.0,
             linewidth: 3
