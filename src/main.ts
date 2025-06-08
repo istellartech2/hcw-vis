@@ -106,6 +106,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // UI表示を更新
         this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
+        this.uiControls.updateGeodeticDisplay(eciData?.geodetic);
     }
     
     
@@ -281,9 +282,10 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         // 現在時刻でECI座標と緯度経度高度を計算
         const currentDate = new Date(Date.now() + this.time * 1000);
         const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements, currentDate);
-        
+
         // UIの軌道情報エリアを更新
         this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
+        this.uiControls.updateGeodeticDisplay(eciData?.geodetic);
     }
     
     // この機能はRenderingSystemに移譲済みのため削除
@@ -466,7 +468,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // UI表示を更新
         this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
-        
+        this.uiControls.updateGeodeticDisplay(eciData?.geodetic);
+
         // 軌道パラメータを更新
         this.updateOrbitParameters();
     }

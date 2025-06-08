@@ -21,6 +21,7 @@ export interface UIControlElements {
     argOfPerigee: HTMLInputElement;
     meanAnomaly: HTMLInputElement;
     orbitInfo: HTMLDivElement;
+    geodeticDisplay: HTMLDivElement;
 }
 
 export class UIControls {
@@ -49,7 +50,8 @@ export class UIControls {
             eccentricity: document.getElementById('eccentricity') as HTMLInputElement,
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,
             meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement,
-            orbitInfo: document.getElementById('orbitInfo') as HTMLDivElement
+            orbitInfo: document.getElementById('orbitInfo') as HTMLDivElement,
+            geodeticDisplay: document.getElementById('geodetic-display') as HTMLDivElement
         };
     }
     
@@ -126,6 +128,15 @@ export class UIControls {
                 ${geodeticInfo}
             </div>
         `;
+    }
+
+    updateGeodeticDisplay(geodetic?: { latitude: number; longitude: number; altitude: number } | null): void {
+        if (!geodetic) {
+            this.elements.geodeticDisplay.textContent = '';
+            return;
+        }
+        this.elements.geodeticDisplay.textContent =
+            `緯度: ${geodetic.latitude.toFixed(4)}°  経度: ${geodetic.longitude.toFixed(4)}°  高度: ${geodetic.altitude.toFixed(1)} km`;
     }
     
     setupPlacementPatternLimits(): void {
