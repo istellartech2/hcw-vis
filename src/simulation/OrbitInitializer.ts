@@ -20,6 +20,7 @@ export type PlacementPattern =
     | 'hexagonal_disk';
 
 export class OrbitInitializer {
+    // 平均運動 (rad/s)
     private n: number; // 平均運動（軌道角速度）
     
     constructor(n: number) {
@@ -31,15 +32,15 @@ export class OrbitInitializer {
     }
     
     generatePositions(
-        pattern: string, 
-        count: number, 
-        radius: number, 
-        zSpread: number,
+        pattern: string,
+        count: number,
+        radius: number,       // m
+        zSpread: number,      // m
         zAmplitudeMultiplier?: number
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        const radiusKm = radius / 1000;
-        const zSpreadKm = zSpread / 1000;
+        const radiusKm = radius / 1000;  // convert m -> km
+        const zSpreadKm = zSpread / 1000; // convert m -> km
         
         switch (pattern) {
             case 'axis':

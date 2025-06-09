@@ -32,13 +32,13 @@ export class OrbitElementsCalculator {
         eccentricity: number,
         argOfPerigee: number,
         meanAnomaly: number,
-        altitude: number
+        altitude: number  // km
     ): OrbitalElements {
         // 長半径を計算
         const semiMajorAxis = this.EARTH_RADIUS + altitude;
         
         // 軌道周期を計算 (ケプラーの第3法則)
-        const semiMajorAxisMeters = semiMajorAxis * 1000;
+        const semiMajorAxisMeters = semiMajorAxis * 1000;  // km -> m
         const periodSeconds = 2 * Math.PI * Math.sqrt(Math.pow(semiMajorAxisMeters, 3) / this.EARTH_MU);
         const periodMinutes = periodSeconds / 60;
         
@@ -204,7 +204,7 @@ export class OrbitElementsCalculator {
                     geodetic: {
                         latitude: satellite.degreesLat(positionGd.latitude),
                         longitude: satellite.degreesLong(positionGd.longitude),
-                        altitude: positionGd.height
+                        altitude: positionGd.height  // km
                     }
                 };
             }

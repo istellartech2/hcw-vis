@@ -14,7 +14,7 @@ export interface SatelliteData {
 }
 
 export class Satellite {
-    // 初期位置・速度
+    // 初期位置・速度 (km, km/s)
     x0: number;
     y0: number;
     z0: number;
@@ -22,7 +22,7 @@ export class Satellite {
     vy0: number;
     vz0: number;
     
-    // 現在の状態（数値積分用）
+    // 現在の状態（数値積分用）(km, km/s)
     x: number;
     y: number;
     z: number;
@@ -65,12 +65,12 @@ export class Satellite {
     }
     
     getPosition(): { x: number; y: number; z: number } {
-        // 数値積分による現在位置を返す
+        // 数値積分による現在位置を返す (km)
         return { x: this.x, y: this.y, z: this.z };
     }
     
     getVelocity(): { x: number; y: number; z: number } {
-        // 現在の速度を返す（位置と同じ形式で返す）
+        // 現在の速度を返す（km/s）
         return { x: this.vx, y: this.vy, z: this.vz };
     }
     
