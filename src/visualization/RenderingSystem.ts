@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { Satellite } from '../models/Satellite.js';
-import { TrailRenderer } from '../visualization/TrailRenderer.js';
-import { PlotRenderer } from '../visualization/PlotRenderer.js';
-import { CelestialBodies } from '../visualization/CelestialBodies.js';
-import { UIControls } from '../ui/UIControls.js';
+import { Satellite } from '../simulation/Satellite.js';
+import { TrailRenderer } from './TrailRenderer.js';
+import { PlotRenderer } from './PlotRenderer.js';
+import { CelestialBodies } from './CelestialBodies.js';
+import { UIControls } from '../interaction/UIControls.js';
 
 export class RenderingSystem {
     private scene: THREE.Scene;

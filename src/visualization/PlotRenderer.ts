@@ -1,4 +1,4 @@
-import { Satellite } from '../models/Satellite.js';
+import { Satellite } from '../simulation/Satellite.js';
 
 export interface PlotContexts {
     xy: CanvasRenderingContext2D;

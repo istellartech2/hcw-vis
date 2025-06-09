@@ -1,14 +1,14 @@
 import * as THREE from 'three';
-import { Satellite } from './models/Satellite.js';
-import { HillEquationSolver } from './physics/HillEquationSolver.js';
-import { OrbitInitializer } from './physics/OrbitInitializer.js';
-import { OrbitElementsCalculator } from './physics/OrbitElements.js';
-import type { OrbitalElements } from './physics/OrbitElements.js';
-import { UIControls } from './ui/UIControls.js';
-import { CameraController } from './controls/CameraController.js';
-import { EventHandler } from './controls/EventHandler.js';
-import type { EventHandlerCallbacks } from './controls/EventHandler.js';
-import { RenderingSystem } from './rendering/RenderingSystem.js';
+import { Satellite } from './simulation/Satellite.js';
+import { HillEquationSolver } from './simulation/HillEquationSolver.js';
+import { OrbitInitializer } from './simulation/OrbitInitializer.js';
+import { OrbitElementsCalculator } from './simulation/OrbitElements.js';
+import type { OrbitalElements } from './simulation/OrbitElements.js';
+import { UIControls } from './interaction/UIControls.js';
+import { CameraController } from './interaction/CameraController.js';
+import { EventHandler } from './interaction/EventHandler.js';
+import type { EventHandlerCallbacks } from './interaction/EventHandler.js';
+import { RenderingSystem } from './visualization/RenderingSystem.js';
 
 class HillEquationSimulation implements EventHandlerCallbacks {
     private container: HTMLElement;

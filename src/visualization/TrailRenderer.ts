@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Satellite } from '../models/Satellite.js';
+import { Satellite } from '../simulation/Satellite.js';
 
 export class TrailRenderer {
     private scene: THREE.Scene;

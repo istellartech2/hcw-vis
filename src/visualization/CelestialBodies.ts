@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { Satellite } from '../models/Satellite.js';
+import { Satellite } from '../simulation/Satellite.js';
 import * as satellite from 'satellite.js';
-import { FrameTransforms } from '../physics/FrameTransforms.js';
+import { FrameTransforms } from '../simulation/FrameTransforms.js';
 
 export class CelestialBodies {
     private scene: THREE.Scene;

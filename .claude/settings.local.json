@@ -5,7 +5,10 @@
       "Bash(cp:*)",
       "Bash(sed:*)",
       "Bash(awk:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(mv:*)",
+      "Bash(rmdir:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

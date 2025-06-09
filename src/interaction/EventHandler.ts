@@ -1,4 +1,4 @@
-import { UIControls } from '../ui/UIControls.js';
+import { UIControls } from './UIControls.js';
 import { CelestialBodies } from '../visualization/CelestialBodies.js';
 
 export interface EventHandlerCallbacks {

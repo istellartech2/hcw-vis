@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { OrbitElementsCalculator, type OrbitalElements } from '../physics/OrbitElements.js';
+import { OrbitElementsCalculator, type OrbitalElements } from './OrbitElements.js';
 
 export interface SatelliteData {
     x0: number;

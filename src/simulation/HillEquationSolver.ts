@@ -1,4 +1,4 @@
-import { Satellite } from '../models/Satellite.js';
+import { Satellite } from './Satellite.js';
 
 export interface HillState {
     x: number;
