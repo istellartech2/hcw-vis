@@ -6,12 +6,17 @@ export class CameraController {
     private mouseX: number = 0;
     private mouseY: number = 0;
     private mouseDown: boolean = false;
-    private cameraPhi: number = Math.PI / 3;
-    private cameraTheta: number = Math.PI / 4;
-    private cameraDistance: number = 400;
+    // Initial camera position configuration
+    // Position camera so that blue (X) and green (Z) axes point left
+    // Scale=1: 1m = 1 unit, 10m range needs ~30 unit distance
+    private readonly INITIAL_CAMERA_DISTANCE: number = 30;
+    private readonly INITIAL_CAMERA_PHI: number = Math.PI / 3;
+    private readonly INITIAL_CAMERA_THETA: number = Math.PI * 4 / 5;
+    private cameraPhi: number = this.INITIAL_CAMERA_PHI;
+    private cameraTheta: number = this.INITIAL_CAMERA_THETA;
+    private cameraDistance: number = this.INITIAL_CAMERA_DISTANCE;
     private pinchStartDistance: number | null = null;
-    private initialCameraDistance: number = 400;
-    private viewMode: number = 0;
+    private initialCameraDistance: number = this.INITIAL_CAMERA_DISTANCE;
 
     constructor(camera: THREE.PerspectiveCamera, container: HTMLElement) {
         this.camera = camera;
@@ -76,7 +81,7 @@ export class CameraController {
 
         this.container.addEventListener('wheel', (e) => {
             this.cameraDistance *= (1 + e.deltaY * 0.001);
-            this.cameraDistance = Math.max(200, Math.min(2000, this.cameraDistance));
+            this.cameraDistance = Math.max(1, Math.min(1000, this.cameraDistance));
         });
     }
 
@@ -101,30 +106,11 @@ export class CameraController {
         this.camera.lookAt(0, 0, 0);
     }
 
-    public changeView(): void {
-        this.viewMode = (this.viewMode + 1) % 4;
-        switch(this.viewMode) {
-            case 0:
-                this.cameraDistance = 400;
-                this.cameraPhi = Math.PI / 4;
-                this.cameraTheta = 0;
-                break;
-            case 1:
-                this.cameraDistance = 400;
-                this.cameraPhi = 0.1;
-                this.cameraTheta = 0;
-                break;
-            case 2:
-                this.cameraDistance = 400;
-                this.cameraPhi = Math.PI / 2;
-                this.cameraTheta = 0;
-                break;
-            case 3:
-                this.cameraDistance = 400;
-                this.cameraPhi = Math.PI / 3;
-                this.cameraTheta = Math.PI / 4;
-                break;
-        }
+    public resetView(): void {
+        this.cameraDistance = this.INITIAL_CAMERA_DISTANCE;
+        this.cameraPhi = this.INITIAL_CAMERA_PHI;
+        this.cameraTheta = this.INITIAL_CAMERA_THETA;
+        this.updateCameraPosition();
     }
 
     public handleResize(): void {

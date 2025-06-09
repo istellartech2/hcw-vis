@@ -53,7 +53,8 @@ export class RenderingSystem {
     private setupRenderer(): void {
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.camera.position.set(100, 250, 100);
+        // Note: Initial camera position is managed by CameraController
+        // This is just a fallback position
         this.camera.lookAt(0, 0, 0);
     }
 
@@ -76,7 +77,7 @@ export class RenderingSystem {
         // X-axis (Along-track)
         const xGeometry = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(300, 0, 0)
+            new THREE.Vector3(15, 0, 0)  // 15m axis for 10m range
         ]);
         const xMaterial = new THREE.LineBasicMaterial({ color: 0x00BFFF });
         const xAxis = new THREE.Line(xGeometry, xMaterial);
@@ -85,7 +86,7 @@ export class RenderingSystem {
         // Y-axis (Radial)
         const yGeometry = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 300, 0)
+            new THREE.Vector3(0, 15, 0)  // 15m axis for 10m range
         ]);
         const yMaterial = new THREE.LineBasicMaterial({ color: 0xFF6B6B });
         const yAxis = new THREE.Line(yGeometry, yMaterial);
@@ -94,7 +95,7 @@ export class RenderingSystem {
         // Z-axis (Cross-track)
         const zGeometry = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 0, 300)
+            new THREE.Vector3(0, 0, 15)  // 15m axis for 10m range
         ]);
         const zMaterial = new THREE.LineBasicMaterial({ color: 0x2ECC71 });
         const zAxis = new THREE.Line(zGeometry, zMaterial);
@@ -104,8 +105,11 @@ export class RenderingSystem {
     }
 
     private createGrid(): THREE.GridHelper {
-        const gridHelper = new THREE.GridHelper(1000, 20, 0x444444, 0x222222);
-        gridHelper.position.y = -200;
+        // Grid adapted for 10m range with 1x scaling
+        // Size: 30 units = 30m total, Divisions: 30 = 1m per division
+        // Subtle colors for background reference
+        const gridHelper = new THREE.GridHelper(30, 30, 0x777777);
+        gridHelper.position.y = -10;  // Just below origin level
         this.scene.add(gridHelper);
         return gridHelper;
     }
@@ -134,8 +138,11 @@ export class RenderingSystem {
         
         this.satelliteMeshes = [];
         
+        // Get satellite size from UI controls
+        const satelliteSize = parseFloat(this.uiControls.elements.satelliteSize.value);
+        
         // Create center satellite
-        const centerGeometry = new THREE.SphereGeometry(8, 32, 32);
+        const centerGeometry = new THREE.SphereGeometry(satelliteSize, 32, 32);
         const centerMaterial = new THREE.MeshPhongMaterial({ 
             color: 0xffffff,
             emissive: 0xffffff,
@@ -151,7 +158,7 @@ export class RenderingSystem {
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         
         for (let i = 1; i < satellites.length; i++) {
-            const satGeometry = new THREE.SphereGeometry(6, 32, 32);
+            const satGeometry = new THREE.SphereGeometry(satelliteSize, 32, 32);
             
             let materialColor: number;
             if (useUniformColor) {
@@ -174,7 +181,7 @@ export class RenderingSystem {
     public updateSatellitePositions(satellites: Satellite[]): void {
         satellites.forEach((sat, index) => {
             const pos = sat.getPosition();
-            const scale = 1000;
+            const scale = 1; // 1m in Hill coords = 1 units in Three.js
             // Convert Hill coordinates to Three.js coordinates
             // pos.x = R (Radial), pos.y = S (Along-track), pos.z = W (Cross-track)
             // Three.js: X = S (Along-track), Y = R (Radial), Z = W (Cross-track)
@@ -271,6 +278,11 @@ export class RenderingSystem {
 
     public getSelectedSatelliteIndex(): number {
         return this.selectedSatelliteIndex;
+    }
+    
+    public updateSatelliteSize(satellites: Satellite[]): void {
+        // Recreate satellite meshes with new size
+        this.createSatelliteMeshes(satellites);
     }
 
     public setSelectedSatelliteIndex(index: number): void {

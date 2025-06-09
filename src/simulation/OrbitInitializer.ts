@@ -39,53 +39,51 @@ export class OrbitInitializer {
         zAmplitudeMultiplier?: number
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        const radiusKm = radius / 1000;  // convert m -> km
-        const zSpreadKm = zSpread / 1000; // convert m -> km
         
         switch (pattern) {
             case 'axis':
-                return this.generateAxisPositions(count, radiusKm);
+                return this.generateAxisPositions(count, radius);
                 
             case 'grid':
-                return this.generateGridPositions(count, radiusKm);
+                return this.generateGridPositions(count, radius);
                 
             case 'random_position':
-                return this.generateRandomPositions(count, radiusKm);
+                return this.generateRandomPositions(count, radius);
                 
             case 'random_position_velocity':
-                return this.generateRandomPositionsVelocities(count, radiusKm);
+                return this.generateRandomPositionsVelocities(count, radius);
                 
             case 'random_periodic':
-                return this.generateRandomPeriodic(count, radiusKm);
+                return this.generateRandomPeriodic(count, radius);
                 
             case 'xy_ellipse':
-                return this.generateXYEllipse(count, radiusKm, zAmplitudeMultiplier);
+                return this.generateXYEllipse(count, radius, zAmplitudeMultiplier);
                 
             case 'circular_orbit':
-                return this.generateCircularOrbit(count, radiusKm);
+                return this.generateCircularOrbit(count, radius);
                 
             case 'vbar_approach':
-                return this.generateVBarApproach(count, radiusKm);
+                return this.generateVBarApproach(count, radius);
                 
             case 'rbar_approach':
-                return this.generateRBarApproach(count, radiusKm);
+                return this.generateRBarApproach(count, radius);
                 
             case 'hexagonal_disk':
-                return this.generateHexagonalDisk(count, radiusKm);
+                return this.generateHexagonalDisk(count, radius);
                 
             default:
-                return this.generateAxisPositions(count, radiusKm);
+                return this.generateAxisPositions(count, radius);
         }
     }
     
-    private generateAxisPositions(count: number, radiusKm: number): InitialCondition[] {
+    private generateAxisPositions(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const axisPositions: number[] = [];
         const eachAxisSatNum = count * 3;
         
         // 各軸に配置する位置を計算（ゼロ点を除外）
         for (let i = 1; i <= eachAxisSatNum; i++) {
-            const position = (radiusKm * i) / count;
+            const position = (radius * i) / count;
             axisPositions.push(-position); // 負の方向
             axisPositions.push(position);  // 正の方向
         }
@@ -129,13 +127,13 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateGridPositions(count: number, radiusKm: number): InitialCondition[] {
+    private generateGridPositions(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const gridValues: number[] = [];
         
         // 各軸の格子点を計算
         for (let i = -count; i <= count; i++) {
-            const value = (i * radiusKm) / count;
+            const value = (i * radius) / count;
             gridValues.push(value);
         }
         
@@ -165,14 +163,14 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateRandomPositions(count: number, radiusKm: number): InitialCondition[] {
+    private generateRandomPositions(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         
         for (let i = 0; i < count; i++) {
             positions.push({
-                x0: (Math.random() * 2 - 1) * radiusKm,
-                y0: (Math.random() * 2 - 1) * radiusKm,
-                z0: (Math.random() * 2 - 1) * radiusKm,
+                x0: (Math.random() * 2 - 1) * radius,
+                y0: (Math.random() * 2 - 1) * radius,
+                z0: (Math.random() * 2 - 1) * radius,
                 vx0: 0,
                 vy0: 0,
                 vz0: 0
@@ -182,15 +180,15 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateRandomPositionsVelocities(count: number, radiusKm: number): InitialCondition[] {
+    private generateRandomPositionsVelocities(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        const maxVelocity = radiusKm * 3 * this.n;
+        const maxVelocity = radius * 3 * this.n;
         
         for (let i = 0; i < count; i++) {
             positions.push({
-                x0: (Math.random() * 2 - 1) * radiusKm,
-                y0: (Math.random() * 2 - 1) * radiusKm,
-                z0: (Math.random() * 2 - 1) * radiusKm,
+                x0: (Math.random() * 2 - 1) * radius,
+                y0: (Math.random() * 2 - 1) * radius,
+                z0: (Math.random() * 2 - 1) * radius,
                 vx0: (Math.random() * 2 - 1) * maxVelocity,
                 vy0: (Math.random() * 2 - 1) * maxVelocity,
                 vz0: (Math.random() * 2 - 1) * maxVelocity
@@ -200,16 +198,16 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateRandomPeriodic(count: number, radiusKm: number): InitialCondition[] {
+    private generateRandomPeriodic(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        const maxVelocityPeriodic = radiusKm * 3 * this.n;
+        const maxVelocityPeriodic = radius * 3 * this.n;
         
         for (let i = 0; i < count; i++) {
-            const x0 = (Math.random() * 2 - 1) * radiusKm;
+            const x0 = (Math.random() * 2 - 1) * radius;
             positions.push({
                 x0: x0,
-                y0: (Math.random() * 2 - 1) * radiusKm,
-                z0: (Math.random() * 2 - 1) * radiusKm,
+                y0: (Math.random() * 2 - 1) * radius,
+                z0: (Math.random() * 2 - 1) * radius,
                 vx0: (Math.random() * 2 - 1) * maxVelocityPeriodic,
                 vy0: -2 * this.n * x0, // ドリフト消失条件
                 vz0: (Math.random() * 2 - 1) * maxVelocityPeriodic
@@ -219,10 +217,10 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateXYEllipse(count: number, radiusKm: number, zAmplitudeMultiplier: number = 0): InitialCondition[] {
+    private generateXYEllipse(count: number, radius: number, zAmplitudeMultiplier: number = 0): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        const rho = radiusKm;
-        const z_amplitude = zAmplitudeMultiplier * radiusKm;
+        const rho = radius;
+        const z_amplitude = zAmplitudeMultiplier * radius;
         
         for (let i = 0; i < count; i++) {
             const phase = (2 * Math.PI * i) / count;
@@ -247,10 +245,10 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateCircularOrbit(count: number, radiusKm: number): InitialCondition[] {
+    private generateCircularOrbit(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        const radius_circular = radiusKm;
-        const z_amplitude = Math.sqrt(3) * radiusKm;
+        const radius_circular = radius;
+        const z_amplitude = Math.sqrt(3) * radius;
         
         for (let i = 0; i < count; i++) {
             const phase = (2 * Math.PI * i) / count;
@@ -276,13 +274,13 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateVBarApproach(count: number, radiusKm: number): InitialCondition[] {
+    private generateVBarApproach(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         
         // V-bar軌道: 速度ベクトル方向（Y軸、Along-track）からの接近
         // 宇宙ステーションの後方から接近する安全な軌道
         for (let i = 0; i < count; i++) {
-            const approachDistance = radiusKm * (1 + i * 0.5); // 段階的に配置
+            const approachDistance = radius * (1 + i * 0.5); // 段階的に配置
             
             // 初期位置: 後方から接近（Y軸負の方向）
             const x0 = 0; // 径方向は中央
@@ -312,13 +310,13 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateRBarApproach(count: number, radiusKm: number): InitialCondition[] {
+    private generateRBarApproach(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         
         // R-bar軌道: 径方向（X軸、Radial）からの接近
         // 宇宙ステーションの下方（地球側）から接近する軌道
         for (let i = 0; i < count; i++) {
-            const approachDistance = radiusKm * (1 + i * 0.5); // 段階的に配置
+            const approachDistance = radius * (1 + i * 0.5); // 段階的に配置
             
             // 初期位置: 下方から接近（X軸負の方向）
             const x0 = -approachDistance; // 下方から接近
@@ -344,7 +342,7 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateHexagonalDisk(count: number, radiusKm: number): InitialCondition[] {
+    private generateHexagonalDisk(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         
         // docs/diskOrbit.mdに基づいた実装
@@ -408,7 +406,7 @@ export class OrbitInitializer {
             const theta = Math.atan2(point.y, point.x);
             
             // 実際の半径にスケール
-            const r = (r_normalized / k) * radiusKm;
+            const r = (r_normalized / k) * radius;
             
             // 円軌道の初期条件（docs/diskOrbit.mdの式を使用）
             const x0 = (r / sqrt5) * Math.cos(theta);

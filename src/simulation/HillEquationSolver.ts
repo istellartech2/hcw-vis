@@ -32,7 +32,7 @@ export class HillEquationSolver {
     
     // Hill方程式の微分方程式（右辺）
     computeDerivatives(state: HillState): HillDerivatives {
-        // state values: position (km), velocity (km/s)
+        // state values: position (m), velocity (m/s)
         const { x, y, z, vx, vy, vz } = state;
         const n = this.n;
         

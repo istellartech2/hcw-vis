@@ -11,8 +11,8 @@ interface OrbitalElements {
     eccentricity: number;    // 離心率
     argOfPerigee: number;    // 近地点引数 (degrees)
     meanAnomaly: number;     // 平均近点角 (degrees)
-    altitude: number;        // 高度 (km)
-    semiMajorAxis: number;   // 長半径 (km)
+    altitude: number;        // 高度 (m)
+    semiMajorAxis: number;   // 長半径 (m)
     period: number;          // 軌道周期 (minutes)
     meanMotion: number;      // 平均運動 (rad/s)
 }
@@ -20,7 +20,7 @@ interface OrbitalElements {
 export type { OrbitalElements };
 
 export class OrbitElementsCalculator {
-    private static readonly EARTH_RADIUS = 6378.137;  // km
+    private static readonly EARTH_RADIUS = 6378137;  // m (meters)
     private static readonly EARTH_MU = 3.986004418e14;  // m³/s²
     
     /**
@@ -32,18 +32,17 @@ export class OrbitElementsCalculator {
         eccentricity: number,
         argOfPerigee: number,
         meanAnomaly: number,
-        altitude: number  // km
+        altitude: number  // m (meters)
     ): OrbitalElements {
-        // 長半径を計算
+        // 長半径を計算 (meters)
         const semiMajorAxis = this.EARTH_RADIUS + altitude;
         
         // 軌道周期を計算 (ケプラーの第3法則)
-        const semiMajorAxisMeters = semiMajorAxis * 1000;  // km -> m
-        const periodSeconds = 2 * Math.PI * Math.sqrt(Math.pow(semiMajorAxisMeters, 3) / this.EARTH_MU);
+        const periodSeconds = 2 * Math.PI * Math.sqrt(Math.pow(semiMajorAxis, 3) / this.EARTH_MU);
         const periodMinutes = periodSeconds / 60;
         
         // 平均運動を計算
-        const meanMotion = Math.sqrt(this.EARTH_MU / Math.pow(semiMajorAxisMeters, 3));
+        const meanMotion = Math.sqrt(this.EARTH_MU / Math.pow(semiMajorAxis, 3));
         
         return {
             inclination,
@@ -98,7 +97,7 @@ export class OrbitElementsCalculator {
             errors.push("平均近点角は0-360度の範囲で入力してください");
         }
         
-        if (elements.altitude !== undefined && (elements.altitude < 200 || elements.altitude > 36000)) {
+        if (elements.altitude !== undefined && (elements.altitude < 200000 || elements.altitude > 36000000)) {
             errors.push("高度は200-36000kmの範囲で入力してください");
         }
         
@@ -115,7 +114,7 @@ export class OrbitElementsCalculator {
             0,     // 離心率（円軌道）
             0,     // 近地点引数
             0,     // 平均近点角
-            408    // ISS平均高度
+            408000    // ISS平均高度 (408 km = 408000 m)
         );
     }
     
@@ -137,7 +136,7 @@ export class OrbitElementsCalculator {
             trueAnomaly = 2 * Math.atan(Math.sqrt((1 + elements.eccentricity) / (1 - elements.eccentricity)) * Math.tan(eccentricAnomaly / 2));
         }
         
-        // 軌道上の距離（km）
+        // 軌道上の距離（m）
         const radius = elements.semiMajorAxis * (1 - elements.eccentricity * elements.eccentricity) / 
                       (1 + elements.eccentricity * Math.cos(trueAnomaly));
         
@@ -192,19 +191,19 @@ export class OrbitElementsCalculator {
                 
                 return {
                     position: {
-                        x: (result.position as any).x,
-                        y: (result.position as any).y,
-                        z: (result.position as any).z
+                        x: (result.position as any).x * 1000,  // km to m
+                        y: (result.position as any).y * 1000,  // km to m
+                        z: (result.position as any).z * 1000   // km to m
                     },
                     velocity: {
-                        x: (result.velocity as any).x,
-                        y: (result.velocity as any).y,
-                        z: (result.velocity as any).z
+                        x: (result.velocity as any).x * 1000,  // km/s to m/s
+                        y: (result.velocity as any).y * 1000,  // km/s to m/s
+                        z: (result.velocity as any).z * 1000   // km/s to m/s
                     },
                     geodetic: {
                         latitude: satellite.degreesLat(positionGd.latitude),
                         longitude: satellite.degreesLong(positionGd.longitude),
-                        altitude: positionGd.height  // km
+                        altitude: positionGd.height * 1000  // km to m
                     }
                 };
             }

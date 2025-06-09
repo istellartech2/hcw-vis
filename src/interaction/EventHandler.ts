@@ -5,7 +5,7 @@ export interface EventHandlerCallbacks {
     resetSimulation: () => void;
     togglePause: () => void;
     addPerturbation: () => void;
-    changeView: () => void;
+    resetView: () => void;
     toggleFullscreen: () => void;
     applyThrustToSelected: (axis: string, dv: number) => void;
     updateOrbitElementsFromUI: () => void;
@@ -128,7 +128,7 @@ export class EventHandler {
                     this.callbacks.addPerturbation();
                     break;
                 case 'v':
-                    this.callbacks.changeView();
+                    this.callbacks.resetView();
                     break;
                 case 't':
                     this.uiControls.elements.showTrails.checked = !this.uiControls.elements.showTrails.checked;
@@ -191,7 +191,7 @@ export class EventHandler {
         (window as any).resetSimulation = () => this.callbacks.resetSimulation();
         (window as any).togglePause = () => this.callbacks.togglePause();
         (window as any).addPerturbation = () => this.callbacks.addPerturbation();
-        (window as any).changeView = () => this.callbacks.changeView();
+        (window as any).resetView = () => this.callbacks.resetView();
         (window as any).toggleFullscreen = () => this.callbacks.toggleFullscreen();
         
         // Section collapse functionality

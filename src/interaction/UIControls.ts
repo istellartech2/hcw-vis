@@ -15,6 +15,7 @@ export interface UIControlElements {
     zAmplitudeControl: HTMLDivElement;
     uniformSatelliteColor: HTMLInputElement;
     satelliteColor: HTMLInputElement;
+    satelliteSize: HTMLInputElement;
     inclination: HTMLInputElement;
     raan: HTMLInputElement;
     eccentricity: HTMLInputElement;
@@ -45,6 +46,7 @@ export class UIControls {
             zAmplitudeControl: document.getElementById('zAmplitudeControl') as HTMLDivElement,
             uniformSatelliteColor: document.getElementById('uniformSatelliteColor') as HTMLInputElement,
             satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement,
+            satelliteSize: document.getElementById('satelliteSize') as HTMLInputElement,
             inclination: document.getElementById('inclination') as HTMLInputElement,
             raan: document.getElementById('raan') as HTMLInputElement,
             eccentricity: document.getElementById('eccentricity') as HTMLInputElement,
@@ -83,6 +85,8 @@ export class UIControls {
         this.elements.zAmplitudeValue.textContent = parseFloat(this.elements.zAmplitude.value).toFixed(1);
     }
     
+    // satelliteSizeDisplay method removed - now using direct number input
+    
     updateOrbitInfo(orbitElements: {
         inclination: number;
         raan: number;
@@ -95,12 +99,13 @@ export class UIControls {
     }, eciPosition?: { x: number; y: number; z: number } | null, geodetic?: { latitude: number; longitude: number; altitude: number } | null): void {
         let eciInfo = '';
         if (eciPosition) {
+            // eciPosition はメーター単位なので、kmで表示するために1000で割る
             eciInfo = `
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
                     <div><strong>ECI座標系 (km):</strong></div>
-                    <div>X: ${eciPosition.x.toFixed(2)}</div>
-                    <div>Y: ${eciPosition.y.toFixed(2)}</div>
-                    <div>Z: ${eciPosition.z.toFixed(2)}</div>
+                    <div>X: ${(eciPosition.x / 1000).toFixed(2)}</div>
+                    <div>Y: ${(eciPosition.y / 1000).toFixed(2)}</div>
+                    <div>Z: ${(eciPosition.z / 1000).toFixed(2)}</div>
                 </div>
             `;
         }
@@ -110,7 +115,7 @@ export class UIControls {
         this.elements.orbitInfo.innerHTML = `
             <div style="font-size: 12px; color: #666; margin-top: 10px;">
                 <div><strong>軌道情報:</strong></div>
-                <div>長半径: ${orbitElements.semiMajorAxis.toFixed(1)} km</div>
+                <div>長半径: ${(orbitElements.semiMajorAxis / 1000).toFixed(1)} km</div>
                 <div>周期: ${orbitElements.period.toFixed(1)} 分</div>
                 <div>離心率: ${orbitElements.eccentricity.toFixed(3)}</div>
                 <div>傾斜角: ${orbitElements.inclination.toFixed(1)}°</div>
@@ -128,7 +133,7 @@ export class UIControls {
         this.elements.geodeticDisplay.innerHTML = `
             緯度: ${geodetic.latitude.toFixed(2)}°<br>
             経度: ${geodetic.longitude.toFixed(2)}°<br>
-            高度: ${Math.round(geodetic.altitude)} km
+            高度: ${Math.round(geodetic.altitude / 1000)} km
         `;
     }
     

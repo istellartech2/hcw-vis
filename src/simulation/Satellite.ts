@@ -14,7 +14,7 @@ export interface SatelliteData {
 }
 
 export class Satellite {
-    // 初期位置・速度 (km, km/s)
+    // 初期位置・速度 (m, m/s)
     x0: number;
     y0: number;
     z0: number;
@@ -22,7 +22,7 @@ export class Satellite {
     vy0: number;
     vz0: number;
     
-    // 現在の状態（数値積分用）(km, km/s)
+    // 現在の状態（数値積分用）(m, m/s)
     x: number;
     y: number;
     z: number;

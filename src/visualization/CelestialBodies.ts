@@ -16,7 +16,7 @@ export class CelestialBodies {
         this.scene.add(this.earthGroup);
     }
     
-    // orbitRadius: km
+    // orbitRadius: m (meters)
     createEarth(orbitRadius: number): void {
         // 既存の地球があれば削除
         if (this.earth) {
@@ -32,10 +32,10 @@ export class CelestialBodies {
         }
         
         // 正確な地球半径と軌道の関係を実装
-        const EARTH_RADIUS = 6378.137; // km（実際の地球半径）
+        const EARTH_RADIUS = 6378137; // m（実際の地球半径）
         
         // シーンユニットでの実際の地球半径
-        const earthRadiusInScene = EARTH_RADIUS; // km
+        const earthRadiusInScene = EARTH_RADIUS; // m
         
         // 地球の球体ジオメトリ（現実的なサイズ）
         const earthGeometry = new THREE.SphereGeometry(earthRadiusInScene, 64, 64);

@@ -25,7 +25,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     // 基準軌道の平均運動 (rad/s)
     private n: number = 1.126e-3;
     // 基準軌道半径 (m)
-    private orbitRadius: number = 6778000;
+    private orbitRadius: number = 6778137;
     
     // System components
     private hillSolver: HillEquationSolver;
@@ -48,8 +48,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.camera = new THREE.PerspectiveCamera(
             75, 
             this.container.clientWidth / this.container.clientHeight, 
-            0.1, 
-            10000
+            0.001, 
+            50000000
         );
         this.renderer = new THREE.WebGLRenderer({ 
             canvas: document.getElementById('canvas') as HTMLCanvasElement,
@@ -63,17 +63,18 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.uiControls = new UIControls();
         this.cameraController = new CameraController(this.camera, this.container);
         this.renderingSystem = new RenderingSystem(this.scene, this.camera, this.renderer, this.container, this.uiControls);
-        this.cameraController.syncWithCameraPosition();
+        this.cameraController.resetView(); // Set initial camera position
         this.eventHandler = new EventHandler(this.uiControls, this.renderingSystem.getCelestialBodies(), this, this.container);
         
         this.setupSatelliteSelectionListener();
+        this.setupUIEventListeners();
         this.initializeOrbitElements();
         this.updateOrbitParameters();
         this.uiControls.setupPlacementPatternLimits();
         this.initSimulation();
         
-        // Create Earth (convert orbit radius from meters to km)
-        this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius / 1000);
+        // Create Earth (orbit radius in meters)
+        this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius);
         this.renderingSystem.getCelestialBodies().setEarthVisibility(true);
         
         this.animate();
@@ -86,6 +87,13 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         });
     }
     
+    private setupUIEventListeners(): void {
+        // Satellite size number input
+        this.uiControls.elements.satelliteSize.addEventListener('input', () => {
+            this.updateSatelliteSize();
+        });
+    }
+    
     
     
     private initializeOrbitElements(): void {
@@ -95,7 +103,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         const eccentricity = parseFloat(this.uiControls.elements.eccentricity.value);
         const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
         const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
-        const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);
+        const altitudeKm = parseFloat(this.uiControls.elements.orbitAltitude.value);
+        const altitude = altitudeKm * 1000; // Convert km to meters
         
         // 軌道要素を計算
         this.currentOrbitElements = OrbitElementsCalculator.calculateOrbitalElements(
@@ -116,9 +125,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private updateOrbitParameters(): void {
         if (!this.currentOrbitElements) return;
         
-        const radiusKm = this.currentOrbitElements.semiMajorAxis;
-        // Convert km -> m
-        this.orbitRadius = radiusKm * 1000;
+        // semiMajorAxis is already in meters
+        this.orbitRadius = this.currentOrbitElements.semiMajorAxis;
         // meanMotion is already in rad/s
         this.n = this.currentOrbitElements.meanMotion;
         
@@ -126,7 +134,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.orbitInitializer.updateMeanMotion(this.n);
         
         if (this.renderingSystem) {
-            this.renderingSystem.getCelestialBodies().createEarth(radiusKm);
+            this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius);
         }
     }
     
@@ -160,7 +168,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         });
         
         const count = parseInt(this.uiControls.elements.satelliteCount.value);
-        const radius = parseInt(this.uiControls.elements.orbitRadius.value);
+        const radius = parseFloat(this.uiControls.elements.orbitRadius.value);
         const pattern = this.uiControls.elements.placementPattern.value;
         
         this.satellites = [];
@@ -256,7 +264,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         if (this.currentOrbitElements) {
             html += `<div style="margin-bottom: 5px; color: #999;">
-                    高度: ${this.currentOrbitElements.altitude.toFixed(1)} km | 
+                    高度: ${(this.currentOrbitElements.altitude / 1000).toFixed(1)} km | 
                     周期: ${this.currentOrbitElements.period.toFixed(1)} 分 | 
                     傾斜角: ${this.currentOrbitElements.inclination.toFixed(1)}°
                     </div>`;
@@ -267,13 +275,13 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             if (eciData) {
                 html += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; color: #666;">
                         <strong>ECI座標系 (km):</strong><br>
-                        X: ${eciData.position.x.toFixed(2)} | 
-                        Y: ${eciData.position.y.toFixed(2)} | 
-                        Z: ${eciData.position.z.toFixed(2)}<br>
+                        X: ${(eciData.position.x / 1000).toFixed(2)} | 
+                        Y: ${(eciData.position.y / 1000).toFixed(2)} | 
+                        Z: ${(eciData.position.z / 1000).toFixed(2)}<br>
                         <strong>緯度経度高度:</strong><br>
                         緯度: ${eciData.geodetic.latitude.toFixed(4)}° | 
                         経度: ${eciData.geodetic.longitude.toFixed(4)}° | 
-                        高度: ${eciData.geodetic.altitude.toFixed(1)} km
+                        高度: ${(eciData.geodetic.altitude / 1000).toFixed(1)} km
                         </div>`;
             }
         }
@@ -335,17 +343,17 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             
             selectedInfoDiv.innerHTML = `
                 <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
-                位置: X=${(pos.x*1000).toFixed(0)}, Y=${(pos.y*1000).toFixed(0)}, Z=${(pos.z*1000).toFixed(0)} L<br>
-                速度: ${(v*1000).toFixed(2)} L/s<br>
-                距離: ${(r*1000).toFixed(0)} L<br>
+                位置: X=${pos.x.toFixed(0)}, Y=${pos.y.toFixed(0)}, Z=${pos.z.toFixed(0)} m<br>
+                速度: ${v.toFixed(2)} m/s<br>
+                距離: ${r.toFixed(0)} m<br>
                 <div style="margin-top: 10px;">
                     <strong>推力制御:</strong><br>
-                    <button onclick="applyThrust('x', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+X</button>
-                    <button onclick="applyThrust('x', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-X</button><br>
-                    <button onclick="applyThrust('y', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+Y</button>
-                    <button onclick="applyThrust('y', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-Y</button><br>
-                    <button onclick="applyThrust('z', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+Z</button>
-                    <button onclick="applyThrust('z', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-Z</button>
+                    <button onclick="applyThrust('x', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+X</button>
+                    <button onclick="applyThrust('x', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-X</button><br>
+                    <button onclick="applyThrust('y', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+Y</button>
+                    <button onclick="applyThrust('y', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-Y</button><br>
+                    <button onclick="applyThrust('z', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+Z</button>
+                    <button onclick="applyThrust('z', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-Z</button>
                 </div>
             `;
             selectedInfoDiv.style.display = 'block';
@@ -378,15 +386,16 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.satellites.forEach((sat, index) => {
             if (index > 0) {
                 // 現在の速度に摂動を加える（数値積分用）
-                sat.vx += (Math.random() - 0.5) * 0.00002;  // 0.0002 → 0.00002 (1桁小さく)
-                sat.vy += (Math.random() - 0.5) * 0.00002;
-                sat.vz += (Math.random() - 0.5) * 0.00002;
+                // 摂動量: ~0.02 m/s
+                sat.vx += (Math.random() - 0.5) * 0.02;
+                sat.vy += (Math.random() - 0.5) * 0.02;
+                sat.vz += (Math.random() - 0.5) * 0.02;
             }
         });
     }
     
-    public changeView(): void {
-        this.cameraController.changeView();
+    public resetView(): void {
+        this.cameraController.resetView();
     }
     
     public toggleFullscreen(): void {
@@ -429,7 +438,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         const sat = this.satellites[selectedIndex];
         
-        // 速度変化を適用（km/s単位）
+        // 速度変化を適用（m/s単位）
         switch (axis) {
             case 'x':
                 sat.vx += dv;
@@ -452,7 +461,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         const eccentricity = parseFloat(this.uiControls.elements.eccentricity.value);
         const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
         const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
-        const altitude = parseFloat(this.uiControls.elements.orbitAltitude.value);
+        const altitudeKm = parseFloat(this.uiControls.elements.orbitAltitude.value);
+        const altitude = altitudeKm * 1000; // Convert km to meters
         
         // 入力値の妥当性チェック
         const errors = OrbitElementsCalculator.validateElements({
@@ -484,6 +494,10 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     public clearTrails(): void {
         this.renderingSystem.clearTrails(this.satellites);
+    }
+    
+    public updateSatelliteSize(): void {
+        this.renderingSystem.updateSatelliteSize(this.satellites);
     }
     
 }
