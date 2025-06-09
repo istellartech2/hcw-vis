@@ -49,14 +49,19 @@ export namespace FrameTransforms {
     }
 
     /**
-     * Constant transform from RSW (physics) to Three.js coordinates.
-     * RSW axes:  +R (inward), +S (along-track), +W (cross-track)
-     * Three.js:  +X (right), +Y (up), +Z (out of screen)
-     */
+    * Constant transform from RSW (physics) to Three.js coordinates.
+    * RSW axes:  +R (radial outward), +S (along-track), +W (cross-track)
+    * Three.js:  +X (right), +Y (up), +Z (out of screen)
+    *
+    * Mapping used here:
+    *   X_three = W
+    *   Y_three = R
+    *   Z_three = S
+    */
     export const rswToThree = new THREE.Matrix4().set(
         /* row 1 */ 0, 0, 1, 0,   // W -> +X
-        /* row 2 */-1, 0, 0, 0,   // R -> -Y
-        /* row 3 */ 0,-1, 0, 0,   // S -> -Z
+        /* row 2 */ 1, 0, 0, 0,   // R -> +Y
+        /* row 3 */ 0, 1, 0, 0,   // S -> +Z
         /* row 4 */ 0, 0, 0, 1
     );
 }

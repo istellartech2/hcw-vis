@@ -58,16 +58,17 @@ z̈ + n²z = 0          (Cross-track方向)
 
 ### 座標系
 
+
 LVLH座標系（Local Vertical Local Horizontal）を使用：
 
-- **X軸（赤）**: Radial（径方向） - 地心からターゲット衛星に向かう方向（外向き正）
-- **Y軸（緑）**: Along-track（軌道進行方向） - ターゲット衛星の速度ベクトル方向
-- **Z軸（青）**: Cross-track（軌道面垂直方向） - 軌道角運動量ベクトル方向
+- **X軸（青）**: Cross-track（軌道面垂直方向）
+- **Y軸（赤）**: Radial（径方向） - 地心からターゲット衛星に向かう方向
+- **Z軸（緑）**: Along-track（軌道進行方向）
 
-**重要**: Three.jsの表示では物理座標系から以下の変換を適用：
-- x_display = x_physics
-- y_display = z_physics  
-- z_display = -y_physics
+**重要**: Three.js表示での軸対応：
+- x_display = W (Cross-track)
+- y_display = R (Radial)
+- z_display = S (Along-track)
 
 ## 🏗️ プロジェクト構成
 
