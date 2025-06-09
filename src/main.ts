@@ -54,7 +54,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.renderer = new THREE.WebGLRenderer({ 
             canvas: document.getElementById('canvas') as HTMLCanvasElement,
             antialias: true,
-            alpha: true 
+            alpha: true,
+            logarithmicDepthBuffer: true
         });
         
         // System components initialization
