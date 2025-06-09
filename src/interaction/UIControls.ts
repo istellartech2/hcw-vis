@@ -106,16 +106,6 @@ export class UIControls {
         }
         
         let geodeticInfo = '';
-        if (geodetic) {
-            geodeticInfo = `
-                <div style="margin-top: 8px;">
-                    <div><strong>緯度経度高度:</strong></div>
-                    <div>緯度: ${geodetic.latitude.toFixed(4)}°</div>
-                    <div>経度: ${geodetic.longitude.toFixed(4)}°</div>
-                    <div>高度: ${geodetic.altitude.toFixed(1)} km</div>
-                </div>
-            `;
-        }
         
         this.elements.orbitInfo.innerHTML = `
             <div style="font-size: 12px; color: #666; margin-top: 10px;">
@@ -132,11 +122,14 @@ export class UIControls {
 
     updateGeodeticDisplay(geodetic?: { latitude: number; longitude: number; altitude: number } | null): void {
         if (!geodetic) {
-            this.elements.geodeticDisplay.textContent = '';
+            this.elements.geodeticDisplay.innerHTML = '';
             return;
         }
-        this.elements.geodeticDisplay.textContent =
-            `緯度: ${geodetic.latitude.toFixed(4)}°  経度: ${geodetic.longitude.toFixed(4)}°  高度: ${geodetic.altitude.toFixed(1)} km`;
+        this.elements.geodeticDisplay.innerHTML = `
+            緯度: ${geodetic.latitude.toFixed(2)}°<br>
+            経度: ${geodetic.longitude.toFixed(2)}°<br>
+            高度: ${Math.round(geodetic.altitude)} km
+        `;
     }
     
     setupPlacementPatternLimits(): void {

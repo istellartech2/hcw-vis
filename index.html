@@ -29,7 +29,7 @@
             <div id="time-display">
                 <span id="simulationTime">00分00秒</span>
             </div>
-            <div id="geodetic-display">緯度: 0.0000° 経度: 0.0000° 高度: 0.0 km</div>
+            <div id="geodetic-display"></div>
             <button id="fullscreen-toggle" onclick="toggleFullscreen()" title="全画面表示">⛶</button>
         </div>
         
@@ -42,10 +42,10 @@
                         <div class="control-group">
                             <label>配置:</label>
                             <select id="placementPattern">
-                                <option value="axis">軸上-位置</option>
-                                <option value="grid">格子-位置</option>
-                                <option value="random_position">ランダム-位置</option>
-                                <option value="random_position_velocity">ランダム-位置速度</option>
+                                <option value="axis">軸上-速度0</option>
+                                <option value="grid">格子-速度0</option>
+                                <option value="random_position">ランダム-速度0</option>
+                                <option value="random_position_velocity">ランダム</option>
                                 <option value="random_periodic">ランダム-周期解</option>
                                 <option value="xy_ellipse">楕円軌道</option>
                                 <option value="circular_orbit">円軌道</option>

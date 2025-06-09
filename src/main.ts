@@ -110,7 +110,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // UI表示を更新
         this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
-        this.uiControls.updateGeodeticDisplay(eciData?.geodetic);
     }
     
     
@@ -309,7 +308,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             newInfoDiv.id = 'selectedSatelliteInfo';
             newInfoDiv.style.cssText = `
                 position: absolute;
-                top: 70px;
+                top: 110px;
                 left: 20px;
                 background: rgba(0, 0, 0, 0.8);
                 color: white;
@@ -478,7 +477,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // UI表示を更新
         this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
-        this.uiControls.updateGeodeticDisplay(eciData?.geodetic);
 
         // 軌道パラメータを更新
         this.updateOrbitParameters();
