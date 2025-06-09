@@ -393,13 +393,17 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             // 全画面モードに切り替え
             this.originalContainerStyle = container.style.cssText;
             container.classList.add('fullscreen-mode');
-            button.textContent = '⛶';
+            (container as any).requestFullscreen?.();
+            button.textContent = '🗗';
             button.title = '全画面を終了';
             this.isFullscreen = true;
         } else {
             // 通常モードに戻る
             container.classList.remove('fullscreen-mode');
             container.style.cssText = this.originalContainerStyle;
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            }
             button.textContent = '⛶';
             button.title = '全画面表示';
             this.isFullscreen = false;
