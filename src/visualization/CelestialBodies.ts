@@ -84,18 +84,20 @@ export class CelestialBodies {
             linewidth: 1
         });
         
-        // 経度線（縦線）を追加 - ECEF座標系準拠（Z軸が北極）
+        // 経度線（縦線）を追加 - ECEF座標系（X=Greenwich, Y=90°E, Z=North Pole）
         for (let longitude = 0; longitude < 360; longitude += 15) {
             // 本初子午線以外
             if (longitude !== 0) {
                 const points: THREE.Vector3[] = [];
                 for (let latitude = -90; latitude <= 90; latitude += 3) {
-                    const phi = (90 - latitude) * Math.PI / 180;
-                    const theta = longitude * Math.PI / 180;
+                    // 緯度経度をECEF座標系に変換
+                    const lat_rad = latitude * Math.PI / 180;
+                    const lon_rad = longitude * Math.PI / 180;
                     
-                    const x = lineRadius * Math.sin(phi) * Math.cos(theta);
-                    const y = lineRadius * Math.sin(phi) * Math.sin(theta);
-                    const z = lineRadius * Math.cos(phi);
+                    // ECEF座標系: X=Greenwich meridian, Z=North pole
+                    const x = lineRadius * Math.cos(lat_rad) * Math.cos(lon_rad);  // Greenwich direction
+                    const y = lineRadius * Math.cos(lat_rad) * Math.sin(lon_rad);  // 90°E direction  
+                    const z = lineRadius * Math.sin(lat_rad);                      // North pole direction
                     
                     points.push(new THREE.Vector3(x, y, z));
                 }
@@ -112,12 +114,14 @@ export class CelestialBodies {
             if (latitude !== 0) {
                 const points: THREE.Vector3[] = [];
                 for (let longitude = 0; longitude <= 360; longitude += 3) {
-                    const phi = (90 - latitude) * Math.PI / 180;
-                    const theta = longitude * Math.PI / 180;
+                    // 緯度経度をECEF座標系に変換
+                    const lat_rad = latitude * Math.PI / 180;
+                    const lon_rad = longitude * Math.PI / 180;
                     
-                    const x = lineRadius * Math.sin(phi) * Math.cos(theta);
-                    const y = lineRadius * Math.sin(phi) * Math.sin(theta);
-                    const z = lineRadius * Math.cos(phi);
+                    // ECEF座標系: X=Greenwich meridian, Z=North pole
+                    const x = lineRadius * Math.cos(lat_rad) * Math.cos(lon_rad);  // Greenwich direction
+                    const y = lineRadius * Math.cos(lat_rad) * Math.sin(lon_rad);  // 90°E direction  
+                    const z = lineRadius * Math.sin(lat_rad);                      // North pole direction
                     
                     points.push(new THREE.Vector3(x, y, z));
                 }
@@ -131,10 +135,11 @@ export class CelestialBodies {
         // 赤道線を特別に強調（赤色）
         const equatorPoints: THREE.Vector3[] = [];
         for (let longitude = 0; longitude <= 360; longitude += 1) {
-            const theta = longitude * Math.PI / 180;
-            const x = lineRadius * Math.cos(theta);
-            const y = lineRadius * Math.sin(theta);
-            const z = 0;
+            const lon_rad = longitude * Math.PI / 180;
+            // 赤道（緯度0°）のECEF座標
+            const x = lineRadius * Math.cos(lon_rad);  // Greenwich direction
+            const y = lineRadius * Math.sin(lon_rad);  // 90°E direction
+            const z = 0;                               // 赤道面（Z=0）
             equatorPoints.push(new THREE.Vector3(x, y, z));
         }
         
@@ -151,10 +156,11 @@ export class CelestialBodies {
         // グリニッジ子午線を特別に強調（青色）
         const greenwichPoints: THREE.Vector3[] = [];
         for (let latitude = -90; latitude <= 90; latitude += 1) {
-            const phi = (90 - latitude) * Math.PI / 180;
-            const x = lineRadius * Math.sin(phi);
-            const y = 0;
-            const z = lineRadius * Math.cos(phi);
+            const lat_rad = latitude * Math.PI / 180;
+            // グリニッジ子午線（経度0°）のECEF座標
+            const x = lineRadius * Math.cos(lat_rad);  // Greenwich direction (経度0°)
+            const y = 0;                               // Greenwich meridian (Y=0)
+            const z = lineRadius * Math.sin(lat_rad);  // North pole direction
             greenwichPoints.push(new THREE.Vector3(x, y, z));
         }
         
