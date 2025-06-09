@@ -18,10 +18,13 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private satellites: Satellite[] = [];
     private time: number = 0;
     private simulationStartTime: Date = new Date();
+    // 時間刻み (seconds)
     private dt: number = 0.1;
     private paused: boolean = false;
     private animationFrameCounter: number = 0;
+    // 基準軌道の平均運動 (rad/s)
     private n: number = 1.126e-3;
+    // 基準軌道半径 (m)
     private orbitRadius: number = 6778000;
     
     // System components
@@ -69,7 +72,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.uiControls.setupPlacementPatternLimits();
         this.initSimulation();
         
-        // Create Earth
+        // Create Earth (convert orbit radius from meters to km)
         this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius / 1000);
         this.renderingSystem.getCelestialBodies().setEarthVisibility(true);
         
@@ -115,7 +118,9 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         if (!this.currentOrbitElements) return;
         
         const radiusKm = this.currentOrbitElements.semiMajorAxis;
+        // Convert km -> m
         this.orbitRadius = radiusKm * 1000;
+        // meanMotion is already in rad/s
         this.n = this.currentOrbitElements.meanMotion;
         
         this.hillSolver.updateMeanMotion(this.n);

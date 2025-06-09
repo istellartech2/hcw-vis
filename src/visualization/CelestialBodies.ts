@@ -16,6 +16,7 @@ export class CelestialBodies {
         this.scene.add(this.earthGroup);
     }
     
+    // orbitRadius: km
     createEarth(orbitRadius: number): void {
         // 既存の地球があれば削除
         if (this.earth) {

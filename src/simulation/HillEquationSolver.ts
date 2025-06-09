@@ -19,6 +19,7 @@ export interface HillDerivatives {
 }
 
 export class HillEquationSolver {
+    // 平均運動 (rad/s)
     private n: number; // 平均運動（軌道角速度）
     
     constructor(n: number) {
@@ -31,6 +32,7 @@ export class HillEquationSolver {
     
     // Hill方程式の微分方程式（右辺）
     computeDerivatives(state: HillState): HillDerivatives {
+        // state values: position (km), velocity (km/s)
         const { x, y, z, vx, vy, vz } = state;
         const n = this.n;
         
@@ -53,6 +55,7 @@ export class HillEquationSolver {
     }
     
     // 4次ルンゲクッタ法による数値積分
+    // dt: integration step (seconds)
     rungeKutta4Step(sat: Satellite, dt: number): void {
         // 現在の状態
         const state0: HillState = {
