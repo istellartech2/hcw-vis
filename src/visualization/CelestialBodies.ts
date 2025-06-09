@@ -39,6 +39,11 @@ export class CelestialBodies {
         
         // 地球の球体ジオメトリ（現実的なサイズ）
         const earthGeometry = new THREE.SphereGeometry(earthRadiusInScene, 64, 64);
+        // Align texture orientation with ECEF axes
+        // SphereGeometry assumes Y-up, but our ECEF frame uses Z-up.
+        // Rotate the geometry so that north becomes +Z and the prime meridian
+        // remains on +X.
+        earthGeometry.rotateX(Math.PI / 2);
         
         // 地球のテクスチャを読み込み
         const textureLoader = new THREE.TextureLoader();
