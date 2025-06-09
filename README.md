@@ -2,7 +2,7 @@
 
 衛星群の相対運動を3D可視化するWebアプリケーション
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-blue)](https://your-username.github.io/hill-equation/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-blue)](https://ina111.github.io/hill-equation/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-0.160+-green)](https://threejs.org/)
 
