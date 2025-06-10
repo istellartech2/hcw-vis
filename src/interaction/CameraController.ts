@@ -109,7 +109,9 @@ export class CameraController {
             target.closest('input') !== null ||
             target.closest('select') !== null ||
             target.closest('textarea') !== null ||
-            target.closest('#selectedSatelliteInfo') !== null
+            target.closest('#selectedSatelliteInfo') !== null ||
+            target.closest('#time-display') !== null ||
+            target.closest('[onclick]') !== null
         );
     }
 
