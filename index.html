@@ -20,6 +20,241 @@
         <h1>🛰️ Hill's equations simulator</h1>
         
         <div id="canvas-container">
+            <!-- トップコントロールバー -->
+            <div id="top-controls">
+                <!-- ハンバーガーメニューボタン -->
+                <button id="hamburger-menu" class="hamburger-button" onclick="toggleSidebar()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                
+                <!-- クイックアクションボタン -->
+                <div class="quick-actions">
+                    <button class="action-button" onclick="resetSimulation()" title="衛星を初期位置に戻す">
+                        <span class="button-icon">🛰️🔄</span>
+                    </button>
+                    <button class="action-button" onclick="resetView()" title="カメラを初期位置に戻す">
+                        <span class="button-icon">🎥🔄</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 衛星配置パネル -->
+            <div id="satellite-config-panel">
+                <div class="panel-header" onclick="toggleSatelliteConfig()">
+                    <h4 class="section-title">🛰️ 衛星配置</h4>
+                    <span id="satellite-config-toggle" class="toggle-icon">▼</span>
+                </div>
+                <div id="satellite-config-content" class="panel-content">
+                    <div class="control-row">
+                        <div class="control-group">
+                            <label>配置:</label>
+                            <select id="placementPattern">
+                                <option value="axis">軸上-速度0</option>
+                                <option value="grid">格子-速度0</option>
+                                <option value="random_position">ランダム-速度0</option>
+                                <option value="random_position_velocity">ランダム</option>
+                                <option value="random_periodic">ランダム-周期解</option>
+                                <option value="periodic_orbit">楕円軌道</option>
+                                <option value="circular_orbit">円軌道</option>
+                                <option value="hexagonal_disk">円盤軌道</option>
+                                <option value="vbar_approach">V-bar軌道</option>
+                                <option value="rbar_approach">R-bar軌道</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control-row">
+                        <div class="control-group">
+                            <label>数:</label>
+                            <input type="number" id="satelliteCount" min="1" max="5" value="1">
+                        </div>
+                        <div class="control-group">
+                            <label>範囲(m):</label>
+                            <input type="number" id="orbitRadius" min="0.1" max="10000" step="0.1" value="10">
+                        </div>
+                    </div>
+                    <div id="zAmplitudeControl" style="display: none;">
+                        <div class="control-group">
+                            <label>Z振幅:</label>
+                            <input type="range" id="zAmplitude" min="-3" max="3" step="0.1" value="0">
+                            <span id="zAmplitudeValue">0.0</span>A
+                        </div>
+                    </div>
+                    <div id="periodicParamsControl" style="display: none;">
+                        <h5>楕円解パラメータ (A=範囲、B~F=A比)</h5>
+                        <div class="periodic-params-grid">
+                            <div class="param-item">
+                                <label>B/A:</label>
+                                <input type="range" id="paramB" min="-3" max="3" step="0.1" value="0">
+                                <span id="paramBValue">0.0</span>
+                            </div>
+                            <div class="param-item">
+                                <label>D/A:</label>
+                                <input type="range" id="paramD" min="-3" max="3" step="0.1" value="0">
+                                <span id="paramDValue">0.0</span>
+                            </div>
+                            <div class="param-item">
+                                <label>E/A:</label>
+                                <input type="range" id="paramE" min="-3" max="3" step="0.1" value="0">
+                                <span id="paramEValue">0.0</span>
+                            </div>
+                            <div class="param-item">
+                                <label>F/A:</label>
+                                <input type="range" id="paramF" min="-3" max="3" step="0.1" value="0">
+                                <span id="paramFValue">0.0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="circularZDirectionControl" style="display: none;">
+                        <div class="control-group">
+                            <input type="checkbox" id="circularZDirection" checked>
+                            <label>+Z方向</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- サイドバー -->
+            <div id="sidebar" class="sidebar">
+                <div class="sidebar-header">
+                    <h3>設定</h3>
+                    <button class="close-button" onclick="toggleSidebar()">×</button>
+                </div>
+                <div class="sidebar-content">
+                    <!-- 制御 -->
+                    <h4 class="sidebar-category-title">⏱️ 制御</h4>
+                            <!-- シミュレーション制御 -->
+                            <div class="subsection">
+                                <h5 class="subsection-title">⚡ シミュレーション</h5>
+                                <div class="control-row">
+                                    <div class="control-group" style="flex: 1;">
+                                        <label>推力:</label>
+                                        <input type="number" id="thrustAmount" min="0.0001" max="1" step="0.0001" value="0.001" style="width: 70px;">
+                                        <span style="font-size: 11px;">m/s</span>
+                                    </div>
+                                    <div class="control-group" style="flex: 1;">
+                                        <label>摂動:</label>
+                                        <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02" style="width: 70px;">
+                                        <span style="font-size: 11px;">m/s</span>
+                                    </div>
+                                </div>
+                                <div class="control-buttons">
+                                    <button onclick="addPerturbation()" style="font-size: 12px; padding: 6px 12px;">💥摂動</button>
+                                </div>
+                            </div>
+                    
+                    <!-- 表示 -->
+                    <h4 class="sidebar-category-title">👁️ 表示</h4>
+                            <!-- 3D空間サブセクション -->
+                            <div class="subsection">
+                                <h5 class="subsection-title">🌌 3D空間</h5>
+                                <div class="control-row">
+                                    <div class="control-group" style="flex: 1;">
+                                        <input type="checkbox" id="showGrid" checked>
+                                        <label style="min-width: auto;">グリッド</label>
+                                    </div>
+                                    <div class="control-group" style="flex: 1;">
+                                        <input type="checkbox" id="showEarth" checked>
+                                        <label style="min-width: auto;">地球</label>
+                                    </div>
+                                    <div class="control-group" style="flex: 2;">
+                                        <select id="earthTexture" style="width: 100%;">
+                                            <option value="earth00.webp">シンプル</option>
+                                            <option value="earth01.webp">標準</option>
+                                            <option value="earth03.webp">淡白</option>
+                                            <option value="earth04.webp">ブルーマーブル</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 衛星サブセクション -->
+                            <div class="subsection">
+                                <h5 class="subsection-title">🛰️ 衛星</h5>
+                                <div class="control-row">
+                                    <div class="control-group" style="flex: 1;">
+                                        <label>サイズ:</label>
+                                        <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8" style="width: 50px;">
+                                        <span style="font-size: 11px;">px</span>
+                                    </div>
+                                    <div class="control-group" style="flex: 1;">
+                                        <label>形状:</label>
+                                        <select id="satelliteShape" style="width: 80px;">
+                                            <option value="sphere">球体</option>
+                                            <option value="cube">立方体</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="control-row">
+                                    <div class="control-group" style="flex: 1;">
+                                        <input type="checkbox" id="uniformSatelliteColor">
+                                        <label style="min-width: auto;">色を統一</label>
+                                    </div>
+                                    <div class="control-group" style="flex: 1;">
+                                        <input type="color" id="satelliteColor" value="#ffffff" style="width: 50px;">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 軌跡サブセクション -->
+                            <div class="subsection">
+                                <h5 class="subsection-title">📈 軌跡</h5>
+                                <div class="control-row">
+                                    <div class="control-group" style="flex: 1;">
+                                        <input type="checkbox" id="showTrails" checked>
+                                        <label style="min-width: auto;">表示</label>
+                                    </div>
+                                    <div class="control-group" style="flex: 2;">
+                                        <label>長さ:</label>
+                                        <input type="range" id="trailLength" min="50" max="500" step="50" value="200" style="width: 80px;">
+                                        <span id="trailLengthValue" style="font-size: 11px;">200</span>
+                                    </div>
+                                </div>
+                            </div>
+                    
+                    <!-- 基準軌道 -->
+                    <div class="sidebar-section">
+                        <div class="sidebar-section-header" onclick="toggleSidebarSection('reference-orbit')">
+                            <span class="section-icon">🌍</span>
+                            <h4 class="section-title">基準軌道</h4>
+                            <span id="reference-orbit-toggle" class="section-toggle">▶</span>
+                        </div>
+                        <div id="reference-orbit" class="sidebar-section-content collapsed">
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>軌道傾斜角(°):</label>
+                                    <input type="number" id="inclination" min="0" max="180" step="0.1" value="51.6">
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>昇交点経度(°):</label>
+                                    <input type="number" id="raan" min="0" max="360" step="0.1" value="0">
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>近地点引数(°):</label>
+                                    <input type="number" id="argOfPerigee" min="0" max="360" step="0.1" value="0">
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>平均近点角(°):</label>
+                                    <input type="number" id="meanAnomaly" min="0" max="360" step="0.1" value="0">
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>高度(km):</label>
+                                    <input type="number" id="orbitAltitude" min="200" max="36000" step="50" value="500">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <canvas id="canvas"></canvas>
             <div id="axes-info">
                 <div class="axis-label" style="color: #ff6b6b">R軸: Radial (径方向 - 地心→衛星)</div>
@@ -53,261 +288,30 @@
                 </div>
             </div>
             
-            <div id="time-display" onclick="togglePause()" title="クリックで一時停止/再開">
-                <span id="simulationTime">00分00秒</span>
+            <!-- 時間制御パネル -->
+            <div id="time-controls-panel">
+                <div id="time-scale-control">
+                    <span class="icon">⏱️</span>
+                    <select id="timeScale">
+                        <option value="1">1x</option>
+                        <option value="2">2x</option>
+                        <option value="5">5x</option>
+                        <option value="10">10x</option>
+                        <option value="20">20x</option>
+                        <option value="50">50x</option>
+                        <option value="100" selected>100x</option>
+                        <option value="200">200x</option>
+                        <option value="500">500x</option>
+                        <option value="1000">1000x</option>
+                    </select>
+                </div>
+                <div id="time-display" onclick="togglePause()" title="クリックで一時停止/再開">
+                    <span id="simulationTime">00分00秒</span>
+                </div>
             </div>
             
-            <!-- 衛星配置設定パネル -->
-            <div id="satellite-config-panel" class="overlay-panel">
-                <div class="panel-header" onclick="toggleSatelliteConfig()">
-                    <span class="section-title">🛰️ 衛星配置</span>
-                    <span class="toggle-icon" id="satellite-config-toggle">▼</span>
-                </div>
-                <div id="satellite-config-content" class="panel-content" style="display: none;">
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>配置:</label>
-                            <select id="placementPattern">
-                                <option value="axis">軸上-速度0</option>
-                                <option value="grid">格子-速度0</option>
-                                <option value="random_position">ランダム-速度0</option>
-                                <option value="random_position_velocity">ランダム</option>
-                                <option value="random_periodic">ランダム-周期解</option>
-                                <option value="periodic_orbit">楕円軌道</option>
-                                <option value="circular_orbit">円軌道</option>
-                                <option value="hexagonal_disk">円盤軌道</option>
-                                <option value="vbar_approach">V-bar軌道</option>
-                                <option value="rbar_approach">R-bar軌道</option>
-                            </select>
-                        </div>
-                        
-                        <div class="control-group" id="satelliteCountControl">
-                            <label>数:</label>
-                            <input type="number" id="satelliteCount" min="1" max="5" value="1">
-                        </div>
-                    </div>
-                    
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>範囲(m):</label>
-                            <input type="number" id="orbitRadius" min="0.1" max="10000" step="0.1" value="10">
-                        </div>
-                    </div>
-                    
-                    <div class="control-row compact">
-                        <div class="control-group" id="zAmplitudeControl" style="display: none;">
-                            <label>Z振幅:</label>
-                            <input type="range" id="zAmplitude" min="-3" max="3" step="0.1" value="0">
-                            <span id="zAmplitudeValue">0.0</span>A
-                        </div>
-                        <div class="control-group" id="periodicParamsControl" style="display: none;">
-                            <h5 class="subsection-title">楕円解パラメータ (A=範囲、B~F=A比)</h5>
-                            <div class="periodic-params-grid">
-                                <div class="param-item">
-                                    <label>B/A:</label>
-                                    <input type="range" id="paramB" min="-3" max="3" step="0.1" value="0">
-                                    <span id="paramBValue">0.0</span>
-                                </div>
-                                <div class="param-item">
-                                    <label>D/A:</label>
-                                    <input type="range" id="paramD" min="-3" max="3" step="0.1" value="0">
-                                    <span id="paramDValue">0.0</span>
-                                </div>
-                                <div class="param-item">
-                                    <label>E/A:</label>
-                                    <input type="range" id="paramE" min="-3" max="3" step="0.1" value="0">
-                                    <span id="paramEValue">0.0</span>
-                                </div>
-                                <div class="param-item">
-                                    <label>F/A:</label>
-                                    <input type="range" id="paramF" min="-3" max="3" step="0.1" value="0">
-                                    <span id="paramFValue">0.0</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="control-group" id="circularZDirectionControl" style="display: none;">
-                            <label>
-                                <input type="checkbox" id="circularZDirection" checked>
-                                +Z方向
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         
-        <div id="controls">
-            <div class="controls-grid">
-                
-                <!-- シミュレーション制御 -->
-                <div class="control-section">
-                    <h4 class="section-title">⏱️ 制御</h4>
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>倍速:</label>
-                            <select id="timeScale">
-                                <option value="1">1x</option>
-                                <option value="2">2x</option>
-                                <option value="5">5x</option>
-                                <option value="10">10x</option>
-                                <option value="20">20x</option>
-                                <option value="50">50x</option>
-                                <option value="100" selected>100x</option>
-                                <option value="200">200x</option>
-                                <option value="500">500x</option>
-                                <option value="1000">1000x</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- 推力制御設定 -->
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>推力量:</label>
-                            <input type="number" id="thrustAmount" min="0.0001" max="1" step="0.0001" value="0.001">
-                            <span>m/s</span>
-                        </div>
-                    </div>
-                    
-                    <!-- 摂動設定 -->
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>摂動量:</label>
-                            <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02">
-                            <span>m/s</span>
-                        </div>
-                    </div>
-                    
-                    <div class="control-buttons compact">
-                        <button onclick="resetSimulation()">🔄衛星初期化</button>
-                        <button onclick="addPerturbation()">💥＋摂動</button>
-                        <button onclick="resetView()">🎦視点リセット</button>
-                    </div>
-                </div>
-                
-                <!-- 表示設定 -->
-                <div class="control-section">
-                    <h4 class="section-title">👁️ 表示</h4>
-                    
-                    <!-- 3D空間の表示要素 -->
-                    <div class="control-subsection">
-                        <h5 class="subsection-title">🌌 3D空間</h5>
-                        <div class="control-row compact">
-                            <div class="control-group">
-                                <input type="checkbox" id="showGrid" checked>
-                                <label>グリッド</label>
-                            </div>
-                            <div class="control-group">
-                                <input type="checkbox" id="showEarth" checked>
-                                <label>地球</label>
-                            </div>
-                        </div>
-                        
-                        <div class="control-row compact">
-                            <div class="control-group">
-                                <label>地球テクスチャ:</label>
-                                <select id="earthTexture">
-                                    <option value="earth00.webp">シンプル</option>
-                                    <option value="earth01.webp">標準</option>
-                                    <option value="earth03.webp">淡白</option>
-                                    <option value="earth04.webp">ブルーマーブル</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 衛星の表示設定 -->
-                    <div class="control-subsection">
-                        <h5 class="subsection-title">🛰️ 衛星</h5>
-                        <div class="control-row compact">
-                            <div class="control-group">
-                                <label>サイズ:</label>
-                                <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8">
-                                <span>px</span>
-                            </div>
-                        </div>
-                        
-                        <div class="control-row compact">
-                            <div class="control-group">
-                                <label>形状:</label>
-                                <select id="satelliteShape">
-                                    <option value="sphere">球体</option>
-                                    <option value="cube">立方体</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="control-row compact">
-                            <div class="control-group">
-                                <input type="checkbox" id="uniformSatelliteColor">
-                                <label>色を統一</label>
-                            </div>
-                            <div class="control-group">
-                                <label>色:</label>
-                                <input type="color" id="satelliteColor" value="#ffffff">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 軌跡の表示設定 -->
-                    <div class="control-subsection">
-                        <h5 class="subsection-title">📈 軌跡</h5>
-                        <div class="control-row compact">
-                            <div class="control-group">
-                                <input type="checkbox" id="showTrails" checked>
-                                <label>軌跡を表示</label>
-                            </div>
-                        </div>
-                        
-                        <div class="control-row compact">
-                            <div class="control-group">
-                                <label>軌跡長:</label>
-                                <input type="range" id="trailLength" min="50" max="500" step="50" value="200">
-                                <span id="trailLengthValue">200</span>
-                                <span>点</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 基準軌道設定 -->
-                <div class="control-section">
-                    <h4 class="section-title collapsible" onclick="toggleSection('orbit-controls')">🌍 基準軌道 <span class="toggle-icon">▼</span></h4>
-                    <div id="orbit-controls" class="collapsible-content" style="display: none;">
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>軌道傾斜角(°):</label>
-                            <input type="number" id="inclination" min="0" max="180" step="0.1" value="51.6">
-                        </div>
-                        
-                        <div class="control-group">
-                            <label>昇交点経度(°):</label>
-                            <input type="number" id="raan" min="0" max="360" step="0.1" value="0">
-                        </div>
-                    </div>
-                    
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>近地点引数(°):</label>
-                            <input type="number" id="argOfPerigee" min="0" max="360" step="0.1" value="0">
-                        </div>
-                    </div>
-                    
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>平均近点角(°):</label>
-                            <input type="number" id="meanAnomaly" min="0" max="360" step="0.1" value="0">
-                        </div>
-                        
-                        <div class="control-group">
-                            <label>高度(km):</label>
-                            <input type="number" id="orbitAltitude" min="200" max="36000" step="50" value="500">
-                        </div>
-                    </div>
-                    </div>
-                </div>
-            </div>
-        </div>
         
 
         
@@ -315,5 +319,45 @@
     </div>
 
     <script type="module" src="/src/main.ts"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const hamburger = document.getElementById('hamburger-menu');
+            sidebar.classList.toggle('open');
+            hamburger.classList.toggle('active');
+        }
+        
+        function toggleSidebarSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const toggle = document.getElementById(sectionId + '-toggle');
+            section.classList.toggle('collapsed');
+            toggle.textContent = section.classList.contains('collapsed') ? '▶' : '▼';
+        }
+        
+        function toggleSatelliteConfig() {
+            const content = document.getElementById('satellite-config-content');
+            const toggle = document.getElementById('satellite-config-toggle');
+            
+            if (content.style.display === 'none' || !content.style.display) {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+        
+        // サイドバー外をクリックしたときに閉じる
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const hamburger = document.getElementById('hamburger-menu');
+            if (sidebar.classList.contains('open') && 
+                !sidebar.contains(event.target) && 
+                !hamburger.contains(event.target)) {
+                sidebar.classList.remove('open');
+                hamburger.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>

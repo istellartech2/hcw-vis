@@ -435,7 +435,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             selectedInfoDiv.id = 'selectedSatelliteInfo';
             selectedInfoDiv.style.cssText = `
                 position: absolute;
-                top: 110px;
+                bottom: 20px;
                 left: 20px;
                 background: rgba(0, 0, 0, 0.8);
                 color: white;
