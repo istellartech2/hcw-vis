@@ -249,9 +249,9 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 this.renderingSystem.updatePlots(this.satellites);
             }
             
-            // Update selected satellite info (only when selected and less frequently)
-            if (this.renderingSystem.getSelectedSatelliteIndex() >= 0 && this.animationFrameCounter % 5 === 0) {
-                this.updateSelectedSatelliteInfo(this.renderingSystem.getSelectedSatelliteIndex());
+            // Update selected satellite info (only when selected and much less frequently)
+            if (this.renderingSystem.getSelectedSatelliteIndex() >= 0 && this.animationFrameCounter % 60 === 0) {
+                this.updateSelectedSatelliteInfo();
             }
             
             // Update time display
@@ -350,28 +350,24 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             const r = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
             const v = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
             
-            // Only update content if it's different to avoid recreating buttons
-            const expectedContent = `
-                <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
-                位置: R=${pos.x.toFixed(0)}, S=${pos.y.toFixed(0)}, W=${pos.z.toFixed(0)} m<br>
-                速度: ${v.toFixed(2)} m/s<br>
-                距離: ${r.toFixed(0)} m<br>
-                <div style="margin-top: 10px;">
-                    <strong>推力制御:</strong><br>
-                    <div id="thrust-controls"></div>
-                </div>
-            `;
+            // Check if we need to create the structure (first time or satellite changed)
+            let infoTextDiv = selectedInfoDiv.querySelector('#info-text');
+            let thrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls');
             
-            // Check if we need to create buttons (first time or satellite changed)
-            const thrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls');
-            const needsButtons = !thrustControlsDiv || thrustControlsDiv.children.length === 0;
-            
-            if (needsButtons) {
-                // Clear and recreate content with buttons
-                selectedInfoDiv.innerHTML = expectedContent;
+            if (!infoTextDiv || !thrustControlsDiv) {
+                // Create the structure once
+                selectedInfoDiv.innerHTML = `
+                    <div id="info-text"></div>
+                    <div style="margin-top: 10px;">
+                        <strong>推力制御:</strong><br>
+                        <div id="thrust-controls"></div>
+                    </div>
+                `;
                 
-                const newThrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls')!;
+                infoTextDiv = selectedInfoDiv.querySelector('#info-text')!;
+                thrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls')!;
                 
+                // Create buttons once
                 const axes = [
                     { axis: 'r', label: 'R' },
                     { axis: 's', label: 'S' },
@@ -395,26 +391,24 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                         this.applyThrustToSelected(axis, -0.001);
                     });
                     
-                    newThrustControlsDiv.appendChild(plusBtn);
-                    newThrustControlsDiv.appendChild(minusBtn);
+                    thrustControlsDiv!.appendChild(plusBtn);
+                    thrustControlsDiv!.appendChild(minusBtn);
                     
                     if (axis !== 'w') {
-                        newThrustControlsDiv.appendChild(document.createElement('br'));
+                        thrustControlsDiv!.appendChild(document.createElement('br'));
                     }
                 });
-            } else {
-                // Just update the text content, keep buttons intact
-                const infoLines = selectedInfoDiv.innerHTML.split('<div style="margin-top: 10px;">')[0];
-                const controlsSection = '<div style="margin-top: 10px;">' + selectedInfoDiv.innerHTML.split('<div style="margin-top: 10px;">')[1];
                 
-                selectedInfoDiv.innerHTML = `
-                    <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
-                    位置: R=${pos.x.toFixed(0)}, S=${pos.y.toFixed(0)}, W=${pos.z.toFixed(0)} m<br>
-                    速度: ${v.toFixed(2)} m/s<br>
-                    距離: ${r.toFixed(0)} m<br>
-                    ${controlsSection}
-                `;
+                console.log('Thrust control buttons created');
             }
+            
+            // Always update just the text content
+            infoTextDiv!.innerHTML = `
+                <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
+                位置: R=${pos.x.toFixed(0)}, S=${pos.y.toFixed(0)}, W=${pos.z.toFixed(0)} m<br>
+                速度: ${v.toFixed(2)} m/s<br>
+                距離: ${r.toFixed(0)} m
+            `;
             
             selectedInfoDiv.style.display = 'block';
         } else {
@@ -520,9 +514,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // Log thrust application for debugging
         console.log(`Applied thrust: ${dv.toFixed(6)} m/s in ${axis.toUpperCase()} direction to satellite ${selectedIndex}`);
-        
-        // Update info display without recreating buttons
-        this.updateSelectedSatelliteInfo();
     }
     
     public updateOrbitElementsFromUI(): void {
