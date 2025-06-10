@@ -8,6 +8,7 @@ export class CelestialBodies {
     private earth: THREE.Mesh | null = null;
     private earthGroup: THREE.Group;
     private showEarth: boolean = false;
+    private currentOrbitRadius: number = 6778137;
     
     constructor(scene: THREE.Scene) {
         this.scene = scene;
@@ -17,6 +18,7 @@ export class CelestialBodies {
     
     // orbitRadius: m (meters)
     createEarth(orbitRadius: number, textureFile: string = 'earth00.webp'): void {
+        this.currentOrbitRadius = orbitRadius;
         // 既存の地球があれば削除
         if (this.earth) {
             this.earthGroup.remove(this.earth);
@@ -46,18 +48,53 @@ export class CelestialBodies {
         
         // 地球のテクスチャを読み込み
         const textureLoader = new THREE.TextureLoader();
-        const earthTexture = textureLoader.load(`/asset/${textureFile}`, 
-            // 読み込み成功時
-            () => console.log('Earth texture loaded successfully'),
-            // 読み込み進行中
-            undefined,
-            // エラー時
-            (error) => console.error('Error loading earth texture:', error)
-        );
         
+        // 複数のパスを試すフォールバック機能
+        const tryLoadTexture = (paths: string[]): void => {
+            if (paths.length === 0) {
+                console.error('All texture paths failed, using fallback material');
+                this.createEarthWithFallbackMaterial(earthGeometry);
+                return;
+            }
+            
+            const currentPath = paths[0];
+            const remainingPaths = paths.slice(1);
+            
+            textureLoader.load(
+                currentPath,
+                // 成功時
+                (texture) => {
+                    console.log(`Earth texture loaded successfully from: ${currentPath}`);
+                    this.applyTextureToEarth(earthGeometry, texture);
+                },
+                // 進行中
+                undefined,
+                // エラー時 - 次のパスを試す
+                (error) => {
+                    console.warn(`Failed to load texture from ${currentPath}, trying next path...`);
+                    tryLoadTexture(remainingPaths);
+                }
+            );
+        };
+        
+        // 試すパスのリスト（優先順位順）
+        const texturePaths = [
+            `/asset/${textureFile}`,           // 通常のパス
+            `./asset/${textureFile}`,          // 相対パス
+            `/public/asset/${textureFile}`,    // 開発環境用
+            `./public/asset/${textureFile}`    // 相対的な開発環境用
+        ];
+        
+        tryLoadTexture(texturePaths);
+        
+        // 緯度経度線を追加
+        this.addLatitudeLongitudeLines(earthRadiusInScene);
+    }
+    
+    private applyTextureToEarth(earthGeometry: THREE.SphereGeometry, texture: THREE.Texture): void {
         // 地球のマテリアル（テクスチャ付き）
         const earthMaterial = new THREE.MeshPhongMaterial({
-            map: earthTexture,
+            map: texture,
             emissive: 0x000033,
             emissiveIntensity: 0.05,
             shininess: 10,
@@ -68,12 +105,27 @@ export class CelestialBodies {
         // Hill方程式の座標系における正確な地球位置
         // 原点(0,0,0)は軌道上のターゲット衛星位置
         // 地球中心はY軸負方向（径方向内側）に軌道半径分配置
-        this.earth.position.set(0, -orbitRadius, 0);
+        this.earth.position.set(0, -this.getOrbitRadius(), 0);
         
         this.earthGroup.add(this.earth);
+    }
+    
+    private createEarthWithFallbackMaterial(earthGeometry: THREE.SphereGeometry): void {
+        // フォールバック用のマテリアル（テクスチャなし）
+        const fallbackMaterial = new THREE.MeshPhongMaterial({
+            color: 0x4a6fa5,
+            emissive: 0x000033,
+            emissiveIntensity: 0.05,
+            shininess: 10,
+        });
         
-        // 緯度経度線を追加
-        this.addLatitudeLongitudeLines(earthRadiusInScene);
+        this.earth = new THREE.Mesh(earthGeometry, fallbackMaterial);
+        this.earth.position.set(0, -this.getOrbitRadius(), 0);
+        this.earthGroup.add(this.earth);
+    }
+    
+    private getOrbitRadius(): number {
+        return this.currentOrbitRadius;
     }
     
     private addLatitudeLongitudeLines(earthRadius: number): void {
