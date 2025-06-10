@@ -321,16 +321,16 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         if (eciData) {
             // 位置情報（緯度経度高度）
             geodeticInfo.innerHTML = `
-                緯度: ${eciData.geodetic.latitude.toFixed(4)}°<br>
-                経度: ${eciData.geodetic.longitude.toFixed(4)}°<br>
-                高度: ${(eciData.geodetic.altitude / 1000).toFixed(1)} km
+                緯度: ${eciData.geodetic.latitude.toFixed(1)}°<br>
+                経度: ${eciData.geodetic.longitude.toFixed(1)}°<br>
+                高度: ${(eciData.geodetic.altitude / 1000).toFixed(0)} km
             `;
             
             // ECI座標系
             eciInfo.innerHTML = `
-                X: ${(eciData.position.x / 1000).toFixed(2)} km<br>
-                Y: ${(eciData.position.y / 1000).toFixed(2)} km<br>
-                Z: ${(eciData.position.z / 1000).toFixed(2)} km
+                X: ${(eciData.position.x / 1000).toFixed(1)} km<br>
+                Y: ${(eciData.position.y / 1000).toFixed(1)} km<br>
+                Z: ${(eciData.position.z / 1000).toFixed(1)} km
             `;
         }
         
