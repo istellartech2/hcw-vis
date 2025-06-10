@@ -70,6 +70,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.setupSatelliteSelectionListener();
         this.setupUIEventListeners();
         this.setupGlobalThrustFunction();
+        this.setupReferenceSatellitePanel();
         this.initializeOrbitElements();
         this.updateOrbitParameters();
         this.uiControls.setupPlacementPatternLimits();
@@ -102,6 +103,31 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             console.log(`Global applyThrust called with axis: ${axis}, dv: ${dv}`);
             this.applyThrustToSelected(axis, dv);
         };
+    }
+    
+    private setupReferenceSatellitePanel(): void {
+        // 基準衛星情報パネルの折りたたみ機能を初期化
+        const toggleButton = document.getElementById('reference-satellite-toggle');
+        const content = document.getElementById('reference-satellite-content');
+        
+        if (toggleButton && content) {
+            // 初期状態は折りたたまれている
+            content.classList.add('hidden');
+            toggleButton.classList.add('collapsed');
+            
+            // グローバル関数として登録
+            (window as any).toggleReferenceSatelliteInfo = () => {
+                const isCollapsed = toggleButton.classList.contains('collapsed');
+                
+                if (isCollapsed) {
+                    content.classList.remove('hidden');
+                    toggleButton.classList.remove('collapsed');
+                } else {
+                    content.classList.add('hidden');
+                    toggleButton.classList.add('collapsed');
+                }
+            };
+        }
     }
     
     private initializeOrbitElements(): void {
@@ -268,64 +294,55 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     
     private updateInfo(): void {
-        let infoDiv = document.getElementById('satelliteInfo');
+        // 新しいパネルに基準衛星情報を更新
+        this.updateReferenceSatellitePanel();
         
-        // 要素が存在しない場合は動的に作成
-        if (!infoDiv) {
-            infoDiv = document.createElement('div');
-            infoDiv.id = 'satelliteInfo';
-            infoDiv.style.cssText = `
-                position: absolute;
-                bottom: 20px;
-                left: 20px;
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 12px;
-                border-radius: 10px;
-                font-size: 12px;
-                border: 1px solid rgba(74, 158, 255, 0.3);
-                backdrop-filter: blur(10px);
-                max-width: 320px;
-                z-index: 10;
+        // 左下の基準衛星情報表示は無効化（新しいパネルに統合されたため）
+        // 既存のsatelliteInfo要素があれば非表示にする
+        const oldInfoDiv = document.getElementById('satelliteInfo');
+        if (oldInfoDiv) {
+            oldInfoDiv.style.display = 'none';
+        }
+    }
+    
+    private updateReferenceSatellitePanel(): void {
+        const geodeticInfo = document.getElementById('geodetic-info');
+        const eciInfo = document.getElementById('eci-info');
+        const orbitalInfo = document.getElementById('orbital-info');
+        
+        if (!geodeticInfo || !eciInfo || !orbitalInfo || !this.currentOrbitElements) {
+            return;
+        }
+        
+        // ECI座標を取得（現在時刻で計算）
+        const currentDate = new Date(Date.now() + this.time * 1000);
+        const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements, currentDate);
+        
+        if (eciData) {
+            // 位置情報（緯度経度高度）
+            geodeticInfo.innerHTML = `
+                緯度: ${eciData.geodetic.latitude.toFixed(4)}°<br>
+                経度: ${eciData.geodetic.longitude.toFixed(4)}°<br>
+                高度: ${(eciData.geodetic.altitude / 1000).toFixed(1)} km
             `;
             
-            // canvas-containerに追加（3D画面のオーバーレイとして表示）
-            const canvasContainer = document.getElementById('canvas-container');
-            if (canvasContainer) {
-                canvasContainer.appendChild(infoDiv);
-            } else {
-                // フォールバック: bodyに追加
-                document.body.appendChild(infoDiv);
-            }
+            // ECI座標系
+            eciInfo.innerHTML = `
+                X: ${(eciData.position.x / 1000).toFixed(2)} km<br>
+                Y: ${(eciData.position.y / 1000).toFixed(2)} km<br>
+                Z: ${(eciData.position.z / 1000).toFixed(2)} km
+            `;
         }
         
-        let html = '基準衛星の状態:';
-        
-        if (this.currentOrbitElements) {
-            html += `<div style="margin-bottom: 5px; color: #999;">
-                    高度: ${(this.currentOrbitElements.altitude / 1000).toFixed(1)} km | 
-                    周期: ${this.currentOrbitElements.period.toFixed(1)} 分 | 
-                    傾斜角: ${this.currentOrbitElements.inclination.toFixed(1)}°
-                    </div>`;
-            
-            // ECI座標を取得して表示（現在時刻で計算）
-            const currentDate = new Date(Date.now() + this.time * 1000);
-            const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements, currentDate);
-            if (eciData) {
-                html += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd; color: #666;">
-                        <strong>ECI座標系 (km):</strong><br>
-                        X: ${(eciData.position.x / 1000).toFixed(2)} | 
-                        Y: ${(eciData.position.y / 1000).toFixed(2)} | 
-                        Z: ${(eciData.position.z / 1000).toFixed(2)}<br>
-                        <strong>緯度経度高度:</strong><br>
-                        緯度: ${eciData.geodetic.latitude.toFixed(4)}° | 
-                        経度: ${eciData.geodetic.longitude.toFixed(4)}° | 
-                        高度: ${(eciData.geodetic.altitude / 1000).toFixed(1)} km
-                        </div>`;
-            }
-        }
-        
-        infoDiv.innerHTML = html;
+        // 軌道要素
+        orbitalInfo.innerHTML = `
+            高度: ${(this.currentOrbitElements.altitude / 1000).toFixed(1)} km<br>
+            周期: ${this.currentOrbitElements.period.toFixed(1)} 分<br>
+            傾斜角: ${this.currentOrbitElements.inclination.toFixed(1)}°<br>
+            離心率: ${this.currentOrbitElements.eccentricity.toFixed(4)}<br>
+            昇交点経度: ${this.currentOrbitElements.raan.toFixed(1)}°<br>
+            近地点引数: ${this.currentOrbitElements.argOfPerigee.toFixed(1)}°
+        `;
     }
     
     private updateOrbitInfoRealtime(): void {

@@ -26,7 +26,6 @@ export interface UIControlElements {
     argOfPerigee: HTMLInputElement;
     meanAnomaly: HTMLInputElement;
     orbitInfo: HTMLDivElement;
-    geodeticDisplay: HTMLDivElement;
 }
 
 export class UIControls {
@@ -60,8 +59,7 @@ export class UIControls {
             eccentricity: document.getElementById('eccentricity') as HTMLInputElement,
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,
             meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement,
-            orbitInfo: document.getElementById('orbitInfo') as HTMLDivElement,
-            geodeticDisplay: document.getElementById('geodetic-display') as HTMLDivElement
+            orbitInfo: document.getElementById('orbitInfo') as HTMLDivElement
         };
     }
     
@@ -134,15 +132,9 @@ export class UIControls {
     }
 
     updateGeodeticDisplay(geodetic?: { latitude: number; longitude: number; altitude: number } | null): void {
-        if (!geodetic) {
-            this.elements.geodeticDisplay.innerHTML = '';
-            return;
-        }
-        this.elements.geodeticDisplay.innerHTML = `
-            緯度: ${geodetic.latitude.toFixed(2)}°<br>
-            経度: ${geodetic.longitude.toFixed(2)}°<br>
-            高度: ${Math.round(geodetic.altitude / 1000)} km
-        `;
+        // 新しい基準衛星情報パネルに統合されたため、この機能は無効化
+        // 左上の緯度経度高度表示は使用されなくなった
+        return;
     }
     
     setupPlacementPatternLimits(): void {

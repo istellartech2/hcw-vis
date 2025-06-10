@@ -26,10 +26,32 @@
                 <div class="axis-label" style="color: #2ECC71">S軸: Along-track (軌道進行方向)</div>
                 <div class="axis-label" style="color: #00BFFF">W軸: Cross-track (軌道面垂直方向)</div>
             </div>
+            
+            <!-- 折りたたみ可能な基準衛星情報パネル -->
+            <div id="reference-satellite-panel">
+                <button id="reference-satellite-toggle" class="panel-toggle" onclick="toggleReferenceSatelliteInfo()">
+                    <span class="icon">🛰️</span>
+                    <span class="toggle-arrow">▼</span>
+                </button>
+                <div id="reference-satellite-content" class="panel-content">
+                    <div class="info-section">
+                        <div class="section-title">📍 位置情報</div>
+                        <div id="geodetic-info" class="info-content"></div>
+                    </div>
+                    <div class="info-section">
+                        <div class="section-title">🌍 ECI座標系</div>
+                        <div id="eci-info" class="info-content"></div>
+                    </div>
+                    <div class="info-section">
+                        <div class="section-title">🚀 軌道要素</div>
+                        <div id="orbital-info" class="info-content"></div>
+                    </div>
+                </div>
+            </div>
+            
             <div id="time-display">
                 <span id="simulationTime">00分00秒</span>
             </div>
-            <div id="geodetic-display"></div>
             <button id="fullscreen-toggle" onclick="toggleFullscreen()" title="全画面表示">⛶</button>
         </div>
         

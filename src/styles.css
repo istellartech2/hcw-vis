@@ -326,18 +326,90 @@ button:active {
     text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
 }
 
-#geodetic-display {
+/* 基準衛星情報パネル */
+#reference-satellite-panel {
     position: absolute;
-    top: 70px;
-    left: 20px;
-    padding: 6px 10px;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 6px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
+    top: 140px;
+    right: 20px;
+    z-index: 12;
+}
+
+.panel-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(74, 158, 255, 0.25);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+}
+
+.panel-toggle:hover {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: rgba(74, 158, 255, 0.4);
+}
+
+.panel-toggle .icon {
+    font-size: 14px;
+}
+
+.panel-toggle .toggle-arrow {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.panel-toggle.collapsed .toggle-arrow {
+    transform: rotate(-90deg);
+}
+
+.panel-content {
+    margin-top: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.8);
     border: 1px solid rgba(74, 158, 255, 0.2);
-    z-index: 10;
-    font-family: monospace;
+    border-radius: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    max-width: 280px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.panel-content.hidden {
+    opacity: 0;
+    max-height: 0;
+    padding: 0 12px;
+    margin-top: 0;
+}
+
+.info-section {
+    margin-bottom: 10px;
+}
+
+.info-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 10px;
+    color: rgba(138, 180, 248, 0.8);
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-content {
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.75);
 }
 
 #selectedSatelliteInfo {
