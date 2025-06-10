@@ -349,6 +349,10 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             const r = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
             const v = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
             
+            // Clear previous content
+            selectedInfoDiv.innerHTML = '';
+            
+            // Create info text
             selectedInfoDiv.innerHTML = `
                 <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
                 位置: R=${pos.x.toFixed(0)}, S=${pos.y.toFixed(0)}, W=${pos.z.toFixed(0)} m<br>
@@ -356,14 +360,38 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 距離: ${r.toFixed(0)} m<br>
                 <div style="margin-top: 10px;">
                     <strong>推力制御:</strong><br>
-                    <button onclick="applyThrust('r', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+R</button>
-                    <button onclick="applyThrust('r', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-R</button><br>
-                    <button onclick="applyThrust('s', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+S</button>
-                    <button onclick="applyThrust('s', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-S</button><br>
-                    <button onclick="applyThrust('w', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+W</button>
-                    <button onclick="applyThrust('w', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-W</button>
+                    <div id="thrust-controls"></div>
                 </div>
             `;
+            
+            // Create thrust control buttons with proper event listeners
+            const thrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls')!;
+            
+            const axes = [
+                { axis: 'r', label: 'R' },
+                { axis: 's', label: 'S' },
+                { axis: 'w', label: 'W' }
+            ];
+            
+            axes.forEach(({ axis, label }) => {
+                const plusBtn = document.createElement('button');
+                plusBtn.textContent = `+${label}`;
+                plusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
+                plusBtn.addEventListener('click', () => this.applyThrustToSelected(axis, 0.001));
+                
+                const minusBtn = document.createElement('button');
+                minusBtn.textContent = `-${label}`;
+                minusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
+                minusBtn.addEventListener('click', () => this.applyThrustToSelected(axis, -0.001));
+                
+                thrustControlsDiv.appendChild(plusBtn);
+                thrustControlsDiv.appendChild(minusBtn);
+                
+                if (axis !== 'w') {
+                    thrustControlsDiv.appendChild(document.createElement('br'));
+                }
+            });
+            
             selectedInfoDiv.style.display = 'block';
             
             
