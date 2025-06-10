@@ -66,7 +66,7 @@ export class RenderingSystem {
         directionalLight.position.set(100, 100, 50);
         this.scene.add(directionalLight);
         
-        const pointLight = new THREE.PointLight(0x4a9eff, 0.5);
+        const pointLight = new THREE.PointLight(0xff7f50, 0.5);
         pointLight.position.set(0, 0, 0);
         this.scene.add(pointLight);
     }
@@ -138,11 +138,14 @@ export class RenderingSystem {
         
         this.satelliteMeshes = [];
         
-        // Get satellite size from UI controls
+        // Get satellite size and shape from UI controls
         const satelliteSize = parseFloat(this.uiControls.elements.satelliteSize.value);
+        const satelliteShape = this.uiControls.elements.satelliteShape.value;
         
         // Create center satellite
-        const centerGeometry = new THREE.SphereGeometry(satelliteSize, 32, 32);
+        const centerGeometry = satelliteShape === 'cube' 
+            ? new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2)
+            : new THREE.SphereGeometry(satelliteSize, 32, 32);
         const centerMaterial = new THREE.MeshPhongMaterial({ 
             color: 0xffffff,
             emissive: 0xffffff,
@@ -158,7 +161,9 @@ export class RenderingSystem {
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         
         for (let i = 1; i < satellites.length; i++) {
-            const satGeometry = new THREE.SphereGeometry(satelliteSize, 32, 32);
+            const satGeometry = satelliteShape === 'cube' 
+                ? new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2)
+                : new THREE.SphereGeometry(satelliteSize, 32, 32);
             
             let materialColor: number;
             if (useUniformColor) {

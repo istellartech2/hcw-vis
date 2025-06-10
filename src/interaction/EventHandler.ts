@@ -98,6 +98,10 @@ export class EventHandler {
             this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
         });
         
+        this.uiControls.elements.earthTexture.addEventListener('change', () => {
+            this.callbacks.updateOrbitElementsFromUI(); // This will recreate earth with new texture
+        });
+        
         // Satellite color controls
         this.uiControls.elements.uniformSatelliteColor.addEventListener('change', () => {
             this.callbacks.updateAllSatelliteColors();
@@ -107,6 +111,10 @@ export class EventHandler {
             if (this.uiControls.elements.uniformSatelliteColor.checked) {
                 this.callbacks.updateAllSatelliteColors();
             }
+        });
+        
+        this.uiControls.elements.satelliteShape.addEventListener('change', () => {
+            this.callbacks.resetSimulation(); // Recreate satellites with new shape
         });
         
         // Window resize

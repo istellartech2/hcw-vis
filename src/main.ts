@@ -69,7 +69,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         this.setupSatelliteSelectionListener();
         this.setupUIEventListeners();
-        this.setupGlobalThrustFunction();
         this.setupReferenceSatellitePanel();
         this.initializeOrbitElements();
         this.updateOrbitParameters();
@@ -77,7 +76,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.initSimulation();
         
         // Create Earth (orbit radius in meters)
-        this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius);
+        const selectedTexture = this.uiControls.elements.earthTexture.value;
+        this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius, selectedTexture);
         this.renderingSystem.getCelestialBodies().setEarthVisibility(true);
         
         this.animate();
@@ -97,13 +97,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         });
     }
     
-    private setupGlobalThrustFunction(): void {
-        // 推力印加関数をグローバルに登録
-        (window as any).applyThrust = (axis: string, dv: number) => {
-            console.log(`Global applyThrust called with axis: ${axis}, dv: ${dv}`);
-            this.applyThrustToSelected(axis, dv);
-        };
-    }
     
     private setupReferenceSatellitePanel(): void {
         // 基準衛星情報パネルの折りたたみ機能を初期化
@@ -168,7 +161,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.orbitInitializer.updateMeanMotion(this.n);
         
         if (this.renderingSystem) {
-            this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius);
+            const selectedTexture = this.uiControls.elements.earthTexture.value;
+            this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius, selectedTexture);
         }
     }
     
@@ -500,22 +494,27 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     public toggleFullscreen(): void {
         const container = this.container;
         const button = document.getElementById('fullscreen-toggle')!;
+        const body = document.body;
         
         if (!this.isFullscreen) {
-            // 全画面モードに切り替え
+            // ページ内全画面モードに切り替え
             this.originalContainerStyle = container.style.cssText;
+            
+            // bodyに全画面クラスを追加してページ全体のレイアウトを調整
+            body.classList.add('canvas-fullscreen');
+            
+            // コンテナにも全画面クラスを追加
             container.classList.add('fullscreen-mode');
-            (container as any).requestFullscreen?.();
+            
             button.textContent = '🗗';
             button.title = '全画面を終了';
             this.isFullscreen = true;
         } else {
             // 通常モードに戻る
+            body.classList.remove('canvas-fullscreen');
             container.classList.remove('fullscreen-mode');
             container.style.cssText = this.originalContainerStyle;
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
+            
             button.textContent = '⛶';
             button.title = '全画面表示';
             this.isFullscreen = false;

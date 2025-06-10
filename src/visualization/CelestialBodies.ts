@@ -1,13 +1,12 @@
 import * as THREE from 'three';
 import { Satellite } from '../simulation/Satellite.js';
-import * as satellite from 'satellite.js';
+import { gstime } from 'satellite.js';
 import { FrameTransforms } from '../simulation/FrameTransforms.js';
 
 export class CelestialBodies {
     private scene: THREE.Scene;
     private earth: THREE.Mesh | null = null;
     private earthGroup: THREE.Group;
-    private sun: THREE.DirectionalLight | null = null;
     private showEarth: boolean = false;
     
     constructor(scene: THREE.Scene) {
@@ -17,7 +16,7 @@ export class CelestialBodies {
     }
     
     // orbitRadius: m (meters)
-    createEarth(orbitRadius: number): void {
+    createEarth(orbitRadius: number, textureFile: string = 'earth00.webp'): void {
         // 既存の地球があれば削除
         if (this.earth) {
             this.earthGroup.remove(this.earth);
@@ -47,7 +46,7 @@ export class CelestialBodies {
         
         // 地球のテクスチャを読み込み
         const textureLoader = new THREE.TextureLoader();
-        const earthTexture = textureLoader.load('/public/asset/earth00.webp', 
+        const earthTexture = textureLoader.load(`/asset/${textureFile}`, 
             // 読み込み成功時
             () => console.log('Earth texture loaded successfully'),
             // 読み込み進行中
@@ -220,7 +219,7 @@ export class CelestialBodies {
         const v0 = new THREE.Vector3(ref.velocity.x,  ref.velocity.y,  ref.velocity.z);
 
         // --- 1.  ECEF → RSW 変換行列を生成（物理座標系変換）
-        const gmst = satellite.gstime(t);
+        const gmst = gstime(t);
         const { m4: ecefToRsw } = FrameTransforms.ecefToRsw(gmst, r0, v0);
 
         // --- 2.  RSW → Three.js 変換（描画座標系変換）

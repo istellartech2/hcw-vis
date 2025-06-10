@@ -25,11 +25,11 @@ body {
 
 h1 {
     text-align: center;
-    color: #4a9eff;
+    color: #ff7f50;
     margin-bottom: 10px;
     margin-top: 10px;
     font-size: 28px;
-    text-shadow: 0 0 20px rgba(74, 158, 255, 0.5);
+    text-shadow: 0 0 20px rgba(255, 127, 80, 0.5);
 }
 
 #canvas-container {
@@ -83,7 +83,7 @@ h1 {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 15px;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(74, 158, 255, 0.3);
+    border: 1px solid rgba(255, 140, 70, 0.3);
 }
 
 .controls-grid {
@@ -96,11 +96,11 @@ h1 {
     padding: 12px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 8px;
-    border: 1px solid rgba(74, 158, 255, 0.2);
+    border: 1px solid rgba(255, 140, 70, 0.2);
 }
 
 .section-title {
-    color: #4a9eff;
+    color: #ff7f50;
     font-size: 14px;
     font-weight: 600;
     margin: 0 0 8px 0;
@@ -121,12 +121,12 @@ h1 {
 }
 
 .subsection-title {
-    color: #8ab4f8;
+    color: #ffb366;
     font-size: 12px;
     font-weight: 600;
     margin: 0 0 6px 0;
     padding-bottom: 2px;
-    border-bottom: 1px solid rgba(138, 180, 248, 0.2);
+    border-bottom: 1px solid rgba(255, 179, 102, 0.2);
 }
 
 .control-row.compact {
@@ -166,7 +166,7 @@ h1 {
 }
 
 label {
-    color: #8ab4f8;
+    color: #ffb366;
     font-weight: 500;
     min-width: 80px;
     font-size: 13px;
@@ -179,7 +179,7 @@ select {
     max-width: 140px;
     padding: 6px 8px;
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(74, 158, 255, 0.3);
+    border: 1px solid rgba(255, 140, 70, 0.3);
     border-radius: 6px;
     color: white;
     font-size: 14px;
@@ -244,7 +244,7 @@ select {
 }
 
 input[type="number"]:focus, input[type="range"]:focus, select:focus {
-    border-color: #4a9eff;
+    border-color: #ff7f50;
     box-shadow: 0 0 10px rgba(74, 158, 255, 0.3);
     outline: none;
 }
@@ -252,7 +252,7 @@ input[type="number"]:focus, input[type="range"]:focus, select:focus {
 button {
     padding: 8px 16px;
     margin: 3px;
-    background: #4a9eff;
+    background: #ff7f50;
     color: #fff;
     border: none;
     border-radius: 6px;
@@ -264,7 +264,7 @@ button {
 }
 
 button:hover {
-    background: #3a7eef;
+    background: #e6633a;
     transform: translateY(-2px);
 }
 
@@ -279,27 +279,9 @@ button:active {
     border-radius: 15px;
     font-size: 13px;
     line-height: 1.6;
-    border: 1px solid rgba(74, 158, 255, 0.2);
+    border: 1px solid rgba(255, 140, 70, 0.2);
 }
 
-.satellite-info {
-    display: inline-flex;
-    align-items: center;
-    margin: 3px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    font-size: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.color-indicator {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-right: 8px;
-    box-shadow: 0 0 10px currentColor;
-}
 
 #axes-info {
     position: absolute;
@@ -309,7 +291,7 @@ button:active {
     background: rgba(0, 0, 0, 0.7);
     border-radius: 10px;
     font-size: 13px;
-    border: 1px solid rgba(74, 158, 255, 0.3);
+    border: 1px solid rgba(255, 140, 70, 0.3);
 }
 
 #time-display {
@@ -321,9 +303,9 @@ button:active {
     border-radius: 10px;
     font-size: 16px;
     font-weight: bold;
-    color: #4a9eff;
-    border: 1px solid rgba(74, 158, 255, 0.3);
-    text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
+    color: #ff7f50;
+    border: 1px solid rgba(255, 140, 70, 0.3);
+    text-shadow: 0 0 10px rgba(255, 127, 80, 0.5);
 }
 
 /* 基準衛星情報パネル */
@@ -343,7 +325,7 @@ button:active {
     gap: 6px;
     padding: 8px 12px;
     background: rgba(0, 0, 0, 0.75);
-    border: 1px solid rgba(74, 158, 255, 0.25);
+    border: 1px solid rgba(255, 140, 70, 0.25);
     border-radius: 8px;
     color: rgba(255, 255, 255, 0.9);
     font-size: 12px;
@@ -354,7 +336,7 @@ button:active {
 
 .panel-toggle:hover {
     background: rgba(0, 0, 0, 0.85);
-    border-color: rgba(74, 158, 255, 0.4);
+    border-color: rgba(255, 140, 70, 0.4);
 }
 
 .panel-toggle .icon {
@@ -374,7 +356,7 @@ button:active {
     margin-top: 8px;
     padding: 12px;
     background: rgba(0, 0, 0, 0.8);
-    border: 1px solid rgba(74, 158, 255, 0.2);
+    border: 1px solid rgba(255, 140, 70, 0.2);
     border-radius: 8px;
     font-size: 11px;
     color: rgba(255, 255, 255, 0.85);
@@ -410,7 +392,7 @@ button:active {
 
 .panel-section-title {
     font-size: 12px;
-    color: rgba(138, 180, 248, 0.8);
+    color: rgba(255, 179, 102, 0.8);
     font-weight: 600;
     margin-bottom: 4px;
     text-transform: uppercase;
@@ -433,7 +415,7 @@ button:active {
     padding: 12px;
     border-radius: 10px;
     font-size: 12px;
-    border: 1px solid rgba(74, 158, 255, 0.3);
+    border: 1px solid rgba(255, 140, 70, 0.3);
     backdrop-filter: blur(10px);
     max-width: 280px;
     z-index: 15;
@@ -446,8 +428,8 @@ button:active {
     width: 40px;
     height: 40px;
     background: rgba(0, 0, 0, 0.8);
-    color: #4a9eff;
-    border: 1px solid rgba(74, 158, 255, 0.3);
+    color: #ff7f50;
+    border: 1px solid rgba(255, 140, 70, 0.3);
     border-radius: 8px;
     font-size: 16px;
     cursor: pointer;
@@ -457,13 +439,23 @@ button:active {
 }
 
 #fullscreen-toggle:hover {
-    background: rgba(74, 158, 255, 0.2);
+    background: rgba(255, 140, 70, 0.2);
     transform: scale(1.1);
-    box-shadow: 0 0 15px rgba(74, 158, 255, 0.5);
+    box-shadow: 0 0 15px rgba(255, 127, 80, 0.5);
 }
 
-/* 全画面モード */
-.fullscreen-mode {
+/* ページ内全画面モード */
+.canvas-fullscreen {
+    overflow: hidden;
+}
+
+.canvas-fullscreen #container {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.canvas-fullscreen #canvas-container {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
@@ -471,6 +463,20 @@ button:active {
     height: 100vh !important;
     z-index: 9999 !important;
     background: #000 !important;
+    border-radius: 0 !important;
+}
+
+.canvas-fullscreen h1,
+.canvas-fullscreen #controls,
+.canvas-fullscreen #plots-container,
+.canvas-fullscreen #info {
+    display: none !important;
+}
+
+/* 全画面モード時のcanvas要素 */
+.fullscreen-mode canvas {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* 小画面での軸情報表示調整 */
@@ -534,23 +540,17 @@ button:active {
     margin: 5px 0;
 }
 
-.axis-note {
-    margin: 8px 0 0 0;
-    font-size: 11px;
-    color: #888;
-    font-style: italic;
-}
 
 #plots-container {
     margin-top: 15px;
     padding: 15px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 15px;
-    border: 1px solid rgba(74, 158, 255, 0.2);
+    border: 1px solid rgba(255, 140, 70, 0.2);
 }
 
 #plots-container h2 {
-    color: #4a9eff;
+    color: #ff7f50;
     text-align: center;
     margin-bottom: 15px;
     margin-top: 10px;
@@ -586,7 +586,7 @@ button:active {
 }
 
 .plot-wrapper h3 {
-    color: #8ab4f8;
+    color: #ffb366;
     font-size: 13px;
     margin-bottom: 8px;
     margin-top: 5px;
@@ -594,7 +594,7 @@ button:active {
 
 .plot-wrapper canvas {
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(74, 158, 255, 0.3);
+    border: 1px solid rgba(255, 140, 70, 0.3);
     border-radius: 10px;
 }
 
@@ -603,14 +603,14 @@ button:active {
     margin-top: 10px;
     padding: 8px;
     background: rgba(74, 158, 255, 0.1);
-    border: 1px solid rgba(74, 158, 255, 0.3);
+    border: 1px solid rgba(255, 140, 70, 0.3);
     border-radius: 5px;
     font-size: 11px;
 }
 
 .orbit-info div {
     margin: 2px 0;
-    color: #8ab4f8;
+    color: #ffb366;
 }
 
 .orbit-info strong {
@@ -625,7 +625,7 @@ button:active {
 }
 
 .collapsible:hover {
-    color: #8ab4f8;
+    color: #ffb366;
 }
 
 .collapsible-content {
