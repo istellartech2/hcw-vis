@@ -113,6 +113,15 @@
                         </div>
                     </div>
                     
+                    <!-- 摂動設定 -->
+                    <div class="control-row compact">
+                        <div class="control-group">
+                            <label>摂動量:</label>
+                            <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02">
+                            <span>m/s</span>
+                        </div>
+                    </div>
+                    
                     <div class="control-buttons compact">
                         <button onclick="resetSimulation()">🔄衛星初期化</button>
                         <button onclick="togglePause()">⏯️一時停止</button>

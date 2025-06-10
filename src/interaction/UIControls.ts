@@ -16,6 +16,7 @@ export interface UIControlElements {
     circularZDirection: HTMLInputElement;
     circularZDirectionControl: HTMLDivElement;
     thrustAmount: HTMLInputElement;
+    perturbationAmount: HTMLInputElement;
     uniformSatelliteColor: HTMLInputElement;
     satelliteColor: HTMLInputElement;
     satelliteSize: HTMLInputElement;
@@ -50,6 +51,7 @@ export class UIControls {
             circularZDirection: document.getElementById('circularZDirection') as HTMLInputElement,
             circularZDirectionControl: document.getElementById('circularZDirectionControl') as HTMLDivElement,
             thrustAmount: document.getElementById('thrustAmount') as HTMLInputElement,
+            perturbationAmount: document.getElementById('perturbationAmount') as HTMLInputElement,
             uniformSatelliteColor: document.getElementById('uniformSatelliteColor') as HTMLInputElement,
             satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement,
             satelliteSize: document.getElementById('satelliteSize') as HTMLInputElement,

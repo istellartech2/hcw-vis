@@ -433,13 +433,15 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     }
     
     public addPerturbation(): void {
+        const perturbationAmount = parseFloat(this.uiControls.elements.perturbationAmount.value);
+        console.log(`Adding perturbation: ±${(perturbationAmount/2).toFixed(3)} m/s to each axis`);
+        
         this.satellites.forEach((sat, index) => {
             if (index > 0) {
                 // 現在の速度に摂動を加える（数値積分用）
-                // 摂動量: ~0.02 m/s
-                sat.vx += (Math.random() - 0.5) * 0.02;
-                sat.vy += (Math.random() - 0.5) * 0.02;
-                sat.vz += (Math.random() - 0.5) * 0.02;
+                sat.vx += (Math.random() - 0.5) * perturbationAmount;
+                sat.vy += (Math.random() - 0.5) * perturbationAmount;
+                sat.vz += (Math.random() - 0.5) * perturbationAmount;
             }
         });
     }
