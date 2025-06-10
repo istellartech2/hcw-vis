@@ -505,7 +505,6 @@ button:active {
 
 .canvas-fullscreen h1,
 .canvas-fullscreen #controls,
-.canvas-fullscreen #plots-container,
 .canvas-fullscreen #info {
     display: none !important;
 }
@@ -578,62 +577,12 @@ button:active {
 }
 
 
-#plots-container {
-    margin-top: 15px;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    border: 1px solid rgba(255, 140, 70, 0.2);
-}
 
-#plots-container h2 {
-    color: #ff7f50;
-    text-align: center;
-    margin-bottom: 15px;
-    margin-top: 10px;
-    font-size: 20px;
-}
 
-.plots-row {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 20px;
-}
 
-/* 小画面でのプロット調整 */
-@media (max-width: 768px) {
-    #plots-container {
-        padding: 15px;
-    }
-    
-    .plots-row {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .plot-wrapper canvas {
-        max-width: 100%;
-        height: auto;
-    }
-}
 
-.plot-wrapper {
-    text-align: center;
-}
 
-.plot-wrapper h3 {
-    color: #ffb366;
-    font-size: 13px;
-    margin-bottom: 8px;
-    margin-top: 5px;
-}
 
-.plot-wrapper canvas {
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 140, 70, 0.3);
-    border-radius: 10px;
-}
 
 /* 軌道情報表示 */
 .orbit-info {

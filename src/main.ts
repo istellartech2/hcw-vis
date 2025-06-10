@@ -320,7 +320,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             if (this.animationFrameCounter % 10 === 0) {
                 this.updateInfo();
                 this.updateOrbitInfoRealtime();
-                this.renderingSystem.updatePlots(this.satellites);
             }
             
             // Update selected satellite info (only when selected and much less frequently)

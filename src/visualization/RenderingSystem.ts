@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { Satellite } from '../simulation/Satellite.js';
 import { TrailRenderer } from './TrailRenderer.js';
-import { PlotRenderer } from './PlotRenderer.js';
 import { CelestialBodies } from './CelestialBodies.js';
 import { UIControls } from '../interaction/UIControls.js';
 
@@ -13,7 +12,6 @@ export class RenderingSystem {
     private satelliteMeshes: THREE.Mesh[] = [];
     private gridHelper: THREE.GridHelper;
     private trailRenderer: TrailRenderer;
-    private plotRenderer: PlotRenderer;
     private celestialBodies: CelestialBodies;
     private uiControls: UIControls;
     private animationFrameCounter: number = 0;
@@ -37,7 +35,6 @@ export class RenderingSystem {
         this.uiControls = uiControls;
         
         this.trailRenderer = new TrailRenderer(this.scene);
-        this.plotRenderer = new PlotRenderer();
         this.celestialBodies = new CelestialBodies(this.scene);
         
         this.raycaster = new THREE.Raycaster();
@@ -275,13 +272,6 @@ export class RenderingSystem {
         this.renderer.render(this.scene, this.camera);
     }
 
-    public updatePlots(satellites: Satellite[]): void {
-        this.animationFrameCounter++;
-        if (this.animationFrameCounter % 3 === 0) {
-            const cameraDistance = this.camera.position.length();
-            this.plotRenderer.update(satellites, cameraDistance);
-        }
-    }
 
     public updateCelestialBodies(time: number, simulationStartTime?: Date): void {
         this.celestialBodies.update(time, simulationStartTime);
