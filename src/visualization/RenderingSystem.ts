@@ -264,7 +264,8 @@ export class RenderingSystem {
     public updatePlots(satellites: Satellite[]): void {
         this.animationFrameCounter++;
         if (this.animationFrameCounter % 10 === 0) {
-            this.plotRenderer.update(satellites);
+            const cameraDistance = this.camera.position.length();
+            this.plotRenderer.update(satellites, cameraDistance);
         }
     }
 

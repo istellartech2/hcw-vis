@@ -10,6 +10,7 @@ export class PlotRenderer {
     private plotContexts: PlotContexts;
     private plotSize: number = 300;
     private center: number = 150;
+    private baseScale: number = 0.4;
     private scale: number = 0.4;
     private colors: string[] = [
         '#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', 
@@ -28,7 +29,12 @@ export class PlotRenderer {
         };
     }
     
-    update(satellites: Satellite[]): void {
+    update(satellites: Satellite[], cameraDistance: number = 30): void {
+        // カメラ距離に基づいてスケールを調整
+        // カメラが近い（距離1）ときはスケール大、遠い（距離1000）ときはスケール小
+        const normalizedDistance = Math.log10(cameraDistance + 1) / Math.log10(1001); // 0 to 1
+        this.scale = this.baseScale * (1.5 - normalizedDistance * 0.8); // 1.5x to 0.7x of base scale
+        
         // 各プロットをクリア
         this.clearPlots();
         
@@ -95,7 +101,8 @@ export class PlotRenderer {
         const pos = sat.getPosition();
         const color = this.colors[(index - 1) % this.colors.length];
         
-        // XY平面 (動径方向 - 進行方向)
+        // RS平面 (動径方向 - 進行方向)
+        // pos.x = R (Radial), pos.y = S (Along-track), pos.z = W (Cross-track)
         const xyX = this.center + pos.y * this.scale * this.plotSize;
         const xyY = this.center - pos.x * this.scale * this.plotSize;
         this.plotContexts.xy.fillStyle = color;
@@ -103,16 +110,16 @@ export class PlotRenderer {
         this.plotContexts.xy.arc(xyX, xyY, 3, 0, 2 * Math.PI);
         this.plotContexts.xy.fill();
         
-        // XZ平面 (進行方向 - 軌道面垂直)
-        const xzX = this.center + pos.y * this.scale * this.plotSize;
+        // RW平面 (動径方向 - 軌道面垂直)
+        const xzX = this.center + pos.x * this.scale * this.plotSize;
         const xzY = this.center - pos.z * this.scale * this.plotSize;
         this.plotContexts.xz.fillStyle = color;
         this.plotContexts.xz.beginPath();
         this.plotContexts.xz.arc(xzX, xzY, 3, 0, 2 * Math.PI);
         this.plotContexts.xz.fill();
         
-        // YZ平面 (動径方向 - 軌道面垂直)
-        const yzX = this.center + pos.x * this.scale * this.plotSize;
+        // SW平面 (進行方向 - 軌道面垂直)
+        const yzX = this.center + pos.y * this.scale * this.plotSize;
         const yzY = this.center - pos.z * this.scale * this.plotSize;
         this.plotContexts.yz.fillStyle = color;
         this.plotContexts.yz.beginPath();
@@ -121,23 +128,23 @@ export class PlotRenderer {
     }
     
     private drawAxisLabels(): void {
-        // XY平面: X=Along-track(進行方向), Y=Radial(動径方向)
+        // RS平面: 横軸=S(Along-track/進行方向), 縦軸=R(Radial/動径方向)
         this.plotContexts.xy.fillStyle = '#4ecdc4';
         this.plotContexts.xy.font = '12px Arial';
-        this.plotContexts.xy.fillText('Along', this.plotSize - 40, this.center - 5);
+        this.plotContexts.xy.fillText('S (Along)', this.plotSize - 50, this.center - 5);
         this.plotContexts.xy.fillStyle = '#ff6b6b';
-        this.plotContexts.xy.fillText('Radial', this.center + 5, 20);
+        this.plotContexts.xy.fillText('R (Radial)', this.center + 5, 20);
         
-        // XZ平面: X=Along-track(進行方向), Z=Cross-track(軌道面垂直)
-        this.plotContexts.xz.fillStyle = '#4ecdc4';
-        this.plotContexts.xz.fillText('Along', this.plotSize - 40, this.center - 5);
+        // RW平面: 横軸=R(Radial/動径方向), 縦軸=W(Cross-track/軌道面垂直)
+        this.plotContexts.xz.fillStyle = '#ff6b6b';
+        this.plotContexts.xz.fillText('R (Radial)', this.plotSize - 50, this.center - 5);
         this.plotContexts.xz.fillStyle = '#f7b731';
-        this.plotContexts.xz.fillText('Cross', this.center + 5, 20);
+        this.plotContexts.xz.fillText('W (Cross)', this.center + 5, 20);
         
-        // YZ平面: Y=Radial(動径方向), Z=Cross-track(軌道面垂直)
-        this.plotContexts.yz.fillStyle = '#ff6b6b';
-        this.plotContexts.yz.fillText('Radial', this.plotSize - 40, this.center - 5);
+        // SW平面: 横軸=S(Along-track/進行方向), 縦軸=W(Cross-track/軌道面垂直)
+        this.plotContexts.yz.fillStyle = '#4ecdc4';
+        this.plotContexts.yz.fillText('S (Along)', this.plotSize - 50, this.center - 5);
         this.plotContexts.yz.fillStyle = '#f7b731';
-        this.plotContexts.yz.fillText('Cross', this.center + 5, 20);
+        this.plotContexts.yz.fillText('W (Cross)', this.center + 5, 20);
     }
 }
