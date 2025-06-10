@@ -376,9 +376,12 @@ button:active {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(10px);
-    max-width: 280px;
+    max-width: 360px;
     transition: all 0.3s ease;
     overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
 .panel-content.hidden {
@@ -388,8 +391,14 @@ button:active {
     margin-top: 0;
 }
 
+.panel-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .info-section {
-    margin-bottom: 10px;
+    margin-bottom: 0;
 }
 
 .info-section:last-child {
