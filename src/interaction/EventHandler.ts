@@ -61,7 +61,6 @@ export class EventHandler {
         const orbitElementInputs = [
             this.uiControls.elements.inclination,
             this.uiControls.elements.raan,
-            this.uiControls.elements.eccentricity,
             this.uiControls.elements.argOfPerigee,
             this.uiControls.elements.meanAnomaly,
             this.uiControls.elements.orbitAltitude

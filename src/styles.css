@@ -252,20 +252,22 @@ input[type="number"]:focus, input[type="range"]:focus, select:focus {
 button {
     padding: 8px 16px;
     margin: 3px;
-    background: #ff7f50;
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
-    border: none;
+    border: 1px solid rgba(255, 140, 70, 0.3);
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
     font-size: 14px;
     min-width: 70px;
-    transition: background 0.3s ease, transform 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 button:hover {
-    background: #e6633a;
+    background: #ff7f50;
+    border-color: #ff7f50;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 127, 80, 0.4);
 }
 
 button:active {

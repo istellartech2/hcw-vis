@@ -24,10 +24,8 @@ export interface UIControlElements {
     satelliteShape: HTMLSelectElement;
     inclination: HTMLInputElement;
     raan: HTMLInputElement;
-    eccentricity: HTMLInputElement;
     argOfPerigee: HTMLInputElement;
     meanAnomaly: HTMLInputElement;
-    orbitInfo: HTMLDivElement;
 }
 
 export class UIControls {
@@ -41,11 +39,11 @@ export class UIControls {
             orbitAltitude: document.getElementById('orbitAltitude') as HTMLInputElement,
             timeScale: document.getElementById('timeScale') as HTMLSelectElement,
             simulationTime: document.getElementById('simulationTime') as HTMLSpanElement,
-                showTrails: document.getElementById('showTrails') as HTMLInputElement,
+            showTrails: document.getElementById('showTrails') as HTMLInputElement,
             showGrid: document.getElementById('showGrid') as HTMLInputElement,
             showEarth: document.getElementById('showEarth') as HTMLInputElement,
             earthTexture: document.getElementById('earthTexture') as HTMLSelectElement,
-                    trailLength: document.getElementById('trailLength') as HTMLInputElement,
+            trailLength: document.getElementById('trailLength') as HTMLInputElement,
             trailLengthValue: document.getElementById('trailLengthValue') as HTMLSpanElement,
             zAmplitude: document.getElementById('zAmplitude') as HTMLInputElement,
             zAmplitudeValue: document.getElementById('zAmplitudeValue') as HTMLSpanElement,
@@ -60,10 +58,8 @@ export class UIControls {
             satelliteShape: document.getElementById('satelliteShape') as HTMLSelectElement,
             inclination: document.getElementById('inclination') as HTMLInputElement,
             raan: document.getElementById('raan') as HTMLInputElement,
-            eccentricity: document.getElementById('eccentricity') as HTMLInputElement,
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,
-            meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement,
-            orbitInfo: document.getElementById('orbitInfo') as HTMLDivElement
+            meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement
         };
     }
     
@@ -94,43 +90,6 @@ export class UIControls {
     
     // satelliteSizeDisplay method removed - now using direct number input
     
-    updateOrbitInfo(orbitElements: {
-        inclination: number;
-        raan: number;
-        eccentricity: number;
-        argOfPerigee: number;
-        meanAnomaly: number;
-        altitude: number;
-        period: number;
-        semiMajorAxis: number;
-    }, eciPosition?: { x: number; y: number; z: number } | null, geodetic?: { latitude: number; longitude: number; altitude: number } | null): void {
-        let eciInfo = '';
-        if (eciPosition) {
-            // eciPosition はメーター単位なので、kmで表示するために1000で割る
-            eciInfo = `
-                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;">
-                    <div><strong>ECI座標系 (km):</strong></div>
-                    <div>X: ${(eciPosition.x / 1000).toFixed(2)}</div>
-                    <div>Y: ${(eciPosition.y / 1000).toFixed(2)}</div>
-                    <div>Z: ${(eciPosition.z / 1000).toFixed(2)}</div>
-                </div>
-            `;
-        }
-        
-        let geodeticInfo = '';
-        
-        this.elements.orbitInfo.innerHTML = `
-            <div style="font-size: 12px; color: #666; margin-top: 10px;">
-                <div><strong>軌道情報:</strong></div>
-                <div>長半径: ${(orbitElements.semiMajorAxis / 1000).toFixed(1)} km</div>
-                <div>周期: ${orbitElements.period.toFixed(1)} 分</div>
-                <div>離心率: ${orbitElements.eccentricity.toFixed(3)}</div>
-                <div>傾斜角: ${orbitElements.inclination.toFixed(1)}°</div>
-                ${eciInfo}
-                ${geodeticInfo}
-            </div>
-        `;
-    }
 
     
     setupPlacementPatternLimits(): void {

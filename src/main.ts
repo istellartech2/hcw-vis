@@ -127,7 +127,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         // UIから初期値を読み取り
         const inclination = parseFloat(this.uiControls.elements.inclination.value);
         const raan = parseFloat(this.uiControls.elements.raan.value);
-        const eccentricity = parseFloat(this.uiControls.elements.eccentricity.value);
+        const eccentricity = 0; // 離心率は0で固定
         const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
         const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
         const altitudeKm = parseFloat(this.uiControls.elements.orbitAltitude.value);
@@ -143,9 +143,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // ECI座標を取得
         const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements);
-        
-        // UI表示を更新
-        this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
     }
     
     
@@ -346,9 +343,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         const currentDate = new Date(Date.now() + this.time * 1000);
         const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements, currentDate);
 
-        // UIの軌道情報エリアを更新
-        this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
-        this.uiControls.updateGeodeticDisplay(eciData?.geodetic);
+        // 基準衛星パネルをリアルタイム更新
+        this.updateReferenceSatellitePanel();
     }
     
     // この機能はRenderingSystemに移譲済みのため削除
@@ -569,7 +565,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     public updateOrbitElementsFromUI(): void {
         const inclination = parseFloat(this.uiControls.elements.inclination.value);
         const raan = parseFloat(this.uiControls.elements.raan.value);
-        const eccentricity = parseFloat(this.uiControls.elements.eccentricity.value);
+        const eccentricity = 0; // 離心率は0で固定
         const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
         const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
         const altitudeKm = parseFloat(this.uiControls.elements.orbitAltitude.value);
@@ -593,14 +589,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         // 基準衛星の軌道要素を更新
         Satellite.setReferenceOrbit(this.currentOrbitElements);
         
-        // ECI座標を取得
-        const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements);
-        
-        // UI表示を更新
-        this.uiControls.updateOrbitInfo(this.currentOrbitElements, eciData?.position, eciData?.geodetic);
-
-        // 軌道パラメータを更新
+        // 軌道パラメータを更新（地球の再作成も含む）
         this.updateOrbitParameters();
+        
+        // 基準衛星パネルの軌道情報を即座に更新
+        this.updateReferenceSatellitePanel();
     }
     
     public clearTrails(): void {
