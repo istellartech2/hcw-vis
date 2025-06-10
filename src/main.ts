@@ -268,7 +268,37 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     
     private updateInfo(): void {
-        const infoDiv = document.getElementById('satelliteInfo')!;
+        let infoDiv = document.getElementById('satelliteInfo');
+        
+        // 要素が存在しない場合は動的に作成
+        if (!infoDiv) {
+            infoDiv = document.createElement('div');
+            infoDiv.id = 'satelliteInfo';
+            infoDiv.style.cssText = `
+                position: absolute;
+                bottom: 20px;
+                left: 20px;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 12px;
+                border-radius: 10px;
+                font-size: 12px;
+                border: 1px solid rgba(74, 158, 255, 0.3);
+                backdrop-filter: blur(10px);
+                max-width: 320px;
+                z-index: 10;
+            `;
+            
+            // canvas-containerに追加（3D画面のオーバーレイとして表示）
+            const canvasContainer = document.getElementById('canvas-container');
+            if (canvasContainer) {
+                canvasContainer.appendChild(infoDiv);
+            } else {
+                // フォールバック: bodyに追加
+                document.body.appendChild(infoDiv);
+            }
+        }
+        
         let html = '基準衛星の状態:';
         
         if (this.currentOrbitElements) {
