@@ -59,8 +59,8 @@ export class CelestialBodies {
                 console.log('Development environment detected, using /public/asset/ path');
                 return `/public/asset/${filename}`;
             } else {
-                console.log('Production environment detected, using /asset/ path');
-                return `/asset/${filename}`;
+                console.log('Production environment detected, using ./public/asset/ path');
+                return `./public/asset/${filename}`;
             }
         };
         
@@ -73,8 +73,8 @@ export class CelestialBodies {
             // エラー時 - フォールバックを試行
             (error) => {
                 console.warn(`Failed to load texture from ${texturePath}, trying fallback...`);
-                const fallbackPath = texturePath.includes('/public/asset/') ? 
-                    `/asset/${textureFile}` : `/public/asset/${textureFile}`;
+                const fallbackPath = texturePath.includes('./public/asset/') ? 
+                    `/public/asset/${textureFile}` : `./public/asset/${textureFile}`;
                 
                 const fallbackTexture = textureLoader.load(fallbackPath,
                     () => console.log(`Earth texture loaded successfully from fallback: ${fallbackPath}`),
