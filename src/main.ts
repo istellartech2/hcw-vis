@@ -654,4 +654,10 @@ let simulation: HillEquationSimulation;
 document.addEventListener('DOMContentLoaded', () => {
     simulation = new HillEquationSimulation();
     (window as any).simulation = simulation;
+    
+    // グローバル関数として登録
+    (window as any).resetSimulation = () => simulation.resetSimulation();
+    (window as any).togglePause = () => simulation.togglePause();
+    (window as any).addPerturbation = () => simulation.addPerturbation();
+    (window as any).resetView = () => simulation.resetView();
 });

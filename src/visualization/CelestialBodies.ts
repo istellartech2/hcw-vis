@@ -88,9 +88,10 @@ export class CelestialBodies {
             texturePaths.push(`/public/asset/${textureFile}`);
             texturePaths.push(`./public/asset/${textureFile}`);
         } else {
-            console.log('Production environment detected, using /asset/ path');
-            // GitHub Pagesでは public/ ディレクトリは build 時に root にコピーされる
-            texturePaths.push(`/asset/${textureFile}`);
+            console.log('Production environment detected');
+            // GitHub Pagesでは public/ ディレクトリの内容が root にコピーされる
+            const basePath = window.location.pathname.includes('/hill-equation/') ? '/hill-equation' : '';
+            texturePaths.push(`${basePath}/asset/${textureFile}`);
             texturePaths.push(`./asset/${textureFile}`);
             texturePaths.push(`asset/${textureFile}`);
         }
