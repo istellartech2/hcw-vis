@@ -32,7 +32,9 @@ export class CameraController {
         });
 
         this.container.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+            if (!this.isInteractiveTarget(e.target)) {
+                e.preventDefault();
+            }
             if (e.touches.length === 1) {
                 this.mouseDown = true;
                 this.mouseX = e.touches[0].clientX;
@@ -56,7 +58,9 @@ export class CameraController {
         });
 
         this.container.addEventListener('touchmove', (e) => {
-            e.preventDefault();
+            if (!this.isInteractiveTarget(e.target)) {
+                e.preventDefault();
+            }
             if (e.touches.length === 1 && this.mouseDown) {
                 const deltaX = e.touches[0].clientX - this.mouseX;
                 const deltaY = e.touches[0].clientY - this.mouseY;
@@ -77,7 +81,9 @@ export class CameraController {
         });
 
         this.container.addEventListener('touchend', (e) => {
-            e.preventDefault();
+            if (!this.isInteractiveTarget(e.target)) {
+                e.preventDefault();
+            }
             this.mouseDown = false;
             this.pinchStartDistance = null;
         }, { passive: false });
@@ -92,6 +98,19 @@ export class CameraController {
         const dx = t1.clientX - t2.clientX;
         const dy = t1.clientY - t2.clientY;
         return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    private isInteractiveTarget(target: EventTarget | null): boolean {
+        if (!(target instanceof HTMLElement)) {
+            return false;
+        }
+        return (
+            target.closest('button') !== null ||
+            target.closest('input') !== null ||
+            target.closest('select') !== null ||
+            target.closest('textarea') !== null ||
+            target.closest('#selectedSatelliteInfo') !== null
+        );
     }
 
     public syncWithCameraPosition(): void {
