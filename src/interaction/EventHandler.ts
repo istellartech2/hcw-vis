@@ -53,6 +53,10 @@ export class EventHandler {
             this.callbacks.resetSimulation();
         });
         
+        this.uiControls.elements.circularZDirection.addEventListener('change', () => {
+            this.callbacks.resetSimulation();
+        });
+        
         // Orbital elements controls
         const orbitElementInputs = [
             this.uiControls.elements.inclination,
