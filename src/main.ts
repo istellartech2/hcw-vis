@@ -69,6 +69,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         this.setupSatelliteSelectionListener();
         this.setupUIEventListeners();
+        this.setupGlobalThrustFunction();
         this.initializeOrbitElements();
         this.updateOrbitParameters();
         this.uiControls.setupPlacementPatternLimits();
@@ -95,7 +96,12 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         });
     }
     
-    
+    private setupGlobalThrustFunction(): void {
+        // 推力印加関数をグローバルに登録
+        (window as any).applyThrust = (axis: string, dv: number) => {
+            this.applyThrustToSelected(axis, dv);
+        };
+    }
     
     private initializeOrbitElements(): void {
         // UIから初期値を読み取り
@@ -350,21 +356,17 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 距離: ${r.toFixed(0)} m<br>
                 <div style="margin-top: 10px;">
                     <strong>推力制御:</strong><br>
-                    <button onclick="applyThrust('r', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+R</button>
-                    <button onclick="applyThrust('r', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-R</button><br>
-                    <button onclick="applyThrust('s', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+S</button>
-                    <button onclick="applyThrust('s', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-S</button><br>
-                    <button onclick="applyThrust('w', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+W</button>
-                    <button onclick="applyThrust('w', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-W</button>
+                    <button onclick="applyThrust('r', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+R</button>
+                    <button onclick="applyThrust('r', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-R</button><br>
+                    <button onclick="applyThrust('s', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+S</button>
+                    <button onclick="applyThrust('s', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-S</button><br>
+                    <button onclick="applyThrust('w', 0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+W</button>
+                    <button onclick="applyThrust('w', -0.001)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-W</button>
                 </div>
             `;
             selectedInfoDiv.style.display = 'block';
             
             
-            // 推力印加関数をグローバルに登録
-            (window as any).applyThrust = (axis: string, dv: number) => {
-                this.applyThrustToSelected(axis, dv);
-            };
         } else {
             selectedInfoDiv.style.display = 'none';
         }
