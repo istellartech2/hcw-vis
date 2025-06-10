@@ -6,7 +6,6 @@ export interface EventHandlerCallbacks {
     togglePause: () => void;
     addPerturbation: () => void;
     resetView: () => void;
-    toggleFullscreen: () => void;
     applyThrustToSelected: (axis: string, dv: number) => void;
     updateOrbitElementsFromUI: () => void;
     updateAllSatelliteColors: () => void;
@@ -215,7 +214,6 @@ export class EventHandler {
         (window as any).togglePause = () => this.callbacks.togglePause();
         (window as any).addPerturbation = () => this.callbacks.addPerturbation();
         (window as any).resetView = () => this.callbacks.resetView();
-        (window as any).toggleFullscreen = () => this.callbacks.toggleFullscreen();
         
         // Section collapse functionality
         (window as any).toggleSection = (sectionId: string) => {
@@ -246,7 +244,7 @@ V: 視点変更
 T: 軌跡表示切り替え
 G: グリッド表示切り替え
 E: 地球表示切り替え
-Escape: 選択解除/全画面終了
+Escape: 選択解除
 +/=: 時間スケール増加
 -/_: 時間スケール減少
 H: このヘルプを表示

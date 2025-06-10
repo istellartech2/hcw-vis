@@ -333,8 +333,8 @@ button:active {
 
 #time-display {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    bottom: 20px;
+    right: 20px;
     padding: 12px 16px;
     background: rgba(0, 0, 0, 0.7);
     border-radius: 10px;
@@ -343,6 +343,75 @@ button:active {
     color: #ff7f50;
     border: 1px solid rgba(255, 140, 70, 0.3);
     text-shadow: 0 0 10px rgba(255, 127, 80, 0.5);
+    font-family: 'Courier New', Monaco, monospace;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s ease;
+}
+
+#time-display:hover {
+    background: rgba(255, 140, 70, 0.2);
+    transform: scale(1.05);
+}
+
+#time-display.paused {
+    background: rgba(255, 70, 70, 0.3);
+    border-color: rgba(255, 70, 70, 0.5);
+}
+
+#time-display.paused::before {
+    content: "⏸ ";
+    font-size: 14px;
+}
+
+/* 衛星配置パネル */
+#satellite-config-panel {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 140, 70, 0.3);
+    backdrop-filter: blur(10px);
+    max-width: 350px;
+    z-index: 100;
+}
+
+#satellite-config-panel .panel-header {
+    padding: 10px 15px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 140, 70, 0.2);
+}
+
+#satellite-config-panel .panel-header:hover {
+    background: rgba(255, 140, 70, 0.1);
+}
+
+#satellite-config-panel .section-title {
+    color: #ff7f50;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#satellite-config-panel .toggle-icon {
+    color: #ff7f50;
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+#satellite-config-panel .toggle-icon.expanded {
+    transform: rotate(180deg);
+}
+
+#satellite-config-panel .panel-content {
+    padding: 15px;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
 /* 基準衛星情報パネル */
@@ -458,62 +527,7 @@ button:active {
     z-index: 15;
 }
 
-#fullscreen-toggle {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    background: rgba(0, 0, 0, 0.8);
-    color: #ff7f50;
-    border: 1px solid rgba(255, 140, 70, 0.3);
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    z-index: 20;
-}
 
-#fullscreen-toggle:hover {
-    background: rgba(255, 140, 70, 0.2);
-    transform: scale(1.1);
-    box-shadow: 0 0 15px rgba(255, 127, 80, 0.5);
-}
-
-/* ページ内全画面モード */
-.canvas-fullscreen {
-    overflow: hidden;
-}
-
-.canvas-fullscreen #container {
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-.canvas-fullscreen #canvas-container {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 9999 !important;
-    background: #000 !important;
-    border-radius: 0 !important;
-}
-
-.canvas-fullscreen h1,
-.canvas-fullscreen #controls,
-.canvas-fullscreen #info {
-    display: none !important;
-}
-
-/* 全画面モード時のcanvas要素 */
-.fullscreen-mode canvas {
-    width: 100% !important;
-    height: 100% !important;
-}
 
 /* 小画面での軸情報表示調整 */
 @media (max-width: 768px) {
@@ -525,10 +539,20 @@ button:active {
     }
     
     #time-display {
-        top: 10px;
-        left: 10px;
+        bottom: 10px;
+        right: 10px;
         padding: 8px 12px;
         font-size: 14px;
+    }
+    
+    #satellite-config-panel {
+        top: 20px;
+        left: 10px;
+        max-width: 300px;
+    }
+    
+    #satellite-config-panel .section-title {
+        font-size: 12px;
     }
 
     #geodetic-display {
@@ -546,13 +570,6 @@ button:active {
         max-width: 200px;
     }
     
-    #fullscreen-toggle {
-        bottom: 10px;
-        right: 10px;
-        width: 35px;
-        height: 35px;
-        font-size: 14px;
-    }
     
     h1 {
         font-size: 24px;

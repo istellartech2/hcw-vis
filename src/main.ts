@@ -38,9 +38,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     // Orbital elements
     private currentOrbitElements!: OrbitalElements;
     
-    // Fullscreen mode
-    private isFullscreen: boolean = false;
-    private originalContainerStyle: string = '';
     
     constructor() {
         this.container = document.getElementById('canvas-container')!;
@@ -148,6 +145,22 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 } else {
                     content.classList.add('hidden');
                     toggleButton.classList.add('collapsed');
+                }
+            };
+            
+            // 衛星配置パネルのトグル
+            (window as any).toggleSatelliteConfig = () => {
+                const content = document.getElementById('satellite-config-content');
+                const toggleIcon = document.getElementById('satellite-config-toggle');
+                
+                if (content && toggleIcon) {
+                    if (content.style.display === 'none') {
+                        content.style.display = 'block';
+                        toggleIcon.classList.add('expanded');
+                    } else {
+                        content.style.display = 'none';
+                        toggleIcon.classList.remove('expanded');
+                    }
                 }
             };
         }
@@ -288,6 +301,9 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private animate = (): void => {
         requestAnimationFrame(this.animate);
         
+        // Always update camera (even when paused)
+        this.cameraController.updateCameraPosition();
+        
         if (!this.paused) {
             this.animationFrameCounter++;
             const timeScale = parseFloat(this.uiControls.elements.timeScale.value);
@@ -312,8 +328,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 }
             }
             
-            // Update camera and rendering
-            this.cameraController.updateCameraPosition();
+            // Update rendering
             this.renderingSystem.updateSatellitePositions(this.satellites);
             
             // Update info and plots
@@ -523,6 +538,14 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     public togglePause(): void {
         this.paused = !this.paused;
+        const timeDisplay = document.getElementById('time-display');
+        if (timeDisplay) {
+            if (this.paused) {
+                timeDisplay.classList.add('paused');
+            } else {
+                timeDisplay.classList.remove('paused');
+            }
+        }
     }
     
     public addPerturbation(): void {
@@ -543,42 +566,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.cameraController.resetView();
     }
     
-    public toggleFullscreen(): void {
-        const container = this.container;
-        const button = document.getElementById('fullscreen-toggle')!;
-        const body = document.body;
-        
-        if (!this.isFullscreen) {
-            // ページ内全画面モードに切り替え
-            this.originalContainerStyle = container.style.cssText;
-            
-            // bodyに全画面クラスを追加してページ全体のレイアウトを調整
-            body.classList.add('canvas-fullscreen');
-            
-            // コンテナにも全画面クラスを追加
-            container.classList.add('fullscreen-mode');
-            
-            button.textContent = '🗗';
-            button.title = '全画面を終了';
-            this.isFullscreen = true;
-        } else {
-            // 通常モードに戻る
-            body.classList.remove('canvas-fullscreen');
-            container.classList.remove('fullscreen-mode');
-            container.style.cssText = this.originalContainerStyle;
-            
-            button.textContent = '⛶';
-            button.title = '全画面表示';
-            this.isFullscreen = false;
-        }
-        
-        // レンダラーサイズを更新
-        setTimeout(() => {
-            this.camera.aspect = container.clientWidth / container.clientHeight;
-            this.camera.updateProjectionMatrix();
-            this.renderer.setSize(container.clientWidth, container.clientHeight);
-        }, 100);
-    }
     
     public applyThrustToSelected(axis: string, dv: number): void {
         const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
