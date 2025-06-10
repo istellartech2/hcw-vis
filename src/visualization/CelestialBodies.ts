@@ -50,12 +50,11 @@ export class CelestialBodies {
         // 複数のパスを順番に試行する方式に変更
         const tryLoadTexture = (paths: string[], index: number = 0): void => {
             if (index >= paths.length) {
-                console.error('All texture paths failed for:', textureFile);
+                console.error(`All texture paths failed: ${paths.join(', ')}`);
                 return;
             }
             
             const currentPath = paths[index];
-            console.log(`Attempting to load texture from: ${currentPath}`);
             
             textureLoader.load(currentPath,
                 // 成功時
@@ -89,10 +88,9 @@ export class CelestialBodies {
             texturePaths.push(`/public/asset/${textureFile}`);
             texturePaths.push(`./public/asset/${textureFile}`);
         } else {
-            console.log('Production environment detected (v2.0 - multiple path fallback)');
-            texturePaths.push(`./public/asset/${textureFile}`);
-            texturePaths.push(`public/asset/${textureFile}`);
-            texturePaths.push(`/public/asset/${textureFile}`);
+            console.log('Production environment detected, using /asset/ path');
+            // GitHub Pagesでは public/ ディレクトリは build 時に root にコピーされる
+            texturePaths.push(`/asset/${textureFile}`);
             texturePaths.push(`./asset/${textureFile}`);
             texturePaths.push(`asset/${textureFile}`);
         }
