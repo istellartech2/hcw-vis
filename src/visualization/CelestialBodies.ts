@@ -49,9 +49,8 @@ export class CelestialBodies {
         
         // 開発環境と本番環境のパスを試行
         const getTexturePath = (filename: string): string => {
-            // 開発環境判定（複数の方法で判定）
+            // 開発環境判定（ブラウザ環境で安全な方法）
             const isDev = import.meta.env?.DEV || 
-                         process.env.NODE_ENV === 'development' ||
                          window.location.hostname === 'localhost' ||
                          window.location.hostname === '127.0.0.1' ||
                          window.location.port !== '';
