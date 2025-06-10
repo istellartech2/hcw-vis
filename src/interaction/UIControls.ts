@@ -23,6 +23,7 @@ export interface UIControlElements {
     paramEValue: HTMLSpanElement;
     paramF: HTMLInputElement;
     paramFValue: HTMLSpanElement;
+    eccentricityValue: HTMLSpanElement;
     circularZDirection: HTMLInputElement;
     circularZDirectionControl: HTMLDivElement;
     thrustAmount: HTMLInputElement;
@@ -66,6 +67,7 @@ export class UIControls {
             paramEValue: document.getElementById('paramEValue') as HTMLSpanElement,
             paramF: document.getElementById('paramF') as HTMLInputElement,
             paramFValue: document.getElementById('paramFValue') as HTMLSpanElement,
+            eccentricityValue: document.getElementById('eccentricityValue') as HTMLSpanElement,
             circularZDirection: document.getElementById('circularZDirection') as HTMLInputElement,
             circularZDirectionControl: document.getElementById('circularZDirectionControl') as HTMLDivElement,
             thrustAmount: document.getElementById('thrustAmount') as HTMLInputElement,
@@ -111,6 +113,69 @@ export class UIControls {
         this.elements.paramDValue.textContent = parseFloat(this.elements.paramD.value).toFixed(1);
         this.elements.paramEValue.textContent = parseFloat(this.elements.paramE.value).toFixed(1);
         this.elements.paramFValue.textContent = parseFloat(this.elements.paramF.value).toFixed(1);
+        
+        // 離心率を計算して表示
+        this.updateEccentricity();
+    }
+    
+    updateEccentricity(): void {
+        const A = parseFloat(this.elements.orbitRadius.value);
+        const B = parseFloat(this.elements.paramB.value) * A;
+        const D = parseFloat(this.elements.paramD.value) * A;
+        const E = parseFloat(this.elements.paramE.value) * A;
+        const F = parseFloat(this.elements.paramF.value) * A;
+        
+        // OrbitInitializer.tsでの実装に基づく正しいHill方程式の周期解:
+        // x(t) = A*cos(nt) + B*sin(nt)
+        // y(t) = -2*A*sin(nt) + 2*B*cos(nt) + D
+        // z(t) = E*cos(nt) + F*sin(nt)
+        
+        // 3次元軌道の最大・最小半径を数値的に計算
+        let maxR = 0;
+        let minR = Infinity;
+        
+        const nPoints = 360;
+        for (let i = 0; i <= nPoints; i++) {
+            const phase = (2 * Math.PI * i) / nPoints;
+            const cos_t = Math.cos(phase);
+            const sin_t = Math.sin(phase);
+            
+            // ドリフト項を除いた位置（Dは除外）
+            const x = A * cos_t + B * sin_t;
+            const y = -2 * A * sin_t + 2 * B * cos_t;
+            const z = E * cos_t + F * sin_t;
+            
+            // 3次元空間での距離
+            const r = Math.sqrt(x * x + y * y + z * z);
+            
+            if (r > maxR) maxR = r;
+            if (r < minR) minR = r;
+        }
+        
+        // 離心率を計算
+        let eccentricity = 0;
+        
+        // 完全な円軌道の場合、maxR = minR
+        if (maxR > 1e-10) {
+            // 楕円の離心率: e = sqrt(1 - (b/a)^2)
+            // ここで a = maxR (長半径), b = minR (短半径)
+            eccentricity = Math.sqrt(1 - (minR * minR) / (maxR * maxR));
+        }
+        
+        // 数値誤差の処理
+        if (Math.abs(maxR - minR) < 1e-10 * maxR) {
+            eccentricity = 0; // 実質的に円
+        }
+        
+        // NaNチェック
+        if (isNaN(eccentricity) || !isFinite(eccentricity)) {
+            eccentricity = 0;
+        }
+        
+        // 0から1の範囲にクリップ
+        eccentricity = Math.max(0, Math.min(1, eccentricity));
+        
+        this.elements.eccentricityValue.textContent = eccentricity.toFixed(3);
     }
     
     // satelliteSizeDisplay method removed - now using direct number input

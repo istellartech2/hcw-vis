@@ -78,12 +78,31 @@ export class EventHandler {
         });
         
         this.uiControls.elements.orbitRadius.addEventListener('change', () => {
+            // 楕円軌道の場合は離心率も更新
+            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
+                this.uiControls.updateEccentricity();
+            }
             this.callbacks.resetSimulation();
         });
         
         this.uiControls.elements.zAmplitude.addEventListener('input', () => {
             this.uiControls.updateZAmplitudeDisplay();
             this.callbacks.resetSimulation();
+        });
+        
+        // 楕円解パラメータのイベントリスナー
+        const periodicParams = [
+            this.uiControls.elements.paramB,
+            this.uiControls.elements.paramD,
+            this.uiControls.elements.paramE,
+            this.uiControls.elements.paramF
+        ];
+        
+        periodicParams.forEach(param => {
+            param.addEventListener('input', () => {
+                this.uiControls.updatePeriodicParamsDisplay();
+                this.callbacks.resetSimulation();
+            });
         });
         
         // Display controls
