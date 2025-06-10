@@ -284,7 +284,7 @@ button:active {
     position: absolute;
     top: 20px;
     right: 20px;
-    padding: 15px;
+    padding: 10px;
     background: rgba(0, 0, 0, 0.7);
     border-radius: 10px;
     font-size: 13px;
@@ -373,8 +373,8 @@ button:active {
     #axes-info {
         top: 10px;
         right: 10px;
-        padding: 10px;
-        font-size: 11px;
+        padding: 8px;
+        font-size: 10px;
     }
     
     #time-display {
