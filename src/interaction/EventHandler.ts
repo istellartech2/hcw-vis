@@ -160,26 +160,26 @@ export class EventHandler {
                 // Thrust control keyboard shortcuts
                 case 'arrowup':
                     if (e.shiftKey) {
-                        this.callbacks.applyThrustToSelected('z', 0.001);
+                        this.callbacks.applyThrustToSelected('w', 0.001);
                     } else {
-                        this.callbacks.applyThrustToSelected('y', 0.001);
+                        this.callbacks.applyThrustToSelected('s', 0.001);
                     }
                     e.preventDefault();
                     break;
                 case 'arrowdown':
                     if (e.shiftKey) {
-                        this.callbacks.applyThrustToSelected('z', -0.001);
+                        this.callbacks.applyThrustToSelected('w', -0.001);
                     } else {
-                        this.callbacks.applyThrustToSelected('y', -0.001);
+                        this.callbacks.applyThrustToSelected('s', -0.001);
                     }
                     e.preventDefault();
                     break;
                 case 'arrowleft':
-                    this.callbacks.applyThrustToSelected('x', -0.001);
+                    this.callbacks.applyThrustToSelected('r', -0.001);
                     e.preventDefault();
                     break;
                 case 'arrowright':
-                    this.callbacks.applyThrustToSelected('x', 0.001);
+                    this.callbacks.applyThrustToSelected('r', 0.001);
                     e.preventDefault();
                     break;
             }
@@ -229,9 +229,9 @@ Escape: 選択解除/全画面終了
 H: このヘルプを表示
 
 推力制御（衛星選択時）:
-矢印キー上/下: Y軸方向推力
-矢印キー左/右: X軸方向推力
-Shift+矢印キー上/下: Z軸方向推力
+矢印キー上/下: S軸方向推力
+矢印キー左/右: R軸方向推力
+Shift+矢印キー上/下: W軸方向推力
 
 マウス操作:
 クリック: 衛星を選択

@@ -345,17 +345,17 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             
             selectedInfoDiv.innerHTML = `
                 <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
-                位置: X=${pos.x.toFixed(0)}, Y=${pos.y.toFixed(0)}, Z=${pos.z.toFixed(0)} m<br>
+                位置: R=${pos.x.toFixed(0)}, S=${pos.y.toFixed(0)}, W=${pos.z.toFixed(0)} m<br>
                 速度: ${v.toFixed(2)} m/s<br>
                 距離: ${r.toFixed(0)} m<br>
                 <div style="margin-top: 10px;">
                     <strong>推力制御:</strong><br>
-                    <button onclick="applyThrust('x', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+X</button>
-                    <button onclick="applyThrust('x', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-X</button><br>
-                    <button onclick="applyThrust('y', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+Y</button>
-                    <button onclick="applyThrust('y', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-Y</button><br>
-                    <button onclick="applyThrust('z', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+Z</button>
-                    <button onclick="applyThrust('z', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-Z</button>
+                    <button onclick="applyThrust('r', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+R</button>
+                    <button onclick="applyThrust('r', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-R</button><br>
+                    <button onclick="applyThrust('s', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+S</button>
+                    <button onclick="applyThrust('s', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-S</button><br>
+                    <button onclick="applyThrust('w', 1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">+W</button>
+                    <button onclick="applyThrust('w', -1)" style="margin: 2px; padding: 2px 6px; font-size: 10px;">-W</button>
                 </div>
             `;
             selectedInfoDiv.style.display = 'block';
@@ -442,13 +442,13 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // 速度変化を適用（m/s単位）
         switch (axis) {
-            case 'x':
+            case 'r':
                 sat.vx += dv;
                 break;
-            case 'y':
+            case 's':
                 sat.vy += dv;
                 break;
-            case 'z':
+            case 'w':
                 sat.vz += dv;
                 break;
         }
