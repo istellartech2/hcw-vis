@@ -132,7 +132,24 @@ export class EventHandler {
         });
         
         this.uiControls.elements.satelliteShape.addEventListener('change', () => {
+            // Show/hide cube rotation controls
+            if (this.uiControls.elements.satelliteShape.value === 'cube') {
+                this.uiControls.elements.cubeRotationControls.style.display = 'flex';
+            } else {
+                this.uiControls.elements.cubeRotationControls.style.display = 'none';
+            }
             this.callbacks.resetSimulation(); // Recreate satellites with new shape
+        });
+        
+        // Cube rotation controls
+        this.uiControls.elements.cubeRotationR.addEventListener('input', () => {
+            const value = this.uiControls.elements.cubeRotationR.value;
+            this.uiControls.elements.cubeRotationRValue.textContent = value + '°';
+        });
+        
+        this.uiControls.elements.cubeRotationS.addEventListener('input', () => {
+            const value = this.uiControls.elements.cubeRotationS.value;
+            this.uiControls.elements.cubeRotationSValue.textContent = value + '°';
         });
         
         // Window resize

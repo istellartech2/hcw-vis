@@ -181,6 +181,10 @@ export class RenderingSystem {
     }
 
     public updateSatellitePositions(satellites: Satellite[]): void {
+        const isCube = this.uiControls.elements.satelliteShape.value === 'cube';
+        const rotationR = isCube ? parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180 : 0;
+        const rotationS = isCube ? parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180 : 0;
+        
         satellites.forEach((sat, index) => {
             const pos = sat.getPosition();
             const scale = 1; // 1m in Hill coords = 1 units in Three.js
@@ -189,6 +193,20 @@ export class RenderingSystem {
             // Three.js: X = S (Along-track), Y = R (Radial), Z = W (Cross-track)
             // this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
             this.satelliteMeshes[index].position.set(pos.z * scale, pos.x * scale, pos.y * scale);
+            
+            // Apply rotation for cubes
+            if (isCube) {
+                // Reset rotation first
+                this.satelliteMeshes[index].rotation.set(0, 0, 0);
+                
+                // Apply rotations in Hill coordinate frame
+                // Hill to Three.js mapping: X=W, Y=R, Z=S
+                // R axis rotation (Radial axis) -> Y axis in Three.js
+                this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 1, 0), rotationR);
+                
+                // S axis rotation (Along-track axis) -> Z axis in Three.js
+                this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 0, 1), rotationS);
+            }
             
             // Highlight selected satellite
             if (index === this.selectedSatelliteIndex) {

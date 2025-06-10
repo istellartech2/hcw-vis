@@ -17,8 +17,6 @@
 </head>
 <body>
     <div id="container">
-        <h1>🛰️ Relative motion equations simulator</h1>
-        
         <div id="canvas-container">
             <!-- トップコントロールバー -->
             <div id="top-controls">
@@ -43,7 +41,7 @@
             <!-- 衛星配置パネル -->
             <div id="satellite-config-panel">
                 <div class="panel-header" onclick="toggleSatelliteConfig()">
-                    <h4 class="section-title">🛰️ 衛星配置</h4>
+                    <h4 class="section-title">🛰️ 衛星配置 </h4>
                     <span id="satellite-config-toggle" class="toggle-icon">▼</span>
                 </div>
                 <div id="satellite-config-content" class="panel-content">
@@ -82,7 +80,7 @@
                         <div class="periodic-params-grid">
                             <div class="param-item">
                                 <label>B/A:</label>
-                                <input type="range" id="paramB" min="-3" max="3" step="0.1" value="0">
+                                <input type="range" id="paramB" min="-3" max="3" step="0.1" value="1">
                                 <span id="paramBValue">0.0</span>
                             </div>
                             <div class="param-item">
@@ -191,6 +189,18 @@
                                 <input type="color" id="satelliteColor" value="#ffffff" style="width: 50px;">
                             </div>
                         </div>
+                        <div id="cubeRotationControls" class="control-row" style="display: none;">
+                            <div class="control-group" style="flex: 1;">
+                                <label>R軸回転:</label>
+                                <input type="range" id="cubeRotationR" min="0" max="90" step="5" value="0" style="width: 80px;">
+                                <span id="cubeRotationRValue">0°</span>
+                            </div>
+                            <div class="control-group" style="flex: 1;">
+                                <label>S軸回転:</label>
+                                <input type="range" id="cubeRotationS" min="0" max="90" step="5" value="0" style="width: 80px;">
+                                <span id="cubeRotationSValue">0°</span>
+                            </div>
+                        </div>
                         <div class="control-row">
                             <div class="control-group" style="flex: 1;">
                                 <input type="checkbox" id="showTrails" checked>
@@ -256,7 +266,7 @@
             <!-- 折りたたみ可能な基準衛星情報パネル -->
             <div id="reference-satellite-panel">
                 <button id="reference-satellite-toggle" class="panel-toggle" onclick="toggleReferenceSatelliteInfo()">
-                    <span class="icon">🛰️</span>
+                    <span class="icon">📍 </span>
                     <span class="toggle-arrow">▼</span>
                 </button>
                 <div id="reference-satellite-content" class="panel-content">
@@ -285,15 +295,13 @@
                     <span class="icon">⏱️</span>
                     <select id="timeScale">
                         <option value="1">1x</option>
-                        <option value="2">2x</option>
                         <option value="5">5x</option>
                         <option value="10">10x</option>
-                        <option value="20">20x</option>
-                        <option value="50">50x</option>
-                        <option value="100" selected>100x</option>
-                        <option value="200">200x</option>
-                        <option value="500">500x</option>
-                        <option value="1000">1000x</option>
+                        <option value="30">30x</option>
+                        <option value="60" selected>60x</option>
+                        <option value="180">180x</option>
+                        <option value="480">480x</option>
+                        <option value="960">960x</option>
                     </select>
                 </div>
                 <div id="time-display" onclick="togglePause()" title="クリックで一時停止/再開">

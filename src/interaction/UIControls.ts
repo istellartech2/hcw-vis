@@ -32,6 +32,11 @@ export interface UIControlElements {
     satelliteColor: HTMLInputElement;
     satelliteSize: HTMLInputElement;
     satelliteShape: HTMLSelectElement;
+    cubeRotationControls: HTMLDivElement;
+    cubeRotationR: HTMLInputElement;
+    cubeRotationRValue: HTMLSpanElement;
+    cubeRotationS: HTMLInputElement;
+    cubeRotationSValue: HTMLSpanElement;
     inclination: HTMLInputElement;
     raan: HTMLInputElement;
     argOfPerigee: HTMLInputElement;
@@ -76,6 +81,11 @@ export class UIControls {
             satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement,
             satelliteSize: document.getElementById('satelliteSize') as HTMLInputElement,
             satelliteShape: document.getElementById('satelliteShape') as HTMLSelectElement,
+            cubeRotationControls: document.getElementById('cubeRotationControls') as HTMLDivElement,
+            cubeRotationR: document.getElementById('cubeRotationR') as HTMLInputElement,
+            cubeRotationRValue: document.getElementById('cubeRotationRValue') as HTMLSpanElement,
+            cubeRotationS: document.getElementById('cubeRotationS') as HTMLInputElement,
+            cubeRotationSValue: document.getElementById('cubeRotationSValue') as HTMLSpanElement,
             inclination: document.getElementById('inclination') as HTMLInputElement,
             raan: document.getElementById('raan') as HTMLInputElement,
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,

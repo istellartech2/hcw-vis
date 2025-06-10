@@ -72,7 +72,7 @@ export class CameraController {
                 const newDist = this.getTouchDistance(e.touches[0], e.touches[1]);
                 const scale = this.pinchStartDistance / newDist;
                 this.cameraDistance = this.initialCameraDistance * scale;
-                this.cameraDistance = Math.max(200, Math.min(2000, this.cameraDistance));
+                this.cameraDistance = Math.max(5, Math.min(2000, this.cameraDistance));
             }
         }, { passive: false });
 
