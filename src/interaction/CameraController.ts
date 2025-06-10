@@ -32,6 +32,7 @@ export class CameraController {
         });
 
         this.container.addEventListener('touchstart', (e) => {
+            e.preventDefault();
             if (e.touches.length === 1) {
                 this.mouseDown = true;
                 this.mouseX = e.touches[0].clientX;
@@ -41,7 +42,7 @@ export class CameraController {
                 this.pinchStartDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
                 this.initialCameraDistance = this.cameraDistance;
             }
-        });
+        }, { passive: false });
 
         this.container.addEventListener('mousemove', (e) => {
             if (this.mouseDown) {
@@ -55,6 +56,7 @@ export class CameraController {
         });
 
         this.container.addEventListener('touchmove', (e) => {
+            e.preventDefault();
             if (e.touches.length === 1 && this.mouseDown) {
                 const deltaX = e.touches[0].clientX - this.mouseX;
                 const deltaY = e.touches[0].clientY - this.mouseY;
@@ -74,10 +76,11 @@ export class CameraController {
             this.mouseDown = false;
         });
 
-        this.container.addEventListener('touchend', () => {
+        this.container.addEventListener('touchend', (e) => {
+            e.preventDefault();
             this.mouseDown = false;
             this.pinchStartDistance = null;
-        });
+        }, { passive: false });
 
         this.container.addEventListener('wheel', (e) => {
             this.cameraDistance *= (1 + e.deltaY * 0.001);
