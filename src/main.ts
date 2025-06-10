@@ -140,8 +140,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     }
     
     
-    private generatePlacementPositions(pattern: string, count: number, radius: number, zSpread: number, zAmplitudeMultiplier?: number): Array<{x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number}> {
-        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier);
+    private generatePlacementPositions(pattern: string, count: number, radius: number, zSpread: number, zAmplitudeMultiplier?: number, positiveZ?: boolean): Array<{x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number}> {
+        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier, positiveZ);
     }
     
     public updateAllSatelliteColors(): void {
@@ -182,7 +182,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         const hexColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff'];
         
         const zAmplitudeMultiplier = parseFloat(this.uiControls.elements.zAmplitude.value) || 0;
-        const positions = this.generatePlacementPositions(pattern, count, radius, 0, zAmplitudeMultiplier);
+        const positiveZ = this.uiControls.elements.circularZDirection.checked;
+        const positions = this.generatePlacementPositions(pattern, count, radius, 0, zAmplitudeMultiplier, positiveZ);
         
         positions.forEach((pos, i) => {
             let satelliteColor: string;

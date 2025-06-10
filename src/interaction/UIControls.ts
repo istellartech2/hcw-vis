@@ -13,6 +13,8 @@ export interface UIControlElements {
     zAmplitude: HTMLInputElement;
     zAmplitudeValue: HTMLSpanElement;
     zAmplitudeControl: HTMLDivElement;
+    circularZDirection: HTMLInputElement;
+    circularZDirectionControl: HTMLDivElement;
     uniformSatelliteColor: HTMLInputElement;
     satelliteColor: HTMLInputElement;
     satelliteSize: HTMLInputElement;
@@ -44,6 +46,8 @@ export class UIControls {
             zAmplitude: document.getElementById('zAmplitude') as HTMLInputElement,
             zAmplitudeValue: document.getElementById('zAmplitudeValue') as HTMLSpanElement,
             zAmplitudeControl: document.getElementById('zAmplitudeControl') as HTMLDivElement,
+            circularZDirection: document.getElementById('circularZDirection') as HTMLInputElement,
+            circularZDirectionControl: document.getElementById('circularZDirectionControl') as HTMLDivElement,
             uniformSatelliteColor: document.getElementById('uniformSatelliteColor') as HTMLInputElement,
             satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement,
             satelliteSize: document.getElementById('satelliteSize') as HTMLInputElement,
@@ -189,8 +193,13 @@ export class UIControls {
         
         if (pattern === 'xy_ellipse') {
             this.elements.zAmplitudeControl.style.display = 'block';
+            this.elements.circularZDirectionControl.style.display = 'none';
+        } else if (pattern === 'circular_orbit') {
+            this.elements.zAmplitudeControl.style.display = 'none';
+            this.elements.circularZDirectionControl.style.display = 'block';
         } else {
             this.elements.zAmplitudeControl.style.display = 'none';
+            this.elements.circularZDirectionControl.style.display = 'none';
         }
     }
 }

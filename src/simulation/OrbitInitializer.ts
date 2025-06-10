@@ -36,7 +36,8 @@ export class OrbitInitializer {
         count: number,
         radius: number,       // m
         zSpread: number,      // m
-        zAmplitudeMultiplier?: number
+        zAmplitudeMultiplier?: number,
+        positiveZ?: boolean
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
         
@@ -60,7 +61,7 @@ export class OrbitInitializer {
                 return this.generateXYEllipse(count, radius, zAmplitudeMultiplier);
                 
             case 'circular_orbit':
-                return this.generateCircularOrbit(count, radius);
+                return this.generateCircularOrbit(count, radius, positiveZ ?? true);
                 
             case 'vbar_approach':
                 return this.generateVBarApproach(count, radius);
@@ -245,10 +246,10 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateCircularOrbit(count: number, radius: number): InitialCondition[] {
+    private generateCircularOrbit(count: number, radius: number, positiveZ: boolean = true): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const radius_circular = radius;
-        const z_amplitude = Math.sqrt(3) * radius;
+        const z_amplitude = Math.sqrt(3) * radius * (positiveZ ? 1 : -1);
         
         for (let i = 0; i < count; i++) {
             const phase = (2 * Math.PI * i) / count;
