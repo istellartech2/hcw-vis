@@ -10,6 +10,7 @@ export interface EventHandlerCallbacks {
     updateOrbitElementsFromUI: () => void;
     updateAllSatelliteColors: () => void;
     clearTrails: () => void;
+    toggleFullscreen?: () => void;
 }
 
 export class EventHandler {
@@ -165,7 +166,9 @@ export class EventHandler {
                     this.showHelp();
                     break;
                 case 'escape':
-                    this.callbacks.toggleFullscreen(); // Will handle fullscreen exit or selection clear
+                    if (this.callbacks.toggleFullscreen) {
+                        this.callbacks.toggleFullscreen(); // Will handle fullscreen exit or selection clear
+                    }
                     break;
                 // Thrust control keyboard shortcuts
                 case 'arrowup':
