@@ -99,6 +99,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private setupGlobalThrustFunction(): void {
         // 推力印加関数をグローバルに登録
         (window as any).applyThrust = (axis: string, dv: number) => {
+            console.log(`Global applyThrust called with axis: ${axis}, dv: ${dv}`);
             this.applyThrustToSelected(axis, dv);
         };
     }
@@ -248,8 +249,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 this.renderingSystem.updatePlots(this.satellites);
             }
             
-            // Update selected satellite info
-            if (this.renderingSystem.getSelectedSatelliteIndex() >= 0) {
+            // Update selected satellite info (only when selected and less frequently)
+            if (this.renderingSystem.getSelectedSatelliteIndex() >= 0 && this.animationFrameCounter % 5 === 0) {
                 this.updateSelectedSatelliteInfo(this.renderingSystem.getSelectedSatelliteIndex());
             }
             
@@ -317,12 +318,14 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         }
         
         const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
-        const infoDiv = document.getElementById('selectedSatelliteInfo');
-        if (!infoDiv) {
+        console.log(`updateSelectedSatelliteInfo called with selectedIndex: ${selectedIndex}`);
+        let selectedInfoDiv = document.getElementById('selectedSatelliteInfo');
+        
+        if (!selectedInfoDiv) {
             // 選択衛星情報表示エリアを作成
-            const newInfoDiv = document.createElement('div');
-            newInfoDiv.id = 'selectedSatelliteInfo';
-            newInfoDiv.style.cssText = `
+            selectedInfoDiv = document.createElement('div');
+            selectedInfoDiv.id = 'selectedSatelliteInfo';
+            selectedInfoDiv.style.cssText = `
                 position: absolute;
                 top: 110px;
                 left: 20px;
@@ -336,12 +339,10 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 backdrop-filter: blur(10px);
                 max-width: 280px;
             `;
-            document.getElementById('canvas-container')!.appendChild(newInfoDiv);
+            document.getElementById('canvas-container')!.appendChild(selectedInfoDiv);
         }
         
-        const selectedInfoDiv = document.getElementById('selectedSatelliteInfo')!;
-        
-        if (selectedIndex >= 0) {
+        if (selectedIndex >= 0 && selectedIndex < this.satellites.length) {
             const sat = this.satellites[selectedIndex];
             const pos = sat.getPosition();
             const vel = sat.getVelocity();
@@ -349,11 +350,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             const r = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
             const v = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
             
-            // Clear previous content
-            selectedInfoDiv.innerHTML = '';
-            
-            // Create info text
-            selectedInfoDiv.innerHTML = `
+            // Only update content if it's different to avoid recreating buttons
+            const expectedContent = `
                 <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
                 位置: R=${pos.x.toFixed(0)}, S=${pos.y.toFixed(0)}, W=${pos.z.toFixed(0)} m<br>
                 速度: ${v.toFixed(2)} m/s<br>
@@ -364,37 +362,61 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 </div>
             `;
             
-            // Create thrust control buttons with proper event listeners
-            const thrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls')!;
+            // Check if we need to create buttons (first time or satellite changed)
+            const thrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls');
+            const needsButtons = !thrustControlsDiv || thrustControlsDiv.children.length === 0;
             
-            const axes = [
-                { axis: 'r', label: 'R' },
-                { axis: 's', label: 'S' },
-                { axis: 'w', label: 'W' }
-            ];
-            
-            axes.forEach(({ axis, label }) => {
-                const plusBtn = document.createElement('button');
-                plusBtn.textContent = `+${label}`;
-                plusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
-                plusBtn.addEventListener('click', () => this.applyThrustToSelected(axis, 0.001));
+            if (needsButtons) {
+                // Clear and recreate content with buttons
+                selectedInfoDiv.innerHTML = expectedContent;
                 
-                const minusBtn = document.createElement('button');
-                minusBtn.textContent = `-${label}`;
-                minusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
-                minusBtn.addEventListener('click', () => this.applyThrustToSelected(axis, -0.001));
+                const newThrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls')!;
                 
-                thrustControlsDiv.appendChild(plusBtn);
-                thrustControlsDiv.appendChild(minusBtn);
+                const axes = [
+                    { axis: 'r', label: 'R' },
+                    { axis: 's', label: 'S' },
+                    { axis: 'w', label: 'W' }
+                ];
                 
-                if (axis !== 'w') {
-                    thrustControlsDiv.appendChild(document.createElement('br'));
-                }
-            });
+                axes.forEach(({ axis, label }) => {
+                    const plusBtn = document.createElement('button');
+                    plusBtn.textContent = `+${label}`;
+                    plusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
+                    plusBtn.addEventListener('click', () => {
+                        console.log(`Plus button clicked for axis: ${axis}`);
+                        this.applyThrustToSelected(axis, 0.001);
+                    });
+                    
+                    const minusBtn = document.createElement('button');
+                    minusBtn.textContent = `-${label}`;
+                    minusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
+                    minusBtn.addEventListener('click', () => {
+                        console.log(`Minus button clicked for axis: ${axis}`);
+                        this.applyThrustToSelected(axis, -0.001);
+                    });
+                    
+                    newThrustControlsDiv.appendChild(plusBtn);
+                    newThrustControlsDiv.appendChild(minusBtn);
+                    
+                    if (axis !== 'w') {
+                        newThrustControlsDiv.appendChild(document.createElement('br'));
+                    }
+                });
+            } else {
+                // Just update the text content, keep buttons intact
+                const infoLines = selectedInfoDiv.innerHTML.split('<div style="margin-top: 10px;">')[0];
+                const controlsSection = '<div style="margin-top: 10px;">' + selectedInfoDiv.innerHTML.split('<div style="margin-top: 10px;">')[1];
+                
+                selectedInfoDiv.innerHTML = `
+                    <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
+                    位置: R=${pos.x.toFixed(0)}, S=${pos.y.toFixed(0)}, W=${pos.z.toFixed(0)} m<br>
+                    速度: ${v.toFixed(2)} m/s<br>
+                    距離: ${r.toFixed(0)} m<br>
+                    ${controlsSection}
+                `;
+            }
             
             selectedInfoDiv.style.display = 'block';
-            
-            
         } else {
             selectedInfoDiv.style.display = 'none';
         }
@@ -464,14 +486,27 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     public applyThrustToSelected(axis: string, dv: number): void {
         const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
+        
+        // Validate inputs
         if (selectedIndex < 0 || selectedIndex >= this.satellites.length) {
+            console.warn(`Invalid satellite index: ${selectedIndex}. Valid range: 0-${this.satellites.length - 1}`);
+            return;
+        }
+        
+        if (!['r', 's', 'w'].includes(axis.toLowerCase())) {
+            console.warn(`Invalid axis: ${axis}. Valid axes: 'r', 's', 'w'`);
+            return;
+        }
+        
+        if (isNaN(dv) || !isFinite(dv)) {
+            console.warn(`Invalid velocity change: ${dv}. Must be a finite number.`);
             return;
         }
         
         const sat = this.satellites[selectedIndex];
         
         // 速度変化を適用（m/s単位）
-        switch (axis) {
+        switch (axis.toLowerCase()) {
             case 'r':
                 sat.vx += dv;
                 break;
@@ -483,7 +518,10 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 break;
         }
         
-        // 情報表示を更新
+        // Log thrust application for debugging
+        console.log(`Applied thrust: ${dv.toFixed(6)} m/s in ${axis.toUpperCase()} direction to satellite ${selectedIndex}`);
+        
+        // Update info display without recreating buttons
         this.updateSelectedSatelliteInfo();
     }
     

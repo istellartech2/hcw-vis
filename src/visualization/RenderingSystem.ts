@@ -231,18 +231,27 @@ export class RenderingSystem {
     }
 
     private checkSatelliteSelection(): void {
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        const intersects = this.raycaster.intersectObjects(this.satelliteMeshes);
-        
-        if (intersects.length > 0) {
-            const clickedMesh = intersects[0].object;
-            const index = this.satelliteMeshes.indexOf(clickedMesh as THREE.Mesh);
+        try {
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+            const intersects = this.raycaster.intersectObjects(this.satelliteMeshes);
             
-            if (index >= 0) {
-                this.selectedSatelliteIndex = index;
+            if (intersects.length > 0) {
+                const clickedMesh = intersects[0].object;
+                const index = this.satelliteMeshes.indexOf(clickedMesh as THREE.Mesh);
+                
+                if (index >= 0 && index < this.satelliteMeshes.length) {
+                    this.selectedSatelliteIndex = index;
+                    console.log(`Selected satellite ${index}`);
+                    this.updateSelectedSatelliteInfo();
+                } else {
+                    console.warn(`Invalid satellite index: ${index}`);
+                }
+            } else {
+                this.selectedSatelliteIndex = -1;
                 this.updateSelectedSatelliteInfo();
             }
-        } else {
+        } catch (error) {
+            console.error('Error in satellite selection:', error);
             this.selectedSatelliteIndex = -1;
             this.updateSelectedSatelliteInfo();
         }
