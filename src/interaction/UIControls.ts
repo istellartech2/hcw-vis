@@ -14,6 +14,15 @@ export interface UIControlElements {
     zAmplitude: HTMLInputElement;
     zAmplitudeValue: HTMLSpanElement;
     zAmplitudeControl: HTMLDivElement;
+    periodicParamsControl: HTMLDivElement;
+    paramB: HTMLInputElement;
+    paramBValue: HTMLSpanElement;
+    paramD: HTMLInputElement;
+    paramDValue: HTMLSpanElement;
+    paramE: HTMLInputElement;
+    paramEValue: HTMLSpanElement;
+    paramF: HTMLInputElement;
+    paramFValue: HTMLSpanElement;
     circularZDirection: HTMLInputElement;
     circularZDirectionControl: HTMLDivElement;
     thrustAmount: HTMLInputElement;
@@ -48,6 +57,15 @@ export class UIControls {
             zAmplitude: document.getElementById('zAmplitude') as HTMLInputElement,
             zAmplitudeValue: document.getElementById('zAmplitudeValue') as HTMLSpanElement,
             zAmplitudeControl: document.getElementById('zAmplitudeControl') as HTMLDivElement,
+            periodicParamsControl: document.getElementById('periodicParamsControl') as HTMLDivElement,
+            paramB: document.getElementById('paramB') as HTMLInputElement,
+            paramBValue: document.getElementById('paramBValue') as HTMLSpanElement,
+            paramD: document.getElementById('paramD') as HTMLInputElement,
+            paramDValue: document.getElementById('paramDValue') as HTMLSpanElement,
+            paramE: document.getElementById('paramE') as HTMLInputElement,
+            paramEValue: document.getElementById('paramEValue') as HTMLSpanElement,
+            paramF: document.getElementById('paramF') as HTMLInputElement,
+            paramFValue: document.getElementById('paramFValue') as HTMLSpanElement,
             circularZDirection: document.getElementById('circularZDirection') as HTMLInputElement,
             circularZDirectionControl: document.getElementById('circularZDirectionControl') as HTMLDivElement,
             thrustAmount: document.getElementById('thrustAmount') as HTMLInputElement,
@@ -88,6 +106,13 @@ export class UIControls {
         this.elements.zAmplitudeValue.textContent = parseFloat(this.elements.zAmplitude.value).toFixed(1);
     }
     
+    updatePeriodicParamsDisplay(): void {
+        this.elements.paramBValue.textContent = parseFloat(this.elements.paramB.value).toFixed(1);
+        this.elements.paramDValue.textContent = parseFloat(this.elements.paramD.value).toFixed(1);
+        this.elements.paramEValue.textContent = parseFloat(this.elements.paramE.value).toFixed(1);
+        this.elements.paramFValue.textContent = parseFloat(this.elements.paramF.value).toFixed(1);
+    }
+    
     // satelliteSizeDisplay method removed - now using direct number input
     
 
@@ -112,7 +137,7 @@ export class UIControls {
                 maxSatellites = 3;
                 defaultValue = 1;
                 break;
-            case 'xy_ellipse':
+            case 'periodic_orbit':
                 maxSatellites = 50;
                 defaultValue = 8;
                 break;
@@ -149,14 +174,17 @@ export class UIControls {
             this.elements.satelliteSize.value = '0.8';
         }
         
-        if (pattern === 'xy_ellipse') {
-            this.elements.zAmplitudeControl.style.display = 'block';
+        if (pattern === 'periodic_orbit') {
+            this.elements.zAmplitudeControl.style.display = 'none';
+            this.elements.periodicParamsControl.style.display = 'block';
             this.elements.circularZDirectionControl.style.display = 'none';
         } else if (pattern === 'circular_orbit') {
             this.elements.zAmplitudeControl.style.display = 'none';
+            this.elements.periodicParamsControl.style.display = 'none';
             this.elements.circularZDirectionControl.style.display = 'block';
         } else {
             this.elements.zAmplitudeControl.style.display = 'none';
+            this.elements.periodicParamsControl.style.display = 'none';
             this.elements.circularZDirectionControl.style.display = 'none';
         }
     }

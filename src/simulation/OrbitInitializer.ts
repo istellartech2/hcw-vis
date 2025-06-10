@@ -13,7 +13,7 @@ export type PlacementPattern =
     | 'random_position' 
     | 'random_position_velocity' 
     | 'random_periodic' 
-    | 'xy_ellipse' 
+    | 'periodic_orbit' 
     | 'circular_orbit'
     | 'vbar_approach'
     | 'rbar_approach'
@@ -37,7 +37,8 @@ export class OrbitInitializer {
         radius: number,       // m
         zSpread: number,      // m
         zAmplitudeMultiplier?: number,
-        positiveZ?: boolean
+        positiveZ?: boolean,
+        periodicParams?: { A: number, B: number, D: number, E: number, F: number }
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
         
@@ -57,8 +58,8 @@ export class OrbitInitializer {
             case 'random_periodic':
                 return this.generateRandomPeriodic(count, radius);
                 
-            case 'xy_ellipse':
-                return this.generateXYEllipse(count, radius, zAmplitudeMultiplier);
+            case 'periodic_orbit':
+                return this.generatePeriodicOrbit(count, radius, zAmplitudeMultiplier, periodicParams);
                 
             case 'circular_orbit':
                 return this.generateCircularOrbit(count, radius, positiveZ ?? true);
@@ -218,29 +219,72 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateXYEllipse(count: number, radius: number, zAmplitudeMultiplier: number = 0): InitialCondition[] {
+    private generatePeriodicOrbit(
+        count: number, 
+        radius: number, 
+        zAmplitudeMultiplier: number = 0,
+        periodicParams?: { A: number, B: number, D: number, E: number, F: number }
+    ): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        const rho = radius;
-        const z_amplitude = zAmplitudeMultiplier * radius;
         
-        for (let i = 0; i < count; i++) {
-            const phase = (2 * Math.PI * i) / count;
+        // Use periodic parameters if provided, otherwise fall back to old behavior
+        if (periodicParams) {
+            const { A, B, D, E, F } = periodicParams;
             
-            const x0 = rho * Math.cos(phase);
-            const y0 = -2 * rho * Math.sin(phase);
-            const z0 = z_amplitude * Math.cos(phase);
-            const vx0 = -rho * this.n * Math.sin(phase);
-            const vy0 = -2 * rho * this.n * Math.cos(phase);
-            const vz0 = -this.n * z_amplitude * Math.sin(phase);
+            for (let i = 0; i < count; i++) {
+                const phase = (2 * Math.PI * i) / count;
+                
+                // Hill equation solutions at time t corresponding to phase:
+                // x(t) = A cos(nt) + B sin(nt)
+                // y(t) = -2A sin(nt) + 2B cos(nt) + D
+                // z(t) = E cos(nt) + F sin(nt)
+                
+                // Initial positions at phase angle (t = phase/n):
+                const x0 = A * Math.cos(phase) + B * Math.sin(phase);
+                const y0 = -2 * A * Math.sin(phase) + 2 * B * Math.cos(phase) + D;
+                const z0 = E * Math.cos(phase) + F * Math.sin(phase);
+                
+                // Initial velocities (derivatives at phase):
+                // dx/dt = -An sin(nt) + Bn cos(nt)
+                // dy/dt = -2An cos(nt) - 2Bn sin(nt)  
+                // dz/dt = -En sin(nt) + Fn cos(nt)
+                const vx0 = -A * this.n * Math.sin(phase) + B * this.n * Math.cos(phase);
+                const vy0 = -2 * A * this.n * Math.cos(phase) - 2 * B * this.n * Math.sin(phase);
+                const vz0 = -E * this.n * Math.sin(phase) + F * this.n * Math.cos(phase);
+                
+                positions.push({
+                    x0: x0,
+                    y0: y0,
+                    z0: z0,
+                    vx0: vx0,
+                    vy0: vy0,
+                    vz0: vz0
+                });
+            }
+        } else {
+            // Fall back to old behavior for backward compatibility
+            const rho = radius;
+            const z_amplitude = zAmplitudeMultiplier * radius;
             
-            positions.push({
-                x0: x0,
-                y0: y0,
-                z0: z0,
-                vx0: vx0,
-                vy0: vy0,
-                vz0: vz0
-            });
+            for (let i = 0; i < count; i++) {
+                const phase = (2 * Math.PI * i) / count;
+                
+                const x0 = rho * Math.cos(phase);
+                const y0 = -2 * rho * Math.sin(phase);
+                const z0 = z_amplitude * Math.cos(phase);
+                const vx0 = -rho * this.n * Math.sin(phase);
+                const vy0 = -2 * rho * this.n * Math.cos(phase);
+                const vz0 = -this.n * z_amplitude * Math.sin(phase);
+                
+                positions.push({
+                    x0: x0,
+                    y0: y0,
+                    z0: z0,
+                    vx0: vx0,
+                    vy0: vy0,
+                    vz0: vz0
+                });
+            }
         }
         
         return positions;

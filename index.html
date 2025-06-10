@@ -73,7 +73,7 @@
                                 <option value="random_position">ランダム-速度0</option>
                                 <option value="random_position_velocity">ランダム</option>
                                 <option value="random_periodic">ランダム-周期解</option>
-                                <option value="xy_ellipse">楕円軌道</option>
+                                <option value="periodic_orbit">楕円軌道</option>
                                 <option value="circular_orbit">円軌道</option>
                                 <option value="hexagonal_disk">円盤軌道</option>
                                 <option value="vbar_approach">V-bar軌道</option>
@@ -99,6 +99,31 @@
                             <label>Z振幅:</label>
                             <input type="range" id="zAmplitude" min="-3" max="3" step="0.1" value="0">
                             <span id="zAmplitudeValue">0.0</span>A
+                        </div>
+                        <div class="control-group" id="periodicParamsControl" style="display: none;">
+                            <h5 class="subsection-title">楕円解パラメータ (A=範囲、B~F=A比)</h5>
+                            <div class="periodic-params-grid">
+                                <div class="param-item">
+                                    <label>B/A:</label>
+                                    <input type="range" id="paramB" min="-3" max="3" step="0.1" value="0">
+                                    <span id="paramBValue">0.0</span>
+                                </div>
+                                <div class="param-item">
+                                    <label>D/A:</label>
+                                    <input type="range" id="paramD" min="-3" max="3" step="0.1" value="0">
+                                    <span id="paramDValue">0.0</span>
+                                </div>
+                                <div class="param-item">
+                                    <label>E/A:</label>
+                                    <input type="range" id="paramE" min="-3" max="3" step="0.1" value="0">
+                                    <span id="paramEValue">0.0</span>
+                                </div>
+                                <div class="param-item">
+                                    <label>F/A:</label>
+                                    <input type="range" id="paramF" min="-3" max="3" step="0.1" value="0">
+                                    <span id="paramFValue">0.0</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="control-group" id="circularZDirectionControl" style="display: none;">
                             <label>

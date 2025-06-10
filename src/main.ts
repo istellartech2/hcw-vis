@@ -73,6 +73,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.initializeOrbitElements();
         this.updateOrbitParameters();
         this.uiControls.setupPlacementPatternLimits();
+        this.uiControls.updatePeriodicParamsDisplay(); // Initialize slider displays
         this.initSimulation();
         
         // Create Earth (orbit radius in meters)
@@ -94,6 +95,35 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         // Satellite size number input
         this.uiControls.elements.satelliteSize.addEventListener('input', () => {
             this.updateSatelliteSize();
+        });
+        
+        // Periodic parameters sliders
+        this.uiControls.elements.paramB.addEventListener('input', () => {
+            this.uiControls.updatePeriodicParamsDisplay();
+            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
+                this.resetSimulation();
+            }
+        });
+        
+        this.uiControls.elements.paramD.addEventListener('input', () => {
+            this.uiControls.updatePeriodicParamsDisplay();
+            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
+                this.resetSimulation();
+            }
+        });
+        
+        this.uiControls.elements.paramE.addEventListener('input', () => {
+            this.uiControls.updatePeriodicParamsDisplay();
+            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
+                this.resetSimulation();
+            }
+        });
+        
+        this.uiControls.elements.paramF.addEventListener('input', () => {
+            this.uiControls.updatePeriodicParamsDisplay();
+            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
+                this.resetSimulation();
+            }
         });
     }
     
@@ -164,8 +194,16 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     }
     
     
-    private generatePlacementPositions(pattern: string, count: number, radius: number, zSpread: number, zAmplitudeMultiplier?: number, positiveZ?: boolean): Array<{x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number}> {
-        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier, positiveZ);
+    private generatePlacementPositions(
+        pattern: string, 
+        count: number, 
+        radius: number, 
+        zSpread: number, 
+        zAmplitudeMultiplier?: number, 
+        positiveZ?: boolean,
+        periodicParams?: { A: number, B: number, D: number, E: number, F: number }
+    ): Array<{x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number}> {
+        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier, positiveZ, periodicParams);
     }
     
     public updateAllSatelliteColors(): void {
@@ -207,7 +245,26 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         const zAmplitudeMultiplier = parseFloat(this.uiControls.elements.zAmplitude.value) || 0;
         const positiveZ = this.uiControls.elements.circularZDirection.checked;
-        const positions = this.generatePlacementPositions(pattern, count, radius, 0, zAmplitudeMultiplier, positiveZ);
+        
+        // Get periodic parameters for periodic_orbit pattern
+        let periodicParams: { A: number, B: number, D: number, E: number, F: number } | undefined;
+        if (pattern === 'periodic_orbit') {
+            const A = radius; // Use range(m) as A parameter
+            const ratioB = parseFloat(this.uiControls.elements.paramB.value);
+            const ratioD = parseFloat(this.uiControls.elements.paramD.value);
+            const ratioE = parseFloat(this.uiControls.elements.paramE.value);
+            const ratioF = parseFloat(this.uiControls.elements.paramF.value);
+            
+            periodicParams = {
+                A: A,
+                B: A * ratioB,
+                D: A * ratioD,
+                E: A * ratioE,
+                F: A * ratioF
+            };
+        }
+        
+        const positions = this.generatePlacementPositions(pattern, count, radius, 0, zAmplitudeMultiplier, positiveZ, periodicParams);
         
         positions.forEach((pos, i) => {
             let satelliteColor: string;
