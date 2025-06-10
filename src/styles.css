@@ -941,7 +941,7 @@ button:active {
 /* 基準衛星情報パネル */
 #reference-satellite-panel {
     position: absolute;
-    top: 85px;
+    top: 130px;
     right: 20px;
     z-index: 12;
     display: flex;
@@ -1119,7 +1119,7 @@ button:active {
     }
     
     #reference-satellite-panel {
-        top: 65px;
+        top: 90px;
         right: 10px;
     }
     

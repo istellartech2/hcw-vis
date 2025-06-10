@@ -1,28 +1,21 @@
-# 🛰️ ヒルの方程式シミュレーター
+# 🛰️ HCW(Hill-Clohessy-Wiltshire) Equations Visualizer
 
-衛星群の相対運動を3D可視化するWebアプリケーション
+近接距離にある複数の人工衛星の相対運動を3自由度で可視化するWebアプリケーション。
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-blue)](https://ina111.github.io/hill-equation/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue)](https://www.typescriptlang.org/)
-[![Three.js](https://img.shields.io/badge/Three.js-0.160+-green)](https://threejs.org/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-blue)](https://istellartech2.github.io/hcw-vis/)
 
-## 📖 概要
+## 概要
 
-このアプリケーションは、ヒルの方程式（Hill's Equations / Clohessy-Wiltshire方程式）を用いて、円軌道上の主衛星に対する近傍衛星の相対運動をシミュレートし、3D空間で可視化します。LVLH座標系（Local Vertical Local Horizontal）での衛星の動きを観察し、実際の宇宙ミッションで使用される軌道パターンを学習できます。
+HCW(Hill-Clohessy-Wiltshire) Equations Visualizerは、Hillの方程式（Hill's Equations / Clohessy-Wiltshire方程式）を用いて、複数の衛星の相対運動をシミュレーションし、3D可視化するWebアプリケーションです。HCW方程式がテイラー展開の1次近似（線形化）されたものであり、近似モデルとして使える範囲と、3自由度（姿勢は考慮しない位置のみ）の計算であること、外乱には対応していないことに留意が必要。
 
-## ✨ 特徴
+## 主な特徴
 
-- 🛰️ **リアルタイム3Dシミュレーション** - Three.jsによる高品質な3D可視化
-- 🎮 **インタラクティブな操作** - マウス・キーボードによる直感的な制御
-- 🚀 **実用的な軌道パターン** - 実際のミッションで使用される軌道
-- 🎨 **多様な初期配置パターン** - 軸上、格子、楕円軌道、円軌道、ランダム配置など
+- 各初期配置毎の衛星の相対運動シミュレーション
+- 3Dの可視化
+- 推力発生や摂動にも対応
+- [キーボードショートカット](docs/keyboard-shortcuts.md)対応
 
-## 必要環境
-
-- [Bun](https://bun.sh/) v1.0以上
-- モダンブラウザ（Chrome、Firefox、Safari、Edge）
-
-## インストールと起動
+## クイックスタート
 
 ```bash
 # 依存関係のインストール
@@ -32,13 +25,20 @@ bun install
 bun run dev
 ```
 
-ブラウザで http://localhost:3000 にアクセスしてください。
+ブラウザで http://localhost:3000 を開いてください。
 
-## 技術仕様
+### その他のコマンド
+```bash
+# プロダクションビルド
+bun run build
 
-### ヒルの方程式
+# TypeScriptの型チェック
+bun run typecheck
+```
 
-円軌道上の主衛星に対する近傍衛星の相対運動は、以下の線形化されたヒルの方程式（Clohessy-Wiltshire方程式）に従います：
+## 📚 理論的背景
+
+Hillの方程式（Hill-Clohessy-Wiltshire方程式）は、円軌道上の主衛星に対する近傍衛星の相対運動を記述します：
 
 ```
 ẍ - 2nẏ - 3n²x = 0   (Radial方向)
@@ -46,64 +46,12 @@ bun run dev
 z̈ + n²z = 0          (Cross-track方向)
 ```
 
-**パラメータ**:
-- `n = √(μ/R₀³)`: 主衛星の平均運動（軌道角速度）
-- `μ = 3.986004418 × 10¹⁴ m³/s²`: 地球の重力定数
-- `R₀`: 主衛星の軌道半径
-
-**物理的意味**:
-- `3n²x`: 重力勾配項（潮汐力）
-- `2nẏ, 2nẋ`: コリオリ力項
-- `n²z`: Cross-track方向の復元力
-
-### 座標系
-
-
-LVLH座標系（Local Vertical Local Horizontal）を使用：
-
-- **X軸（青）**: Cross-track（軌道面垂直方向）
-- **Y軸（赤）**: Radial（径方向） - 地心からターゲット衛星に向かう方向
-- **Z軸（緑）**: Along-track（軌道進行方向）
-
-**重要**: Three.js表示での軸対応：
-- x_display = W (Cross-track)
-- y_display = R (Radial)
-- z_display = S (Along-track)
-
-## 🏗️ プロジェクト構成
-
-```
-hill-equation/
-├── index.html                    # メインHTML
-├── src/
-│   ├── main.ts                  # TypeScriptメインファイル
-│   ├── styles.css               # スタイルシート
-│   ├── models/
-│   │   └── Satellite.ts         # 衛星オブジェクトクラス
-│   ├── physics/
-│   │   ├── HillEquationSolver.ts # ヒルの方程式数値積分
-│   │   └── OrbitInitializer.ts   # 初期配置生成クラス
-│   ├── ui/
-│   │   └── UIControls.ts        # UIコントロール管理
-│   └── visualization/
-│       ├── PlotRenderer.ts      # 2Dプロット描画
-│       └── TrailRenderer.ts     # 軌跡描画
-├── docs/
-│   └── theory.md               # ヒルの方程式の理論的背景
-├── server.ts                   # Bun開発サーバー
-├── package.json               # プロジェクト設定
-├── tsconfig.json             # TypeScript設定（開発用）
-├── tsconfig.prod.json        # TypeScript設定（ビルド用）
-├── TODO.md                   # 今後の実装予定
-└── README.md                 # このファイル
-```
-
-## 📚 理論的背景
-
-詳細な数学的導出と物理的解釈については、[docs/theory.md](docs/theory.md) を参照してください。
+詳細な理論については [docs/theory.md](docs/theory.md) を参照してください。
+また座標については[docs/corrdinate.md](docs/coordinate.md)を参照。
 
 ## 📖 参考文献
 
-- Clohessy, W. H. and Wiltshire, R. S., "Terminal Guidance System for Satellite Rendezvous," Journal of the Aerospace Sciences, Vol. 27, No. 9, 1960, pp. 653-658.
-- Hill, G. W., "Researches in the Lunar Theory," American Journal of Mathematics, Vol. 1, No. 1, 1878, pp. 5-26.
-- Vallado, D. A., "Fundamentals of Astrodynamics and Applications," 4th Edition, Microcosm Press, 2013.
+- Clohessy, W. H. and Wiltshire, R. S., "Terminal Guidance System for Satellite Rendezvous," Journal of the Aerospace Sciences, Vol. 27, No. 9, 1960
+- Hill, G. W., "Researches in the Lunar Theory," American Journal of Mathematics, Vol. 1, No. 1, 1878
+- Vallado, D. A., "Fundamentals of Astrodynamics and Applications," 4th Edition, Microcosm Press, 2013
+

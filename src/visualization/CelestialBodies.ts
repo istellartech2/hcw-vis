@@ -123,7 +123,7 @@ export class CelestialBodies {
     
     private addLatitudeLongitudeLines(earthRadius: number): void {
         // 線を地球表面から少し浮かせて見やすくする
-        const lineRadius = earthRadius * 1.002;
+        const lineRadius = earthRadius * 1.001;
         
         // 一般的な緯度経度線
         const normalLineMaterial = new THREE.LineBasicMaterial({
