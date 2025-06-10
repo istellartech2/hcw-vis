@@ -115,49 +115,62 @@
                 <!-- 表示設定 -->
                 <div class="control-section">
                     <h4 class="section-title">👁️ 表示</h4>
-                    <div class="control-row compact">                        
-                        <div class="control-group">
-                            <input type="checkbox" id="showGrid" checked>
-                            <label>グリッド</label>
-                        </div>
-                        
-                        
-                        <div class="control-group">
-                            <input type="checkbox" id="showEarth" checked>
-                            <label>地球</label>
-                        </div>
-                    </div>
-
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <input type="checkbox" id="uniformSatelliteColor">
-                            <label>衛星色均一</label>
-                        </div>
-                        
-                        <div class="control-group">
-                            <label>色:</label>
-                            <input type="color" id="satelliteColor" value="#ffffff">
-                        </div>
-                    </div>
-
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>衛星サイズ:</label>
-                            <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8">
-                            <span>px</span>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <input type="checkbox" id="showTrails" checked>
-                        <label>軌跡</label>
-                    </div>
                     
-                    <div class="control-row compact">
-                        <div class="control-group">
-                            <label>軌跡長:</label>
-                            <input type="range" id="trailLength" min="50" max="500" step="50" value="200">
-                            <span id="trailLengthValue">200</span>
+                    <!-- 3D空間の表示要素 -->
+                    <div class="control-subsection">
+                        <h5 class="subsection-title">🌌 3D空間</h5>
+                        <div class="control-row compact">
+                            <div class="control-group">
+                                <input type="checkbox" id="showGrid" checked>
+                                <label>グリッド</label>
+                            </div>
+                            <div class="control-group">
+                                <input type="checkbox" id="showEarth" checked>
+                                <label>地球</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 衛星の表示設定 -->
+                    <div class="control-subsection">
+                        <h5 class="subsection-title">🛰️ 衛星</h5>
+                        <div class="control-row compact">
+                            <div class="control-group">
+                                <label>サイズ:</label>
+                                <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8">
+                                <span>px</span>
+                            </div>
+                        </div>
+                        
+                        <div class="control-row compact">
+                            <div class="control-group">
+                                <input type="checkbox" id="uniformSatelliteColor">
+                                <label>色を統一</label>
+                            </div>
+                            <div class="control-group">
+                                <label>色:</label>
+                                <input type="color" id="satelliteColor" value="#ffffff">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 軌跡の表示設定 -->
+                    <div class="control-subsection">
+                        <h5 class="subsection-title">📈 軌跡</h5>
+                        <div class="control-row compact">
+                            <div class="control-group">
+                                <input type="checkbox" id="showTrails" checked>
+                                <label>軌跡を表示</label>
+                            </div>
+                        </div>
+                        
+                        <div class="control-row compact">
+                            <div class="control-group">
+                                <label>軌跡長:</label>
+                                <input type="range" id="trailLength" min="50" max="500" step="50" value="200">
+                                <span id="trailLengthValue">200</span>
+                                <span>点</span>
+                            </div>
                         </div>
                     </div>
                 </div>

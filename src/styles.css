@@ -108,6 +108,27 @@ h1 {
     border-bottom: 1px solid rgba(74, 158, 255, 0.3);
 }
 
+.control-subsection {
+    margin-bottom: 12px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.control-subsection:last-child {
+    margin-bottom: 0;
+}
+
+.subsection-title {
+    color: #8ab4f8;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+    padding-bottom: 2px;
+    border-bottom: 1px solid rgba(138, 180, 248, 0.2);
+}
+
 .control-row.compact {
     margin-bottom: 6px;
     gap: 10px;
