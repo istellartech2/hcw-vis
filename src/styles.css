@@ -396,7 +396,7 @@ button:active {
     margin-bottom: 0;
 }
 
-.section-title {
+.panel-section-title {
     font-size: 10px;
     color: rgba(138, 180, 248, 0.8);
     font-weight: 600;
@@ -405,7 +405,7 @@ button:active {
     letter-spacing: 0.5px;
 }
 
-.info-content {
+.panel-info-content {
     font-family: 'Courier New', monospace;
     font-size: 10px;
     line-height: 1.4;
