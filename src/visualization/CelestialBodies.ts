@@ -47,49 +47,58 @@ export class CelestialBodies {
         // 地球のテクスチャを読み込み
         const textureLoader = new THREE.TextureLoader();
         
-        // 開発環境と本番環境のパスを試行
-        const getTexturePath = (filename: string): string => {
-            // 開発環境判定（ブラウザ環境で安全な方法）
-            const isDev = import.meta.env?.DEV || 
-                         window.location.hostname === 'localhost' ||
-                         window.location.hostname === '127.0.0.1' ||
-                         window.location.port !== '';
-            
-            if (isDev) {
-                console.log('Development environment detected, using /public/asset/ path');
-                return `/public/asset/${filename}`;
-            } else {
-                // GitHub Pages / Production environment
-                console.log('Production environment detected, using public/asset/ path');
-                return `public/asset/${filename}`;
+        // 複数のパスを順番に試行する方式に変更
+        const tryLoadTexture = (paths: string[], index: number = 0): void => {
+            if (index >= paths.length) {
+                console.error('All texture paths failed for:', textureFile);
+                return;
             }
+            
+            const currentPath = paths[index];
+            console.log(`Attempting to load texture from: ${currentPath}`);
+            
+            textureLoader.load(currentPath,
+                // 成功時
+                (texture) => {
+                    console.log(`Earth texture loaded successfully from: ${currentPath}`);
+                    if (this.earth && this.earth.material) {
+                        (this.earth.material as THREE.MeshPhongMaterial).map = texture;
+                        (this.earth.material as THREE.MeshPhongMaterial).needsUpdate = true;
+                    }
+                },
+                // 進行中
+                undefined,
+                // エラー時 - 次のパスを試行
+                (error) => {
+                    console.warn(`Failed to load texture from ${currentPath}, trying next path...`);
+                    tryLoadTexture(paths, index + 1);
+                }
+            );
         };
         
-        const texturePath = getTexturePath(textureFile);
-        const earthTexture = textureLoader.load(texturePath, 
-            // 読み込み成功時
-            () => console.log(`Earth texture loaded successfully from: ${texturePath}`),
-            // 読み込み進行中
-            undefined,
-            // エラー時 - フォールバックを試行
-            (error) => {
-                console.warn(`Failed to load texture from ${texturePath}, trying fallback...`);
-                const fallbackPath = texturePath.includes('public/asset/') ? 
-                    `/public/asset/${textureFile}` : `public/asset/${textureFile}`;
-                
-                const fallbackTexture = textureLoader.load(fallbackPath,
-                    () => console.log(`Earth texture loaded successfully from fallback: ${fallbackPath}`),
-                    undefined,
-                    (fallbackError) => console.error('All texture paths failed:', fallbackError)
-                );
-                
-                // フォールバックテクスチャで地球マテリアルを更新
-                if (this.earth && this.earth.material) {
-                    (this.earth.material as THREE.MeshPhongMaterial).map = fallbackTexture;
-                    (this.earth.material as THREE.MeshPhongMaterial).needsUpdate = true;
-                }
-            }
-        );
+        // 開発環境判定
+        const isDev = import.meta.env?.DEV || 
+                     window.location.hostname === 'localhost' ||
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.port !== '';
+        
+        // 複数のパスパターンを定義（優先順位順）
+        const texturePaths: string[] = [];
+        if (isDev) {
+            console.log('Development environment detected');
+            texturePaths.push(`/public/asset/${textureFile}`);
+            texturePaths.push(`./public/asset/${textureFile}`);
+        } else {
+            console.log('Production environment detected (v2.0 - multiple path fallback)');
+            texturePaths.push(`./public/asset/${textureFile}`);
+            texturePaths.push(`public/asset/${textureFile}`);
+            texturePaths.push(`/public/asset/${textureFile}`);
+            texturePaths.push(`./asset/${textureFile}`);
+            texturePaths.push(`asset/${textureFile}`);
+        }
+        
+        const earthTexture = new THREE.Texture();
+        tryLoadTexture(texturePaths);
         
         // 地球のマテリアル（テクスチャ付き）
         const earthMaterial = new THREE.MeshPhongMaterial({
