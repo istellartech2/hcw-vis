@@ -379,16 +379,18 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                     plusBtn.textContent = `+${label}`;
                     plusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
                     plusBtn.addEventListener('click', () => {
-                        console.log(`Plus button clicked for axis: ${axis}`);
-                        this.applyThrustToSelected(axis, 0.001);
+                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        console.log(`Plus button clicked for axis: ${axis}, thrust: ${thrustAmount}`);
+                        this.applyThrustToSelected(axis, thrustAmount);
                     });
                     
                     const minusBtn = document.createElement('button');
                     minusBtn.textContent = `-${label}`;
                     minusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
                     minusBtn.addEventListener('click', () => {
-                        console.log(`Minus button clicked for axis: ${axis}`);
-                        this.applyThrustToSelected(axis, -0.001);
+                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        console.log(`Minus button clicked for axis: ${axis}, thrust: ${thrustAmount}`);
+                        this.applyThrustToSelected(axis, -thrustAmount);
                     });
                     
                     thrustControlsDiv!.appendChild(plusBtn);

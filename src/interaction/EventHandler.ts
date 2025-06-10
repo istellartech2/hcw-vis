@@ -163,28 +163,40 @@ export class EventHandler {
                     break;
                 // Thrust control keyboard shortcuts
                 case 'arrowup':
-                    if (e.shiftKey) {
-                        this.callbacks.applyThrustToSelected('w', 0.001);
-                    } else {
-                        this.callbacks.applyThrustToSelected('s', 0.001);
+                    {
+                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        if (e.shiftKey) {
+                            this.callbacks.applyThrustToSelected('w', thrustAmount);
+                        } else {
+                            this.callbacks.applyThrustToSelected('s', thrustAmount);
+                        }
+                        e.preventDefault();
                     }
-                    e.preventDefault();
                     break;
                 case 'arrowdown':
-                    if (e.shiftKey) {
-                        this.callbacks.applyThrustToSelected('w', -0.001);
-                    } else {
-                        this.callbacks.applyThrustToSelected('s', -0.001);
+                    {
+                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        if (e.shiftKey) {
+                            this.callbacks.applyThrustToSelected('w', -thrustAmount);
+                        } else {
+                            this.callbacks.applyThrustToSelected('s', -thrustAmount);
+                        }
+                        e.preventDefault();
                     }
-                    e.preventDefault();
                     break;
                 case 'arrowleft':
-                    this.callbacks.applyThrustToSelected('r', -0.001);
-                    e.preventDefault();
+                    {
+                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        this.callbacks.applyThrustToSelected('r', -thrustAmount);
+                        e.preventDefault();
+                    }
                     break;
                 case 'arrowright':
-                    this.callbacks.applyThrustToSelected('r', 0.001);
-                    e.preventDefault();
+                    {
+                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        this.callbacks.applyThrustToSelected('r', thrustAmount);
+                        e.preventDefault();
+                    }
                     break;
             }
         });
