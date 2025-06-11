@@ -2,7 +2,7 @@
 
 ## 📖 概要
 
-ヒルの方程式（Hill's Equations）は、円軌道上を運動する主衛星（ターゲット）に対する、近傍の追跡衛星（チェイサー）の相対運動を記述する線形微分方程式です。これらの方程式は、1960年にClohessyとWiltshireによって衛星のランデブー問題に適用され、Clohessy-Wiltshire（CW）方程式とも呼ばれます。
+Hill-Clohessy-Wiltshire方程式（HCW Equations）は、円軌道上を運動する主衛星（ターゲット）に対する、近傍の追跡衛星（チェイサー）の相対運動を記述する線形微分方程式です。これらの方程式は、1878年にHillによって導出され、1960年にClohessyとWiltshireによって衛星のランデブー問題に適用され、Hillの方程式もしくはClohessy-Wiltshire（CW）方程式とも呼ばれます。
 
 現代の宇宙ミッションにおいて、国際宇宙ステーション（ISS）への補給ミッション、衛星の編隊飛行、軌道上サービシングなどで広く活用されています。
 
@@ -44,110 +44,118 @@
 
 慣性座標系での運動方程式から始めて、LVLH座標系（回転座標系）への変換を行います：
 
-```
-r̈ᵢ = -μ/|r|³ · r
-```
+$$
+\ddot{\mathbf{r}}_i = -\frac{\mu}{|\mathbf{r}|^3} \cdot \mathbf{r}
+$$
 
-LVLH座標系での相対位置ベクトルを **ρ** = [x, y, z]ᵀ とすると：
+LVLH座標系での相対位置ベクトルを $\boldsymbol{\rho} = [x, y, z]^T$ とすると：
 
-```
-ρ̈ + 2Ω × ρ̇ + Ω̇ × ρ + Ω × (Ω × ρ) = aᵣₑₗ
-```
+$$
+\ddot{\boldsymbol{\rho}} + 2\boldsymbol{\Omega} \times \dot{\boldsymbol{\rho}} + \dot{\boldsymbol{\Omega}} \times \boldsymbol{\rho} + \boldsymbol{\Omega} \times (\boldsymbol{\Omega} \times \boldsymbol{\rho}) = \mathbf{a}_{rel}
+$$
 
 ここで：
-- **Ω** = [0, 0, n]ᵀ は軌道角速度ベクトル
-- n = √(μ/R₀³) は平均運動（軌道角速度）
-- μ = 3.986004418 × 10¹⁴ m³/s² は地球の重力定数
-- R₀ はターゲット衛星の軌道半径
+- $\boldsymbol{\Omega} = [0, 0, n]^T$ は軌道角速度ベクトル
+- $n = \sqrt{\mu/R_0^3}$ は平均運動（軌道角速度）
+- $\mu = 3.986004418 \times 10^{14}$ m$^3$/s$^2$ は地球の重力定数
+- $R_0$ はターゲット衛星の軌道半径
 
 ### 線形化過程
 
-相対距離が軌道半径に比べて十分小さい（|ρ| << R₀）という仮定の下で、重力勾配項を展開し線形化を行います。
+相対距離が軌道半径に比べて十分小さい（$|\boldsymbol{\rho}| \ll R_0$）という仮定の下で、重力勾配項を展開し線形化を行います。
 
 ## ヒルの方程式（Clohessy-Wiltshire方程式）
 
 最終的に得られる線形微分方程式：
 
-```
-ẍ - 2nẏ - 3n²x = ax   (Radial方向)
-ÿ + 2nẋ         = ay   (Along-track方向)  
-z̈ + n²z         = az   (Cross-track方向)
-```
+$$
+\begin{aligned}
+\ddot{x} - 2n\dot{y} - 3n^2x &= a_x \quad \text{(Radial方向)}\\
+\ddot{y} + 2n\dot{x} &= a_y \quad \text{(Along-track方向)}\\
+\ddot{z} + n^2z &= a_z \quad \text{(Cross-track方向)}
+\end{aligned}
+$$
 
-ここで、ax, ay, az は摂動加速度。無摂動の場合（ax = ay = az = 0）：
+ここで、$a_x$, $a_y$, $a_z$ は摂動加速度。無摂動の場合（$a_x = a_y = a_z = 0$）：
 
-```
-ẍ - 2nẏ - 3n²x = 0   (Radial方向)
-ÿ + 2nẋ = 0           (Along-track方向)  
-z̈ + n²z = 0          (Cross-track方向)
-```
+$$
+\begin{aligned}
+\ddot{x} - 2n\dot{y} - 3n^2x &= 0 \quad \text{(Radial方向)}\\
+\ddot{y} + 2n\dot{x} &= 0 \quad \text{(Along-track方向)}\\
+\ddot{z} + n^2z &= 0 \quad \text{(Cross-track方向)}
+\end{aligned}
+$$
 
 ### 各項の物理的意味
 
-- **3n²x**: 重力勾配項（潮汐力）
-- **2nẏ, 2nẋ**: コリオリ力項
-- **n²z**: Cross-track方向の復元力
+- **$3n^2x$**: 重力勾配項（潮汐力）
+- **$2n\dot{y}$, $2n\dot{x}$**: コリオリ力項
+- **$n^2z$**: Cross-track方向の復元力
 
 ## 解析解
 
 ### 初期条件
 
-t = 0 での初期条件：
-- 位置: (x₀, y₀, z₀)
-- 速度: (ẋ₀, ẏ₀, ż₀)
+$t = 0$ での初期条件：
+- 位置: $(x_0, y_0, z_0)$
+- 速度: $(\dot{x}_0, \dot{y}_0, \dot{z}_0)$
 
 ### 厳密解
 
-初期条件 y₀ = (x₀, y₀, z₀, ẋ₀, ẏ₀, ż₀)ᵀ に対する解は次のように表される：
+初期条件 $\mathbf{y}_0 = (x_0, y_0, z_0, \dot{x}_0, \dot{y}_0, \dot{z}_0)^T$ に対する解は次のように表される：
 
 **位置の解**:
-```
-x(t) = -(3x₀ + 2ẏ₀/n)cos(nt) + (ẋ₀/n)sin(nt) + (4x₀ + 2ẏ₀/n)
-
-y(t) = (6x₀ + 4ẏ₀/n)sin(nt) + (2ẋ₀/n)cos(nt) - (6nx₀ + 3ẏ₀)t + (y₀ - 2ẋ₀/n)
-
-z(t) = z₀cos(nt) + (ż₀/n)sin(nt)
-```
+$$
+\begin{aligned}
+x(t) &= -(3x_0 + 2\dot{y}_0/n)\cos(nt) + (\dot{x}_0/n)\sin(nt) + (4x_0 + 2\dot{y}_0/n)\\
+y(t) &= (6x_0 + 4\dot{y}_0/n)\sin(nt) + (2\dot{x}_0/n)\cos(nt) - (6nx_0 + 3\dot{y}_0)t + (y_0 - 2\dot{x}_0/n)\\
+z(t) &= z_0\cos(nt) + (\dot{z}_0/n)\sin(nt)
+\end{aligned}
+$$
 
 **速度の解**:
-```
-ẋ(t) = (3nx₀ + 2ẏ₀)sin(nt) + ẋ₀cos(nt)
-
-ẏ(t) = (6nx₀ + 4ẏ₀)cos(nt) - 2ẋ₀sin(nt) - (6nx₀ + 3ẏ₀)
-
-ż(t) = -nz₀sin(nt) + ż₀cos(nt)
-```
+$$
+\begin{aligned}
+\dot{x}(t) &= (3nx_0 + 2\dot{y}_0)\sin(nt) + \dot{x}_0\cos(nt)\\
+\dot{y}(t) &= (6nx_0 + 4\dot{y}_0)\cos(nt) - 2\dot{x}_0\sin(nt) - (6nx_0 + 3\dot{y}_0)\\
+\dot{z}(t) &= -nz_0\sin(nt) + \dot{z}_0\cos(nt)
+\end{aligned}
+$$
 
 ## 物理的解釈
 
 ### 運動の特性
 
 1. **面内運動（x-y平面）**
-   - x方向（径方向）とy方向（軌道進行方向）の運動は結合
-   - y方向に永年項（secular term）-6nx₀t - 3ẏ₀t によるドリフトが発生
-   - 周期的な楕円運動が重畳（周期2π/n）
-   - 相対的な半長軸の差 Δa = (4x₀ + 2ẏ₀/n) により、ドリフト率 aΔn = -(3/2)nΔa = -(6nx₀ + 3ẏ₀)
+   - $x$方向（径方向）と$y$方向（軌道進行方向）の運動は結合
+   - $y$方向に永年項（secular term）$-6nx_0t - 3\dot{y}_0t$ によるドリフトが発生
+   - 周期的な楕円運動が重畳（周期$2\pi/n$）
+   - 相対的な半長軸の差 $\Delta a = (4x_0 + 2\dot{y}_0/n)$ により、ドリフト率 $a\Delta n = -(3/2)n\Delta a = -(6nx_0 + 3\dot{y}_0)$
 
 2. **面外運動（z方向）**
    - 他の方向と独立（デカップル）
    - 単純な調和振動
-   - 周期 T = 2π/n（軌道周期と同じ）
+   - 周期 $T = 2\pi/n$（軌道周期と同じ）
 
 ### 特殊な軌道
 
 1. **周期軌道**
    - ドリフトなしで閉軌道を描く特殊な初期条件
-   - 条件: ẏ₀ = -2nx₀
+   - 条件: $\dot{y}_0 = -2nx_0$
 
 2. **円軌道**
-   - 条件: ẏ₀ = -2nx₀, z₀ = √3x₀, ż₀ = √3ẋ₀
-   - 半径 ρ のパラメータ化
-     - x0  = (ρ / √5) * cos(φ)         
-     - dx0/dt  = (ρ * n / √5) * sin(φ)
-     - y0  = (2ρ / √5) * sin(φ)
-     - dy0/dt  = -(2ρ * n / √5) * cos(φ)
-     - z0  = (√3 * ρ / √5) * cos(φ),    
-     - dz0/dt  = (√3 * ρ * n / √5) * sin(φ)
+   - 条件: $\dot{y}_0 = -2nx_0$, $z_0 = \sqrt{3}x_0$, $\dot{z}_0 = \sqrt{3}\dot{x}_0$
+   - 半径 $\rho$ のパラメータ化
+     $$
+     \begin{aligned}
+     x_0 &= \frac{\rho}{\sqrt{5}} \cos(\varphi)\\
+     \dot{x}_0 &= \frac{\rho n}{\sqrt{5}} \sin(\varphi)\\
+     y_0 &= \frac{2\rho}{\sqrt{5}} \sin(\varphi)\\
+     \dot{y}_0 &= -\frac{2\rho n}{\sqrt{5}} \cos(\varphi)\\
+     z_0 &= \frac{\sqrt{3} \rho}{\sqrt{5}} \cos(\varphi)\\
+     \dot{z}_0 &= \frac{\sqrt{3} \rho n}{\sqrt{5}} \sin(\varphi)
+     \end{aligned}
+     $$
 
 
 
@@ -156,19 +164,19 @@ z(t) = z₀cos(nt) + (ż₀/n)sin(nt)
    - 宇宙ステーション後方から接近する安全な軌道パターン
    - 制御失敗時に自然に離れる特性により安全性が高い
    - SpaceX Dragon、Soyuz宇宙船のISSへの接近で使用
-   - 初期条件例: x₀ = 0, y₀ < 0（後方配置），適切な接近速度vy₀ > 0
+   - 初期条件例: $x_0 = 0$, $y_0 < 0$（後方配置），適切な接近速度$\dot{y}_0 > 0$
 
 4. **R-bar軌道（Radial Bar）**
    - 径方向（X軸、Radial）からの接近軌道
    - 宇宙ステーション真下（地球側）からの直接接近
    - より直接的だが軌道力学的に不安定
    - 精密な制御と継続的な推力が必要
-   - 初期条件例: x₀ < 0（下方配置）, y₀ = 0, ヒルの方程式結合項を考慮したvy₀ = -2nx₀
+   - 初期条件例: $x_0 < 0$（下方配置）, $y_0 = 0$, ヒルの方程式結合項を考慮した$\dot{y}_0 = -2nx_0$
 
 ### エネルギーと積分
 
 相対運動系では以下の積分が存在：
-- Jacobi積分: C = n²(3x² - z²) - 2(ẋ² + ẏ² + ż²)
+- Jacobi積分: $C = n^2(3x^2 - z^2) - 2(\dot{x}^2 + \dot{y}^2 + \dot{z}^2)$
 
 ## 🚀 応用
 
@@ -201,13 +209,6 @@ z(t) = z₀cos(nt) + (ż₀/n)sin(nt)
 4. **非線形効果**: 大きな相対運動では精度が低下
 5. **高度**: 低軌道での大気抵抗は考慮されない
 
-## 数値例
-
-地球低軌道（高度400km）での典型値：
-- 軌道半径: R₀ ≈ 6778 km
-- 平均運動: n ≈ 1.13 × 10⁻³ rad/s
-- 軌道周期: T ≈ 92.7 分
-
 ## 💻 本シミュレーターでの実装
 
 ### 数値積分手法
@@ -221,31 +222,17 @@ z(t) = z₀cos(nt) + (ż₀/n)sin(nt)
 3. **実用パターン**: V-bar軌道、R-bar軌道
 4. **カスタマイズ**: Z軸振幅調整、配置範囲変更
 
-### 教育的活用
-- **軌道力学の可視化**: 理論を直感的に理解
-- **ミッション設計**: 実際の宇宙ミッションの軌道計画学習
-- **パラメータ感度**: 初期条件変化による軌道への影響観察
-- **制御実験**: 摂動追加による軌道変化の観察
 
 ## 📚 参考文献
 
-### 基礎理論
 1. **Clohessy, W. H. and Wiltshire, R. S.**, "Terminal Guidance System for Satellite Rendezvous," *Journal of the Aerospace Sciences*, Vol. 27, No. 9, 1960, pp. 653-658.
 
 2. **Hill, G. W.**, "Researches in the Lunar Theory," *American Journal of Mathematics*, Vol. 1, No. 1, 1878, pp. 5-26.
 
 3. **Vallado, D. A.**, "Fundamentals of Astrodynamics and Applications," 4th Edition, Microcosm Press, 2013.
 
-### 応用・実装
 4. **Alfriend, K. T., et al.**, "Spacecraft Formation Flying: Dynamics, Control and Navigation," Elsevier, 2010.
 
 5. **Fehse, W.**, "Automated Rendezvous and Docking of Spacecraft," Cambridge University Press, 2003.
 
 6. **Wiesel, W. E.**, "Spaceflight Dynamics," 3rd Edition, Aphelion Press, 2010.
-
-### 実用事例
-7. **NASA**, "International Space Station Familiarization," NASA SSP 50808, 2006.
-
-8. **SpaceX**, "Dragon Spacecraft Overview," SpaceX Mission and Vehicle Overview, 2020.
-
-9. **ESA**, "Automated Transfer Vehicle (ATV) User Manual," ESA-HSO-ESA-MAN-0001, 2008.

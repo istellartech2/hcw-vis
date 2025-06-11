@@ -117,23 +117,24 @@
             <div id="sidebar" class="sidebar">
                 <div class="sidebar-header">
                     <h3>設定</h3>
-                    <button class="close-button" onclick="toggleSidebar()">×</button>
+                    <div class="header-buttons">
+                        <button class="help-button" onclick="window.open('https://github.com/istellartech2/hcw-vis/blob/main/README.md', '_blank')" title="ヘルプ">?</button>
+                        <button class="close-button" onclick="toggleSidebar()">×</button>
+                    </div>
                 </div>
                 <div class="sidebar-content">
                     <!-- シミュレーション制御 -->
                     <div class="subsection">
                         <h5 class="subsection-title">⚡ シミュレーション</h5>
-                        <div class="control-row">
-                            <div class="control-group" style="flex: 1;">
-                                <label>推力:</label>
-                                <input type="number" id="thrustAmount" min="0.0001" max="1" step="0.0001" value="0.001" style="width: 70px;">
-                                <span style="font-size: 11px;">m/s</span>
-                            </div>
-                            <div class="control-group" style="flex: 1;">
-                                <label>摂動:</label>
-                                <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02" style="width: 70px;">
-                                <span style="font-size: 11px;">m/s</span>
-                            </div>
+                        <div class="control-group">
+                            <label>推力:</label>
+                            <input type="number" id="thrustAmount" min="0.0001" max="1" step="0.0001" value="0.001" style="width: 100px;">
+                            <span style="font-size: 11px;">m/s</span>
+                        </div>
+                        <div class="control-group">
+                            <label>摂動:</label>
+                            <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02" style="width: 100px;">
+                            <span style="font-size: 11px;">m/s</span>
                         </div>
                         <div class="control-buttons">
                             <button onclick="addPerturbation()" style="font-size: 12px; padding: 6px 12px;">💥摂動</button>
@@ -166,19 +167,17 @@
                     <!-- 衛星サブセクション -->
                     <div class="subsection">
                         <h5 class="subsection-title">🛰️ 衛星表示</h5>
-                        <div class="control-row">
-                            <div class="control-group" style="flex: 1;">
-                                <label>サイズ:</label>
-                                <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8" style="width: 50px;">
-                                <span style="font-size: 11px;">px</span>
-                            </div>
-                            <div class="control-group" style="flex: 1;">
-                                <label>形状:</label>
-                                <select id="satelliteShape" style="width: 80px;">
-                                    <option value="sphere">球体</option>
-                                    <option value="cube">立方体</option>
-                                </select>
-                            </div>
+                        <div class="control-group">
+                            <label>サイズ:</label>
+                            <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8" style="width: 80px;">
+                            <span style="font-size: 11px;">px</span>
+                        </div>
+                        <div class="control-group">
+                            <label>形状:</label>
+                            <select id="satelliteShape" style="width: 120px;">
+                                <option value="sphere">球体</option>
+                                <option value="cube">立方体</option>
+                            </select>
                         </div>
                         <div class="control-row">
                             <div class="control-group" style="flex: 1;">
@@ -189,15 +188,15 @@
                                 <input type="color" id="satelliteColor" value="#ffffff" style="width: 50px;">
                             </div>
                         </div>
-                        <div id="cubeRotationControls" class="control-row" style="display: none;">
-                            <div class="control-group" style="flex: 1;">
+                        <div id="cubeRotationControls" style="display: none;">
+                            <div class="control-group">
                                 <label>R軸回転:</label>
-                                <input type="range" id="cubeRotationR" min="0" max="90" step="5" value="0" style="width: 80px;">
+                                <input type="range" id="cubeRotationR" min="0" max="90" step="5" value="0" style="width: 120px;">
                                 <span id="cubeRotationRValue">0°</span>
                             </div>
-                            <div class="control-group" style="flex: 1;">
+                            <div class="control-group">
                                 <label>S軸回転:</label>
-                                <input type="range" id="cubeRotationS" min="0" max="90" step="5" value="0" style="width: 80px;">
+                                <input type="range" id="cubeRotationS" min="0" max="90" step="5" value="0" style="width: 120px;">
                                 <span id="cubeRotationSValue">0°</span>
                             </div>
                         </div>

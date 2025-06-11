@@ -1,12 +1,13 @@
 # 🛰️ HCW(Hill-Clohessy-Wiltshire) Equations Visualizer
 
-近接距離にある複数の人工衛星の相対運動を3自由度で可視化するWebアプリケーション。
+円軌道上で近接距離（軌道半径の1%以内）にある複数の人工衛星の相対運動を3自由度で可視化するWebアプリケーション。
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-blue)](https://istellartech2.github.io/hcw-vis/)
 
 ## 概要
 
-HCW(Hill-Clohessy-Wiltshire) Equations Visualizerは、Hillの方程式（Hill's Equations / Clohessy-Wiltshire方程式）を用いて、複数の衛星の相対運動をシミュレーションし、3D可視化するWebアプリケーションです。HCW方程式がテイラー展開の1次近似（線形化）されたものであり、近似モデルとして使える範囲と、3自由度（姿勢は考慮しない位置のみ）の計算であること、外乱には対応していないことに留意が必要。
+HCW(Hill-Clohessy-Wiltshire) Equations Visualizerは、HCW方程式（Hill's Equations / Clohessy-Wiltshire方程式とも呼ばれる）を用いて、複数の衛星の相対運動をシミュレーションし、3D可視化するWebアプリケーションです。
+HCW方程式自体が非線形の運動方程式からテイラー展開の1次近似（線形化）されたものであり、近似モデルとして使える範囲と、3自由度（姿勢は考慮しない位置のみ）の計算であること、外乱には対応していないことに留意が必要。
 
 ## 主な特徴
 
@@ -36,22 +37,24 @@ bun run build
 bun run typecheck
 ```
 
-## 📚 理論的背景
+## 📚 ドキュメント
 
-Hillの方程式（Hill-Clohessy-Wiltshire方程式）は、円軌道上の主衛星に対する近傍衛星の相対運動を記述します：
+### 理論的背景
 
-```
-ẍ - 2nẏ - 3n²x = 0   (Radial方向)
-ÿ + 2nẋ = 0           (Along-track方向)  
-z̈ + n²z = 0          (Cross-track方向)
-```
+HCW方程式（Hill-Clohessy-Wiltshire equations）は、円軌道上の主衛星に対する近傍衛星の相対運動を記述します：
 
-詳細な理論については [docs/theory.md](docs/theory.md) を参照してください。
-また座標については[docs/corrdinate.md](docs/coordinate.md)を参照。
+$$
+\begin{aligned}
+\ddot{x} - 2n\dot{y} - 3n^2x &= 0 \quad \text{(Radial方向)}\\
+\ddot{y} + 2n\dot{x} &= 0 \quad \text{(Along-track方向)}\\
+\ddot{z} + n^2z &= 0 \quad \text{(Cross-track方向)}
+\end{aligned}
+$$
 
-## 📖 参考文献
+### 詳細ドキュメント
 
-- Clohessy, W. H. and Wiltshire, R. S., "Terminal Guidance System for Satellite Rendezvous," Journal of the Aerospace Sciences, Vol. 27, No. 9, 1960
-- Hill, G. W., "Researches in the Lunar Theory," American Journal of Mathematics, Vol. 1, No. 1, 1878
-- Vallado, D. A., "Fundamentals of Astrodynamics and Applications," 4th Edition, Microcosm Press, 2013
-
+- **[理論的背景](docs/theory.md)** - HCW方程式の詳細な理論、導出過程、物理的意味、実際の宇宙ミッションでの応用例
+- **[座標系変換](docs/coordinate.md)** - ECI、ECEF、LVLH座標系間の変換公式と実装例
+- **[周期解と解析解](docs/periodicSolution.md)** - HCW方程式の解析解、周期軌道の条件、初期値から積分定数への変換公式
+- **[円盤軌道の初期配置](docs/diskOrbit.md)** - 正六角形タイル張りを用いた衛星群の初期配置アルゴリズム
+- **[キーボードショートカット](docs/keyboard-shortcuts.md)** - アプリケーションの操作方法と便利なショートカット一覧

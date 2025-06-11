@@ -680,6 +680,37 @@ button:active {
     letter-spacing: 1px;
 }
 
+.header-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.help-button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 140, 70, 0.3);
+    border-radius: 8px;
+    color: #ff9060;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 36px;
+}
+
+.help-button:hover {
+    transform: scale(1.1);
+    background: rgba(255, 140, 70, 0.2);
+    border-color: #ff7f50;
+    color: #fff;
+    box-shadow: 0 0 20px rgba(255, 127, 80, 0.4);
+}
+
 .close-button {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 140, 70, 0.3);

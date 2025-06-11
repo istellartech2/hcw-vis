@@ -43,56 +43,60 @@ Hill's equations simulatorで使用される座標系間の変換について数
 
 ### ECI座標系からR‑S‑W座標系への変換
 
-基準衛星のECI座標を \$(\mathbf r\_0, \mathbf v\_0)\$ とし、任意の衛星のECI座標を \$(\mathbf r, \mathbf v)\$ とする。
+基準衛星のECI座標を $(\mathbf{r}_0, \mathbf{v}_0)$ とし、任意の衛星のECI座標を $(\mathbf{r}, \mathbf{v})$ とする。
 
 #### 1. R‑S‑W座標系の基底ベクトルをECI座標系で表現
 
-```math
-\hat{\mathbf R} = \frac{\mathbf r_0}{\|\mathbf r_0\|} \qquad (\text{径方向単位ベクトル})
+$$
+\hat{\mathbf{R}} = \frac{\mathbf{r}_0}{\|\mathbf{r}_0\|} \qquad (\text{径方向単位ベクトル})
+$$
 
-\hat{\mathbf W} = \frac{\mathbf r_0 \times \mathbf v_0}{\|\mathbf r_0 \times \mathbf v_0\|} \qquad (\text{角運動量方向単位ベクトル})
+$$
+\hat{\mathbf{W}} = \frac{\mathbf{r}_0 \times \mathbf{v}_0}{\|\mathbf{r}_0 \times \mathbf{v}_0\|} \qquad (\text{角運動量方向単位ベクトル})
+$$
 
-\hat{\mathbf S} = \hat{\mathbf W} \times \hat{\mathbf R} \qquad (\text{軌道進行方向単位ベクトル})
-```
+$$
+\hat{\mathbf{S}} = \hat{\mathbf{W}} \times \hat{\mathbf{R}} \qquad (\text{軌道進行方向単位ベクトル})
+$$
 
 #### 2. 変換行列の構築
 
-ECI座標系からR‑S‑W座標系への変換行列 \$\mathbf T\_{\text{ECI}\to\text{RSW}}\$:
+ECI座標系からR‑S‑W座標系への変換行列 $\mathbf{T}_{\text{ECI}\to\text{RSW}}$:
 
-```math
-\mathbf T_{\text{ECI}\to\text{RSW}} =
+$$
+\mathbf{T}_{\text{ECI}\to\text{RSW}} =
 \begin{bmatrix}
-\hat{\mathbf R}^T\\
-\hat{\mathbf S}^T\\
-\hat{\mathbf W}^T
+\hat{\mathbf{R}}^T\\
+\hat{\mathbf{S}}^T\\
+\hat{\mathbf{W}}^T
 \end{bmatrix}
-```
+$$
 
 #### 3. 位置と速度の変換
 
 相対位置ベクトル:
 
-```math
-\Delta\mathbf r_{\text{ECI}} = \mathbf r - \mathbf r_0
-```
+$$
+\Delta\mathbf{r}_{\text{ECI}} = \mathbf{r} - \mathbf{r}_0
+$$
 
 R‑S‑W座標系での位置:
 
-```math
-\mathbf r_{\text{RSW}} = \mathbf T_{\text{ECI}\to\text{RSW}}\,\Delta\mathbf r_{\text{ECI}}
-```
+$$
+\mathbf{r}_{\text{RSW}} = \mathbf{T}_{\text{ECI}\to\text{RSW}}\,\Delta\mathbf{r}_{\text{ECI}}
+$$
 
 R‑S‑W座標系での速度:
 
-```math
-\mathbf v_{\text{RSW}} = \mathbf T_{\text{ECI}\to\text{RSW}}(\mathbf v - \mathbf v_0)\;\; -\;\; \boldsymbol\Omega \times \mathbf r_{\text{RSW}}
-```
+$$
+\mathbf{v}_{\text{RSW}} = \mathbf{T}_{\text{ECI}\to\text{RSW}}(\mathbf{v} - \mathbf{v}_0) - \boldsymbol{\Omega} \times \mathbf{r}_{\text{RSW}}
+$$
 
-ここで、\$\boldsymbol\Omega\$ は軌道角速度ベクトル:
+ここで、$\boldsymbol{\Omega}$ は軌道角速度ベクトル:
 
-```math
-\boldsymbol\Omega = \frac{\mathbf r_0 \times \mathbf v_0}{\|\mathbf r_0\|^2}
-```
+$$
+\boldsymbol{\Omega} = \frac{\mathbf{r}_0 \times \mathbf{v}_0}{\|\mathbf{r}_0\|^2}
+$$
 
 ---
 
@@ -100,23 +104,23 @@ R‑S‑W座標系での速度:
 
 地球の自転により、地球固定座標系 (ECEF) はECIに対してZ軸回りに時刻依存で回転する。
 
-1. **グリニッジ平均恒星時 (GMST)** を計算し、時角 \$\theta\_g\$ を得る。
+1. **グリニッジ平均恒星時 (GMST)** を計算し、時角 $\theta_g$ を得る。
 2. Z軸回りの回転行列
 
-```math
-\mathbf R_3(\theta_g) =
+$$
+\mathbf{R}_3(\theta_g) =
 \begin{bmatrix}
 \cos\theta_g & \sin\theta_g & 0\\
 -\sin\theta_g & \cos\theta_g & 0\\
 0 & 0 & 1
 \end{bmatrix}
-```
+$$
 
 3. **ECI→ECEF 変換**
 
-```math
-\mathbf r_{\text{ECEF}} = \mathbf R_3(\theta_g)\,\mathbf r_{\text{ECI}}
-```
+$$
+\mathbf{r}_{\text{ECEF}} = \mathbf{R}_3(\theta_g)\,\mathbf{r}_{\text{ECI}}
+$$
 
 ---
 
@@ -124,17 +128,17 @@ R‑S‑W座標系での速度:
 
 ECEF→RSW変換行列は、先に示した二つの行列の積で得られる。
 
-```math
-\mathbf T_{\text{ECEF}\to\text{RSW}} = \mathbf T_{\text{ECI}\to\text{RSW}}\,\mathbf R_3(-\theta_g)
-```
+$$
+\mathbf{T}_{\text{ECEF}\to\text{RSW}} = \mathbf{T}_{\text{ECI}\to\text{RSW}}\,\mathbf{R}_3(-\theta_g)
+$$
 
-> **注**: \$\mathbf R\_3(-\theta\_g)\$ はECEF→ECIの回転であり、行列計算順序に注意。
+> **注**: $\mathbf{R}_3(-\theta_g)$ はECEF→ECIの回転であり、行列計算順序に注意。
 
-これにより、地球固定座標系で与えられた任意の点 \$(x\_{\text{ECEF}},y\_{\text{ECEF}},z\_{\text{ECEF}})\$ が衛星ローカル座標 (R‑S‑W) に直接変換できる。
+これにより、地球固定座標系で与えられた任意の点 $(x_{\text{ECEF}}, y_{\text{ECEF}}, z_{\text{ECEF}})$ が衛星ローカル座標 (R‑S‑W) に直接変換できる。
 
-```math
-\mathbf r_{\text{RSW}} = \mathbf T_{\text{ECEF}\to\text{RSW}}\,\mathbf r_{\text{ECEF}}
-```
+$$
+\mathbf{r}_{\text{RSW}} = \mathbf{T}_{\text{ECEF}\to\text{RSW}}\,\mathbf{r}_{\text{ECEF}}
+$$
 
 ---
 
@@ -144,21 +148,23 @@ ECEF→RSW変換行列は、先に示した二つの行列の積で得られる�
 
 1. **ECEF単位ベクトルをECIで表現**
 
-```math
-\hat{\mathbf i}_{\text{E}}^{\text{ECI}} = \mathbf R_3(-\theta_g)\,[1,0,0]^T\\
-\hat{\mathbf j}_{\text{E}}^{\text{ECI}} = \mathbf R_3(-\theta_g)\,[0,1,0]^T\\
-\hat{\mathbf k}_{\text{E}}^{\text{ECI}} = [0,0,1]^T
-```
+$$
+\begin{aligned}
+\hat{\mathbf{i}}_{\text{E}}^{\text{ECI}} &= \mathbf{R}_3(-\theta_g)\,[1,0,0]^T\\
+\hat{\mathbf{j}}_{\text{E}}^{\text{ECI}} &= \mathbf{R}_3(-\theta_g)\,[0,1,0]^T\\
+\hat{\mathbf{k}}_{\text{E}}^{\text{ECI}} &= [0,0,1]^T
+\end{aligned}
+$$
 
 2. **RSW基底への射影**
 
-```math
+$$
 \begin{aligned}
-\hat{\mathbf i}_{\text{E}}^{\text{RSW}} &= \mathbf T_{\text{ECI}\to\text{RSW}}\,\hat{\mathbf i}_{\text{E}}^{\text{ECI}}\\[4pt]
-\hat{\mathbf j}_{\text{E}}^{\text{RSW}} &= \mathbf T_{\text{ECI}\to\text{RSW}}\,\hat{\mathbf j}_{\text{E}}^{\text{ECI}}\\[4pt]
-\hat{\mathbf k}_{\text{E}}^{\text{RSW}} &= \mathbf T_{\text{ECI}\to\text{RSW}}\,[0,0,1]^T
+\hat{\mathbf{i}}_{\text{E}}^{\text{RSW}} &= \mathbf{T}_{\text{ECI}\to\text{RSW}}\,\hat{\mathbf{i}}_{\text{E}}^{\text{ECI}}\\[4pt]
+\hat{\mathbf{j}}_{\text{E}}^{\text{RSW}} &= \mathbf{T}_{\text{ECI}\to\text{RSW}}\,\hat{\mathbf{j}}_{\text{E}}^{\text{ECI}}\\[4pt]
+\hat{\mathbf{k}}_{\text{E}}^{\text{RSW}} &= \mathbf{T}_{\text{ECI}\to\text{RSW}}\,[0,0,1]^T
 \end{aligned}
-```
+$$
 
 これら3本のベクトルが、衛星ローカル空間における地球の姿勢（自転軸と経度基準線方向）を表す。
 
@@ -253,25 +259,16 @@ earthMesh.quaternion.copy(q);
 
 ---
 
-## Hill方程式との関係
+## HCW方程式との関係
 
-R‑S‑W座標系でのHill方程式:
+R‑S‑W座標系でのHCW方程式:
 
-```math
+$$
 \begin{cases}
-\ddot x - 2n\dot y - 3n^2 x = 0 \\
-\ddot y + 2n\dot x = 0\\
-\ddot z + n^2 z = 0
+\ddot{x} - 2n\dot{y} - 3n^2 x = 0 \\
+\ddot{y} + 2n\dot{x} = 0\\
+\ddot{z} + n^2 z = 0
 \end{cases}
-```
+$$
 
-ここで、\$n\$ は基準衛星の軌道平均運動 (\$n = \sqrt{\mu/a^3}\$)。
-
----
-
-## 参考文献
-
-* Vallado, D. A. (2013). *Fundamentals of Astrodynamics and Applications*.
-* Curtis, H. D. (2013). *Orbital Mechanics for Engineering Students*.
-* Montenbruck, O., & Gill, E. (2000). *Satellite Orbits: Models, Methods and Applications*.
-* Wertz, J. R. (2001). *Spacecraft Attitude Determination and Control*.
+ここで、$n$ は基準衛星の軌道平均運動 ($n = \sqrt{\mu/a^3}$)。
