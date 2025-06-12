@@ -10,6 +10,7 @@
     {
       "imports": {
         "three": "/node_modules/three/build/three.module.js",
+        "three/examples/jsm/": "/node_modules/three/examples/jsm/",
         "satellite.js": "/node_modules/satellite.js/dist/satellite.es.js"
       }
     }
@@ -177,6 +178,7 @@
                             <select id="satelliteShape" style="width: 120px;">
                                 <option value="sphere">球体</option>
                                 <option value="cube">立方体</option>
+                                <option value="3dfile">3Dファイル読込</option>
                             </select>
                         </div>
                         <div class="control-row">
@@ -198,6 +200,21 @@
                                 <label>S軸回転:</label>
                                 <input type="range" id="cubeRotationS" min="0" max="90" step="5" value="0" style="width: 120px;">
                                 <span id="cubeRotationSValue">0°</span>
+                            </div>
+                        </div>
+                        <div id="file3dControls" style="display: none;">
+                            <div class="control-group">
+                                <input type="file" id="file3dInput" accept=".glb,.gltf,.stl" style="width: 100%;">
+                            </div>
+                            <div class="control-group">
+                                <label>R軸回転:</label>
+                                <input type="range" id="file3dRotationR" min="-180" max="180" step="5" value="0" style="width: 120px;">
+                                <span id="file3dRotationRValue">0°</span>
+                            </div>
+                            <div class="control-group">
+                                <label>S軸回転:</label>
+                                <input type="range" id="file3dRotationS" min="-180" max="180" step="5" value="0" style="width: 120px;">
+                                <span id="file3dRotationSValue">0°</span>
                             </div>
                         </div>
                         <div class="control-row">

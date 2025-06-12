@@ -647,6 +647,10 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.renderingSystem.updateSatelliteSize(this.satellites);
     }
     
+    public loadFile3D(file: File): void {
+        this.renderingSystem.loadFile3D(file);
+    }
+    
 }
 
 let simulation: HillEquationSimulation;

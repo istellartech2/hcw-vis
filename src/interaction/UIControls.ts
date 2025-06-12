@@ -37,6 +37,12 @@ export interface UIControlElements {
     cubeRotationRValue: HTMLSpanElement;
     cubeRotationS: HTMLInputElement;
     cubeRotationSValue: HTMLSpanElement;
+    file3dControls: HTMLDivElement;
+    file3dInput: HTMLInputElement;
+    file3dRotationR: HTMLInputElement;
+    file3dRotationRValue: HTMLSpanElement;
+    file3dRotationS: HTMLInputElement;
+    file3dRotationSValue: HTMLSpanElement;
     inclination: HTMLInputElement;
     raan: HTMLInputElement;
     argOfPerigee: HTMLInputElement;
@@ -86,6 +92,12 @@ export class UIControls {
             cubeRotationRValue: document.getElementById('cubeRotationRValue') as HTMLSpanElement,
             cubeRotationS: document.getElementById('cubeRotationS') as HTMLInputElement,
             cubeRotationSValue: document.getElementById('cubeRotationSValue') as HTMLSpanElement,
+            file3dControls: document.getElementById('file3dControls') as HTMLDivElement,
+            file3dInput: document.getElementById('file3dInput') as HTMLInputElement,
+            file3dRotationR: document.getElementById('file3dRotationR') as HTMLInputElement,
+            file3dRotationRValue: document.getElementById('file3dRotationRValue') as HTMLSpanElement,
+            file3dRotationS: document.getElementById('file3dRotationS') as HTMLInputElement,
+            file3dRotationSValue: document.getElementById('file3dRotationSValue') as HTMLSpanElement,
             inclination: document.getElementById('inclination') as HTMLInputElement,
             raan: document.getElementById('raan') as HTMLInputElement,
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,

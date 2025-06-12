@@ -3,18 +3,21 @@ import { Satellite } from '../simulation/Satellite.js';
 import { TrailRenderer } from './TrailRenderer.js';
 import { CelestialBodies } from './CelestialBodies.js';
 import { UIControls } from '../interaction/UIControls.js';
+import { ModelLoader } from './ModelLoader.js';
 
 export class RenderingSystem {
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
     private container: HTMLElement;
-    private satelliteMeshes: THREE.Mesh[] = [];
+    private satelliteMeshes: (THREE.Mesh | THREE.Group)[] = [];
     private gridHelper: THREE.GridHelper;
     private trailRenderer: TrailRenderer;
     private celestialBodies: CelestialBodies;
     private uiControls: UIControls;
     private animationFrameCounter: number = 0;
+    private modelLoader: ModelLoader;
+    private loadedModel: THREE.Group | THREE.Mesh | null = null;
     
     // Selection system
     private selectedSatelliteIndex: number = -1;
@@ -36,6 +39,7 @@ export class RenderingSystem {
         
         this.trailRenderer = new TrailRenderer(this.scene);
         this.celestialBodies = new CelestialBodies(this.scene);
+        this.modelLoader = new ModelLoader();
         
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
@@ -123,13 +127,35 @@ export class RenderingSystem {
 
     public createSatelliteMeshes(satellites: Satellite[]): void {
         // Clean up existing meshes
-        this.satelliteMeshes.forEach(mesh => {
-            this.scene.remove(mesh);
-            if (mesh.geometry) mesh.geometry.dispose();
-            if (mesh.material && Array.isArray(mesh.material)) {
-                mesh.material.forEach(mat => mat.dispose());
-            } else if (mesh.material) {
-                (mesh.material as THREE.Material).dispose();
+        this.satelliteMeshes.forEach(meshOrGroup => {
+            this.scene.remove(meshOrGroup);
+            
+            // If it's a group (3D model), traverse and dispose all children
+            if (meshOrGroup instanceof THREE.Group) {
+                meshOrGroup.traverse((child) => {
+                    if ((child as THREE.Mesh).isMesh) {
+                        const mesh = child as THREE.Mesh;
+                        if (mesh.geometry) mesh.geometry.dispose();
+                        if (mesh.material) {
+                            if (Array.isArray(mesh.material)) {
+                                mesh.material.forEach(mat => mat.dispose());
+                            } else {
+                                mesh.material.dispose();
+                            }
+                        }
+                    }
+                });
+            } else if ((meshOrGroup as THREE.Mesh).isMesh) {
+                // Standard mesh cleanup
+                const mesh = meshOrGroup as THREE.Mesh;
+                if (mesh.geometry) mesh.geometry.dispose();
+                if (mesh.material) {
+                    if (Array.isArray(mesh.material)) {
+                        mesh.material.forEach(mat => mat.dispose());
+                    } else {
+                        mesh.material.dispose();
+                    }
+                }
             }
         });
         
@@ -140,15 +166,39 @@ export class RenderingSystem {
         const satelliteShape = this.uiControls.elements.satelliteShape.value;
         
         // Create center satellite
-        const centerGeometry = satelliteShape === 'cube' 
-            ? new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2)
-            : new THREE.SphereGeometry(satelliteSize, 32, 32);
-        const centerMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xffffff,
-            emissive: 0xffffff,
-            emissiveIntensity: 0.3
-        });
-        const centerMesh = new THREE.Mesh(centerGeometry, centerMaterial);
+        let centerMesh: THREE.Mesh | THREE.Group;
+        
+        if (satelliteShape === '3dfile' && this.loadedModel) {
+            // Clone the loaded model for the center satellite
+            centerMesh = this.loadedModel.clone();
+            
+            // Apply white material to make it distinguishable
+            centerMesh.traverse((child) => {
+                if ((child as THREE.Mesh).isMesh) {
+                    const mesh = child as THREE.Mesh;
+                    mesh.material = new THREE.MeshPhongMaterial({
+                        color: 0xffffff,
+                        emissive: 0xffffff,
+                        emissiveIntensity: 0.3
+                    });
+                }
+            });
+            
+            // Scale the model based on satellite size
+            centerMesh.scale.setScalar(satelliteSize);
+        } else {
+            // Create standard geometry
+            const centerGeometry = satelliteShape === 'cube' 
+                ? new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2)
+                : new THREE.SphereGeometry(satelliteSize, 32, 32);
+            const centerMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xffffff,
+                emissive: 0xffffff,
+                emissiveIntensity: 0.3
+            });
+            centerMesh = new THREE.Mesh(centerGeometry, centerMaterial);
+        }
+        
         this.scene.add(centerMesh);
         this.satelliteMeshes.push(centerMesh);
         
@@ -158,32 +208,75 @@ export class RenderingSystem {
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         
         for (let i = 1; i < satellites.length; i++) {
-            const satGeometry = satelliteShape === 'cube' 
-                ? new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2)
-                : new THREE.SphereGeometry(satelliteSize, 32, 32);
+            let satMesh: THREE.Mesh | THREE.Group;
             
-            let materialColor: number;
-            if (useUniformColor) {
-                materialColor = parseInt(uniformColor.replace('#', ''), 16);
+            if (satelliteShape === '3dfile' && this.loadedModel) {
+                // Clone the loaded model for each satellite
+                satMesh = this.loadedModel.clone();
+                
+                // Determine the color for this satellite
+                let materialColor: number;
+                if (useUniformColor) {
+                    materialColor = parseInt(uniformColor.replace('#', ''), 16);
+                } else {
+                    materialColor = colors[(i - 1) % colors.length];
+                }
+                
+                // Apply colored material to the model
+                satMesh.traverse((child) => {
+                    if ((child as THREE.Mesh).isMesh) {
+                        const mesh = child as THREE.Mesh;
+                        mesh.material = new THREE.MeshPhongMaterial({
+                            color: materialColor,
+                            emissive: materialColor,
+                            emissiveIntensity: 0.2
+                        });
+                    }
+                });
+                
+                // Scale the model based on satellite size
+                satMesh.scale.setScalar(satelliteSize);
             } else {
-                materialColor = colors[(i - 1) % colors.length];
+                // Create standard geometry
+                const satGeometry = satelliteShape === 'cube' 
+                    ? new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2)
+                    : new THREE.SphereGeometry(satelliteSize, 32, 32);
+                
+                let materialColor: number;
+                if (useUniformColor) {
+                    materialColor = parseInt(uniformColor.replace('#', ''), 16);
+                } else {
+                    materialColor = colors[(i - 1) % colors.length];
+                }
+                
+                const satMaterial = new THREE.MeshPhongMaterial({ 
+                    color: materialColor,
+                    emissive: materialColor,
+                    emissiveIntensity: 0.2
+                });
+                satMesh = new THREE.Mesh(satGeometry, satMaterial);
             }
             
-            const satMaterial = new THREE.MeshPhongMaterial({ 
-                color: materialColor,
-                emissive: materialColor,
-                emissiveIntensity: 0.2
-            });
-            const satMesh = new THREE.Mesh(satGeometry, satMaterial);
             this.scene.add(satMesh);
             this.satelliteMeshes.push(satMesh);
         }
     }
 
     public updateSatellitePositions(satellites: Satellite[]): void {
-        const isCube = this.uiControls.elements.satelliteShape.value === 'cube';
-        const rotationR = isCube ? parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180 : 0;
-        const rotationS = isCube ? parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180 : 0;
+        const satelliteShape = this.uiControls.elements.satelliteShape.value;
+        const isCube = satelliteShape === 'cube';
+        const is3DFile = satelliteShape === '3dfile';
+        
+        let rotationR = 0;
+        let rotationS = 0;
+        
+        if (isCube) {
+            rotationR = parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180;
+            rotationS = parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180;
+        } else if (is3DFile) {
+            rotationR = parseFloat(this.uiControls.elements.file3dRotationR.value) * Math.PI / 180;
+            rotationS = parseFloat(this.uiControls.elements.file3dRotationS.value) * Math.PI / 180;
+        }
         
         satellites.forEach((sat, index) => {
             const pos = sat.getPosition();
@@ -194,8 +287,8 @@ export class RenderingSystem {
             // this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
             this.satelliteMeshes[index].position.set(pos.z * scale, pos.x * scale, pos.y * scale);
             
-            // Apply rotation for cubes
-            if (isCube) {
+            // Apply rotation for cubes and 3D files
+            if (isCube || is3DFile) {
                 // Reset rotation first
                 this.satelliteMeshes[index].rotation.set(0, 0, 0);
                 
@@ -209,16 +302,47 @@ export class RenderingSystem {
             }
             
             // Highlight selected satellite
-            if (index === this.selectedSatelliteIndex) {
-                (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).emissiveIntensity = 0.8;
+            const mesh = this.satelliteMeshes[index];
+            const intensity = index === this.selectedSatelliteIndex ? 0.8 : 0.2;
+            
+            if (is3DFile && this.loadedModel) {
+                // For 3D models, traverse and update all materials
+                mesh.traverse((child) => {
+                    if ((child as THREE.Mesh).isMesh) {
+                        const meshChild = child as THREE.Mesh;
+                        if (meshChild.material && (meshChild.material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined) {
+                            (meshChild.material as THREE.MeshPhongMaterial).emissiveIntensity = intensity;
+                        }
+                    }
+                });
             } else {
-                (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).emissiveIntensity = 0.2;
+                // For standard geometries
+                if ((mesh as THREE.Mesh).material && ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined) {
+                    ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissiveIntensity = intensity;
+                }
             }
             
             // Update trails
             if (this.uiControls.elements.showTrails.checked && index > 0) {
                 const trailMax = parseInt(this.uiControls.elements.trailLength.value);
-                const color = (this.satelliteMeshes[index].material as THREE.MeshPhongMaterial).color;
+                let color: THREE.Color = new THREE.Color(0xffffff); // Initialize with default
+                
+                if (is3DFile && this.loadedModel) {
+                    // For 3D models, get color from the first mesh child
+                    mesh.traverse((child) => {
+                        if ((child as THREE.Mesh).isMesh) {
+                            const meshChild = child as THREE.Mesh;
+                            if (meshChild.material && (meshChild.material as THREE.MeshPhongMaterial).color) {
+                                color = (meshChild.material as THREE.MeshPhongMaterial).color;
+                                return; // Exit traverse once we found a color
+                            }
+                        }
+                    });
+                } else {
+                    // For standard geometries
+                    color = ((this.satelliteMeshes[index] as THREE.Mesh).material as THREE.MeshPhongMaterial).color;
+                }
+                
                 this.trailRenderer.updateTrail(sat, pos, scale, color, trailMax);
             }
         });
@@ -228,18 +352,34 @@ export class RenderingSystem {
         const isUniform = this.uiControls.elements.uniformSatelliteColor.checked;
         const uniformColor = this.uiControls.elements.satelliteColor.value;
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
+        const is3DFile = this.uiControls.elements.satelliteShape.value === '3dfile';
         
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
             const mesh = this.satelliteMeshes[i];
             
+            let colorToSet: number;
             if (isUniform) {
-                const uniformColorInt = parseInt(uniformColor.replace('#', ''), 16);
-                (mesh.material as THREE.MeshPhongMaterial).color.setHex(uniformColorInt);
-                (mesh.material as THREE.MeshPhongMaterial).emissive.setHex(uniformColorInt);
+                colorToSet = parseInt(uniformColor.replace('#', ''), 16);
             } else {
                 const colorIndex = (i - 1) % colors.length;
-                (mesh.material as THREE.MeshPhongMaterial).color.setHex(colors[colorIndex]);
-                (mesh.material as THREE.MeshPhongMaterial).emissive.setHex(colors[colorIndex]);
+                colorToSet = colors[colorIndex];
+            }
+            
+            if (is3DFile && this.loadedModel) {
+                // For 3D models, traverse and update all materials
+                mesh.traverse((child) => {
+                    if ((child as THREE.Mesh).isMesh) {
+                        const meshChild = child as THREE.Mesh;
+                        if (meshChild.material && (meshChild.material as THREE.MeshPhongMaterial).color) {
+                            (meshChild.material as THREE.MeshPhongMaterial).color.setHex(colorToSet);
+                            (meshChild.material as THREE.MeshPhongMaterial).emissive.setHex(colorToSet);
+                        }
+                    }
+                });
+            } else {
+                // For standard geometries
+                ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).color.setHex(colorToSet);
+                ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissive.setHex(colorToSet);
             }
         }
     }
@@ -253,11 +393,22 @@ export class RenderingSystem {
     private checkSatelliteSelection(): void {
         try {
             this.raycaster.setFromCamera(this.mouse, this.camera);
-            const intersects = this.raycaster.intersectObjects(this.satelliteMeshes);
+            // Use recursive intersection to handle Groups
+            const intersects = this.raycaster.intersectObjects(this.satelliteMeshes, true);
             
             if (intersects.length > 0) {
-                const clickedMesh = intersects[0].object;
-                const index = this.satelliteMeshes.indexOf(clickedMesh as THREE.Mesh);
+                const clickedObject = intersects[0].object;
+                
+                // Find which satellite mesh/group contains the clicked object
+                let index = -1;
+                for (let i = 0; i < this.satelliteMeshes.length; i++) {
+                    const satelliteMesh = this.satelliteMeshes[i];
+                    if (satelliteMesh === clickedObject || 
+                        (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))) {
+                        index = i;
+                        break;
+                    }
+                }
                 
                 if (index >= 0 && index < this.satelliteMeshes.length) {
                     this.selectedSatelliteIndex = index;
@@ -275,6 +426,15 @@ export class RenderingSystem {
             this.selectedSatelliteIndex = -1;
             this.updateSelectedSatelliteInfo();
         }
+    }
+    
+    private isChildOf(object: THREE.Object3D, parent: THREE.Object3D): boolean {
+        let current = object.parent;
+        while (current) {
+            if (current === parent) return true;
+            current = current.parent;
+        }
+        return false;
     }
 
     private updateSelectedSatelliteInfo(): void {
@@ -316,5 +476,29 @@ export class RenderingSystem {
         this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    }
+
+    public async loadFile3D(file: File): Promise<void> {
+        try {
+            this.loadedModel = await this.modelLoader.loadModel(file);
+            
+            // Trigger recreation of satellites with the new model
+            const resetButton = document.getElementById('resetButton') as HTMLButtonElement;
+            if (resetButton) {
+                resetButton.click();
+            }
+        } catch (error) {
+            console.error('Failed to load 3D model:', error);
+            alert('Failed to load 3D model. Please ensure the file is a valid .glb, .gltf, or .stl file.');
+            
+            // Reset to sphere shape on error
+            this.uiControls.elements.satelliteShape.value = 'sphere';
+            this.uiControls.elements.file3dControls.style.display = 'none';
+            
+            const resetButton = document.getElementById('resetButton') as HTMLButtonElement;
+            if (resetButton) {
+                resetButton.click();
+            }
+        }
     }
 }

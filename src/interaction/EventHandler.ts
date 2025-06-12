@@ -11,6 +11,7 @@ export interface EventHandlerCallbacks {
     updateAllSatelliteColors: () => void;
     clearTrails: () => void;
     toggleFullscreen?: () => void;
+    loadFile3D: (file: File) => void;
 }
 
 export class EventHandler {
@@ -132,11 +133,18 @@ export class EventHandler {
         });
         
         this.uiControls.elements.satelliteShape.addEventListener('change', () => {
-            // Show/hide cube rotation controls
-            if (this.uiControls.elements.satelliteShape.value === 'cube') {
+            // Show/hide shape-specific controls
+            const shapeValue = this.uiControls.elements.satelliteShape.value;
+            
+            if (shapeValue === 'cube') {
                 this.uiControls.elements.cubeRotationControls.style.display = 'flex';
+                this.uiControls.elements.file3dControls.style.display = 'none';
+            } else if (shapeValue === '3dfile') {
+                this.uiControls.elements.cubeRotationControls.style.display = 'none';
+                this.uiControls.elements.file3dControls.style.display = 'block';
             } else {
                 this.uiControls.elements.cubeRotationControls.style.display = 'none';
+                this.uiControls.elements.file3dControls.style.display = 'none';
             }
             this.callbacks.resetSimulation(); // Recreate satellites with new shape
         });
@@ -150,6 +158,25 @@ export class EventHandler {
         this.uiControls.elements.cubeRotationS.addEventListener('input', () => {
             const value = this.uiControls.elements.cubeRotationS.value;
             this.uiControls.elements.cubeRotationSValue.textContent = value + '°';
+        });
+        
+        // 3D file rotation controls
+        this.uiControls.elements.file3dRotationR.addEventListener('input', () => {
+            const value = this.uiControls.elements.file3dRotationR.value;
+            this.uiControls.elements.file3dRotationRValue.textContent = value + '°';
+        });
+        
+        this.uiControls.elements.file3dRotationS.addEventListener('input', () => {
+            const value = this.uiControls.elements.file3dRotationS.value;
+            this.uiControls.elements.file3dRotationSValue.textContent = value + '°';
+        });
+        
+        // 3D file input
+        this.uiControls.elements.file3dInput.addEventListener('change', (event) => {
+            const target = event.target as HTMLInputElement;
+            if (target.files && target.files.length > 0) {
+                this.callbacks.loadFile3D(target.files[0]);
+            }
         });
         
         // Window resize
