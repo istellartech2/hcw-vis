@@ -3,19 +3,18 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "bun run server.ts",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
     "type-check": "tsc --noEmit",
-    "build": "bun run build:clean && bun run build:ts && bun run build:copy",
-    "build:clean": "rm -rf dist",
-    "build:ts": "tsc -p tsconfig.prod.json",
-    "build:copy": "cp index.html dist/ && cp src/styles.css dist/ && cp -r node_modules dist/ && cp -r public/* dist/ && sed -i.bak 's|href=\"/src/styles.css\"|href=\"./styles.css\"|g; s|\"/node_modules/|\"./node_modules/|g; s|src=\"/src/main.ts\"|src=\"./main.js\"|g' dist/index.html && rm -f dist/index.html.bak",
-    "preview": "bunx serve dist",
     "deploy": "bun run build && echo 'Ready for deployment to GitHub Pages'"
   },
   "devDependencies": {
     "@types/three": "^0.160.0",
+    "@vitejs/plugin-legacy": "^6.1.1",
     "bun-types": "latest",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vite": "^6.3.5"
   },
   "dependencies": {
     "satellite.js": "^6.0.0",

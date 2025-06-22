@@ -47,7 +47,7 @@ This is a 3D orbital mechanics visualization web application that simulates rela
    - `EventHandler.ts`: Event handling and keyboard shortcuts
 
 ### Technology Stack
-- **Runtime**: Bun (TypeScript transpilation built-in)
+- **Build Tool**: Vite (with TypeScript support)
 - **3D Graphics**: Three.js v0.160.0
 - **Orbital Mechanics**: satellite.js v6.0.0
 - **Language**: TypeScript with ES modules
