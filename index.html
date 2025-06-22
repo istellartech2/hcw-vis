@@ -7,39 +7,39 @@
     <title>Relative motion equations(HCW) simulator</title>
     <link rel="stylesheet" href="./src/styles.css">
 </head>
-<body>
-    <div id="container">
-        <div id="canvas-container">
+<body class="m-0 p-0 font-sans bg-zinc-950 text-white overflow-hidden">
+    <div id="container" class="w-screen h-screen relative flex flex-col">
+        <div id="canvas-container" class="relative w-full h-screen bg-gradient-radial from-slate-900/95 to-black overflow-hidden touch-none">
             <!-- トップコントロールバー -->
-            <div id="top-controls">
+            <div id="top-controls" class="absolute top-5 left-5 flex gap-3 items-center z-[1000]">
                 <!-- ハンバーガーメニューボタン -->
-                <button id="hamburger-menu" class="hamburger-button" onclick="toggleSidebar()">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <button id="hamburger-menu" class="hamburger-button w-10 h-10 p-0 bg-black/70 border border-orange-500/30 rounded-lg cursor-pointer flex flex-col justify-center items-center gap-1 transition-all duration-300 hover:bg-orange-500/20 hover:border-orange-500 hover:shadow-[0_0_15px_rgba(255,127,80,0.3)]" onclick="toggleSidebar()">
+                    <span class="hamburger-line w-6 h-0.5 bg-orange-500 transition-all duration-300 block"></span>
+                    <span class="hamburger-line w-6 h-0.5 bg-orange-500 transition-all duration-300 block"></span>
+                    <span class="hamburger-line w-6 h-0.5 bg-orange-500 transition-all duration-300 block"></span>
                 </button>
                 
                 <!-- クイックアクションボタン -->
-                <div class="quick-actions">
-                    <button class="action-button" onclick="resetSimulation()" title="衛星を初期位置に戻す">
-                        <span class="button-icon">🛰️🔄</span>
+                <div class="quick-actions flex gap-2">
+                    <button class="action-button flex items-center gap-1.5 px-3.5 py-2 bg-black/70 border border-orange-500/30 rounded-lg text-orange-500 text-[13px] font-semibold cursor-pointer transition-all duration-300 backdrop-blur-lg h-10 hover:bg-orange-500/20 hover:border-orange-500 hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(255,127,80,0.4)] active:translate-y-0" onclick="resetSimulation()" title="衛星を初期位置に戻す">
+                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🛰️🔄</span>
                     </button>
-                    <button class="action-button" onclick="resetView()" title="カメラを初期位置に戻す">
-                        <span class="button-icon">🎥🔄</span>
+                    <button class="action-button flex items-center gap-1.5 px-3.5 py-2 bg-black/70 border border-orange-500/30 rounded-lg text-orange-500 text-[13px] font-semibold cursor-pointer transition-all duration-300 backdrop-blur-lg h-10 hover:bg-orange-500/20 hover:border-orange-500 hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(255,127,80,0.4)] active:translate-y-0" onclick="resetView()" title="カメラを初期位置に戻す">
+                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🎥🔄</span>
                     </button>
                 </div>
             </div>
             
             <!-- 衛星配置パネル -->
-            <div id="satellite-config-panel">
-                <div class="panel-header" onclick="toggleSatelliteConfig()">
-                    <h4 class="section-title">🛰️ 衛星配置 </h4>
-                    <span id="satellite-config-toggle" class="toggle-icon">▼</span>
+            <div id="satellite-config-panel" class="absolute top-[70px] left-5 bg-gradient-to-br from-slate-900/95 to-slate-800/90 rounded-2xl border border-orange-500/25 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_80px_rgba(255,127,80,0.1)] max-w-xs z-[100] overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/50 before:to-transparent before:animate-[shimmer_3s_ease-in-out_infinite]">
+                <div class="panel-header px-3.5 py-2.5 cursor-pointer select-none flex justify-between items-center bg-orange-500/[0.08] border-b border-orange-500/15 transition-all duration-300 hover:bg-orange-500/15 hover:pl-4" onclick="toggleSatelliteConfig()">
+                    <h4 class="section-title text-orange-400 text-[15px] font-bold m-0 border-none p-0 drop-shadow-[0_0_20px_rgba(255,127,80,0.5)] tracking-[0.5px]">🛰️ 衛星配置 </h4>
+                    <span id="satellite-config-toggle" class="toggle-icon text-orange-400 text-xs transition-transform duration-300">▼</span>
                 </div>
-                <div id="satellite-config-content" class="panel-content">
-                        <div class="control-group">
-                            <label>配置:</label>
-                            <select id="placementPattern">
+                <div id="satellite-config-content" class="panel-content p-3 overflow-hidden transition-all duration-300 flex flex-col gap-2.5">
+                        <div class="control-group flex items-center gap-2">
+                            <label class="text-orange-400 font-semibold text-[13px] uppercase tracking-[0.5px] opacity-90 min-w-[70px]">配置:</label>
+                            <select id="placementPattern" class="flex-1 px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-sm font-medium transition-all duration-300 cursor-pointer hover:bg-white/10 hover:border-orange-500/40 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.15)] focus:bg-white/[0.12] focus:border-orange-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,127,80,0.2),0_4px_12px_rgba(255,127,80,0.25)]">
                                 <option value="axis">軸上-速度0</option>
                                 <option value="grid">格子-速度0</option>
                                 <option value="random_position">ランダム-速度0</option>
@@ -52,90 +52,90 @@
                                 <option value="rbar_approach">R-bar軌道</option>
                             </select>
                         </div>
-                        <div class="control-group">
-                            <label>数:</label>
-                            <input type="number" id="satelliteCount" min="1" max="5" value="1">
+                        <div class="control-group flex items-center gap-2">
+                            <label class="text-orange-400 font-semibold text-[13px] uppercase tracking-[0.5px] opacity-90 min-w-[70px]">数:</label>
+                            <input type="number" id="satelliteCount" min="1" max="5" value="1" class="flex-1 px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-sm font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.15)] focus:bg-white/[0.12] focus:border-orange-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,127,80,0.2),0_4px_12px_rgba(255,127,80,0.25)]">
                         </div>
-                        <div class="control-group">
-                            <label>範囲(m):</label>
-                            <input type="number" id="orbitRadius" min="0.1" max="10000" step="0.1" value="10">
+                        <div class="control-group flex items-center gap-2">
+                            <label class="text-orange-400 font-semibold text-[13px] uppercase tracking-[0.5px] opacity-90 min-w-[70px]">範囲(m):</label>
+                            <input type="number" id="orbitRadius" min="0.1" max="10000" step="0.1" value="10" class="flex-1 px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-sm font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.15)] focus:bg-white/[0.12] focus:border-orange-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,127,80,0.2),0_4px_12px_rgba(255,127,80,0.25)]">
                         </div>
                     <div id="zAmplitudeControl" style="display: none;">
-                        <div class="control-group">
-                            <label>Z振幅:</label>
-                            <input type="range" id="zAmplitude" min="-3" max="3" step="0.1" value="0">
-                            <span id="zAmplitudeValue">0.0</span>A
+                        <div class="control-group flex items-center gap-3">
+                            <label class="text-orange-400 font-semibold text-[13px] uppercase tracking-[0.5px] opacity-90">Z振幅:</label>
+                            <input type="range" id="zAmplitude" min="-3" max="3" step="0.1" value="0" class="flex-1 h-1 bg-white/10 rounded-sm appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-orange-400 [&::-webkit-slider-thumb]:to-orange-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_8px_rgba(255,127,80,0.4)] [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-200 [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:hover:shadow-[0_2px_10px_rgba(0,0,0,0.4),0_0_16px_rgba(255,127,80,0.6)]">
+                            <span id="zAmplitudeValue" class="inline-block min-w-[40px] text-center font-semibold text-orange-400 font-mono text-sm px-2 py-1 bg-orange-500/10 rounded-md ml-2">0.0</span>A
                         </div>
                     </div>
                     <div id="periodicParamsControl" style="display: none;">
-                        <h5>楕円解パラメータ (A=範囲、B~F=A比)</h5>
-                        <div class="periodic-params-grid">
-                            <div class="param-item">
-                                <label>B/A:</label>
-                                <input type="range" id="paramB" min="-3" max="3" step="0.1" value="1">
-                                <span id="paramBValue">0.0</span>
+                        <h5 class="text-orange-400 text-[13px] font-semibold m-0 mb-4 text-center opacity-90">楕円解パラメータ (A=範囲、B~F=A比)</h5>
+                        <div class="periodic-params-grid flex flex-col gap-4 mt-3">
+                            <div class="param-item flex items-center gap-3">
+                                <label class="text-xs text-orange-400 font-semibold min-w-[50px]">B/A:</label>
+                                <input type="range" id="paramB" min="-3" max="3" step="0.1" value="1" class="flex-1 h-1 bg-white/10 rounded-sm appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-orange-400 [&::-webkit-slider-thumb]:to-orange-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_8px_rgba(255,127,80,0.4)] [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-200 [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:hover:shadow-[0_2px_10px_rgba(0,0,0,0.4),0_0_16px_rgba(255,127,80,0.6)]">
+                                <span id="paramBValue" class="text-[13px] text-orange-400 font-semibold text-center px-2 py-1 bg-orange-500/10 rounded-md font-mono min-w-[45px]">0.0</span>
                             </div>
-                            <div class="param-item">
-                                <label>D/A:</label>
-                                <input type="range" id="paramD" min="-3" max="3" step="0.1" value="0">
-                                <span id="paramDValue">0.0</span>
+                            <div class="param-item flex items-center gap-3">
+                                <label class="text-xs text-orange-400 font-semibold min-w-[50px]">D/A:</label>
+                                <input type="range" id="paramD" min="-3" max="3" step="0.1" value="0" class="flex-1 h-1 bg-white/10 rounded-sm appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-orange-400 [&::-webkit-slider-thumb]:to-orange-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_8px_rgba(255,127,80,0.4)] [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-200 [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:hover:shadow-[0_2px_10px_rgba(0,0,0,0.4),0_0_16px_rgba(255,127,80,0.6)]">
+                                <span id="paramDValue" class="text-[13px] text-orange-400 font-semibold text-center px-2 py-1 bg-orange-500/10 rounded-md font-mono min-w-[45px]">0.0</span>
                             </div>
-                            <div class="param-item">
-                                <label>E/A:</label>
-                                <input type="range" id="paramE" min="-3" max="3" step="0.1" value="0">
-                                <span id="paramEValue">0.0</span>
+                            <div class="param-item flex items-center gap-3">
+                                <label class="text-xs text-orange-400 font-semibold min-w-[50px]">E/A:</label>
+                                <input type="range" id="paramE" min="-3" max="3" step="0.1" value="0" class="flex-1 h-1 bg-white/10 rounded-sm appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-orange-400 [&::-webkit-slider-thumb]:to-orange-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_8px_rgba(255,127,80,0.4)] [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-200 [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:hover:shadow-[0_2px_10px_rgba(0,0,0,0.4),0_0_16px_rgba(255,127,80,0.6)]">
+                                <span id="paramEValue" class="text-[13px] text-orange-400 font-semibold text-center px-2 py-1 bg-orange-500/10 rounded-md font-mono min-w-[45px]">0.0</span>
                             </div>
-                            <div class="param-item">
-                                <label>F/A:</label>
-                                <input type="range" id="paramF" min="-3" max="3" step="0.1" value="0">
-                                <span id="paramFValue">0.0</span>
+                            <div class="param-item flex items-center gap-3">
+                                <label class="text-xs text-orange-400 font-semibold min-w-[50px]">F/A:</label>
+                                <input type="range" id="paramF" min="-3" max="3" step="0.1" value="0" class="flex-1 h-1 bg-white/10 rounded-sm appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-orange-400 [&::-webkit-slider-thumb]:to-orange-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_8px_rgba(255,127,80,0.4)] [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-200 [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:hover:shadow-[0_2px_10px_rgba(0,0,0,0.4),0_0_16px_rgba(255,127,80,0.6)]">
+                                <span id="paramFValue" class="text-[13px] text-orange-400 font-semibold text-center px-2 py-1 bg-orange-500/10 rounded-md font-mono min-w-[45px]">0.0</span>
                             </div>
                         </div>
-                        <div id="eccentricityDisplay" class="eccentricity-info">
-                            <span class="eccentricity-label">離心率 e:</span>
-                            <span id="eccentricityValue">0.00</span>
+                        <div id="eccentricityDisplay" class="eccentricity-info mt-4 p-2 bg-orange-500/[0.08] border border-orange-500/20 rounded-lg flex items-center justify-center gap-2">
+                            <span class="eccentricity-label text-orange-400 text-[13px] font-semibold uppercase tracking-[0.5px]">離心率 e:</span>
+                            <span id="eccentricityValue" class="text-orange-400 text-base font-bold font-mono drop-shadow-[0_0_10px_rgba(255,127,80,0.5)]">0.00</span>
                         </div>
                     </div>
                     <div id="circularZDirectionControl" style="display: none;">
-                        <div class="control-group">
-                            <input type="checkbox" id="circularZDirection" checked>
-                            <label>+Z方向</label>
+                        <div class="control-group flex items-center gap-3">
+                            <input type="checkbox" id="circularZDirection" checked class="w-5 h-5 cursor-pointer accent-orange-500">
+                            <label class="mb-0 text-[13px] normal-case tracking-normal">+Z方向</label>
                         </div>
                     </div>
                 </div>
             </div>
             
             <!-- サイドバー -->
-            <div id="sidebar" class="sidebar">
-                <div class="sidebar-header">
-                    <h3>設定</h3>
-                    <div class="header-buttons">
-                        <button class="help-button" onclick="window.open('https://github.com/istellartech2/hcw-vis/blob/main/README.md', '_blank')" title="ヘルプ">?</button>
-                        <button class="close-button" onclick="toggleSidebar()">×</button>
+            <div id="sidebar" class="sidebar fixed top-0 left-[-400px] w-[380px] h-screen bg-gradient-to-b from-slate-900/98 to-slate-800/95 border-r border-orange-500/25 transition-[left] duration-300 ease-out z-[9999] overflow-y-auto backdrop-blur-[30px] shadow-[4px_0_24px_rgba(0,0,0,0.5),0_0_80px_rgba(255,127,80,0.05)] before:content-[''] before:absolute before:top-0 before:right-0 before:bottom-0 before:w-[1px] before:bg-gradient-to-b before:from-transparent before:via-orange-500/50 before:to-transparent before:animate-[pulseGlow_4s_ease-in-out_infinite]">
+                <div class="sidebar-header px-5 py-3 bg-orange-500/[0.08] border-b border-orange-500/20 flex justify-between items-center relative overflow-hidden after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gradient-to-r after:from-transparent after:via-orange-500/60 after:to-transparent after:animate-[shimmer_3s_ease-in-out_infinite]">
+                    <h3 class="text-orange-400 m-0 text-xl font-bold drop-shadow-[0_0_20px_rgba(255,127,80,0.5)] tracking-[1px]">設定</h3>
+                    <div class="header-buttons flex gap-2">
+                        <button class="help-button w-9 h-9 p-0 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-lg font-bold cursor-pointer flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-orange-500/20 hover:border-orange-500 hover:text-white hover:shadow-[0_0_20px_rgba(255,127,80,0.4)]" onclick="window.open('https://github.com/istellartech2/hcw-vis/blob/main/README.md', '_blank')" title="ヘルプ">?</button>
+                        <button class="close-button w-9 h-9 p-0 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-xl cursor-pointer flex items-center justify-center transition-all duration-300 hover:rotate-90 hover:scale-110 hover:bg-orange-500/20 hover:border-orange-500 hover:text-white hover:shadow-[0_0_20px_rgba(255,127,80,0.4)]" onclick="toggleSidebar()">×</button>
                     </div>
                 </div>
-                <div class="sidebar-content">
+                <div class="sidebar-content p-4">
                     <!-- シミュレーション制御 -->
-                    <div class="subsection">
-                        <h5 class="subsection-title">⚡ シミュレーション</h5>
-                        <div class="control-group">
-                            <label>推力:</label>
-                            <input type="number" id="thrustAmount" min="0.0001" max="1" step="0.0001" value="0.001" style="width: 100px;">
-                            <span style="font-size: 11px;">m/s</span>
+                    <div class="subsection mb-2.5 p-2.5 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
+                        <h5 class="subsection-title text-orange-400 text-[13px] font-bold m-0 mb-1.5 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">⚡ シミュレーション</h5>
+                        <div class="control-group flex items-center gap-2">
+                            <label class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 whitespace-nowrap">推力:</label>
+                            <input type="number" id="thrustAmount" min="0.0001" max="1" step="0.0001" value="0.001" class="w-[100px] px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-[13px] font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.15)] focus:bg-white/[0.12] focus:border-orange-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,127,80,0.2),0_4px_12px_rgba(255,127,80,0.25)]">
+                            <span class="text-[11px]">m/s</span>
                         </div>
-                        <div class="control-group">
-                            <label>摂動:</label>
-                            <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02" style="width: 100px;">
-                            <span style="font-size: 11px;">m/s</span>
+                        <div class="control-group flex items-center gap-2">
+                            <label class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 whitespace-nowrap">摂動:</label>
+                            <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02" class="w-[100px] px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-[13px] font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.15)] focus:bg-white/[0.12] focus:border-orange-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,127,80,0.2),0_4px_12px_rgba(255,127,80,0.25)]">
+                            <span class="text-[11px]">m/s</span>
                         </div>
-                        <div class="control-buttons">
-                            <button onclick="addPerturbation()" style="font-size: 12px; padding: 6px 12px;">💥摂動</button>
+                        <div class="control-buttons flex flex-wrap gap-1.5 mt-1.5">
+                            <button onclick="addPerturbation()" class="text-xs px-3 py-1.5">💥摂動</button>
                         </div>
                     </div>
             
                     <!-- 3D空間サブセクション -->
-                    <div class="subsection">
-                        <h5 class="subsection-title">🌌 3D空間表示</h5>
+                    <div class="subsection mb-2.5 p-2.5 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
+                        <h5 class="subsection-title text-orange-400 text-[13px] font-bold m-0 mb-1.5 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🌌 3D空間表示</h5>
                         <div class="control-row">
                             <div class="control-group" style="flex: 1;">
                                 <input type="checkbox" id="showGrid" checked>
@@ -157,8 +157,8 @@
                     </div>
                     
                     <!-- 衛星サブセクション -->
-                    <div class="subsection">
-                        <h5 class="subsection-title">🛰️ 衛星表示</h5>
+                    <div class="subsection mb-2.5 p-2.5 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
+                        <h5 class="subsection-title text-orange-400 text-[13px] font-bold m-0 mb-1.5 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🛰️ 衛星表示</h5>
                         <div class="control-group">
                             <label>サイズ:</label>
                             <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8" style="width: 80px;">
@@ -222,11 +222,11 @@
                     </div>
             
                     <!-- 基準軌道 -->
-                    <div class="sidebar-section">
-                        <div class="sidebar-section-header" onclick="toggleSidebarSection('reference-orbit')">
-                            <span class="section-icon">🌍</span>
-                            <h4 class="section-title">基準軌道</h4>
-                            <span id="reference-orbit-toggle" class="section-toggle">▶</span>
+                    <div class="sidebar-section mb-3 border border-orange-500/15 rounded-2xl overflow-hidden bg-gradient-to-br from-white/[0.03] to-white/[0.01] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_40px_rgba(255,127,80,0.1)]">
+                        <div class="sidebar-section-header px-4 py-3 bg-gradient-to-br from-orange-500/10 to-orange-500/[0.05] cursor-pointer select-none flex items-center gap-2.5 transition-all duration-300 relative overflow-hidden hover:from-orange-500/15 hover:to-orange-500/[0.08] hover:pl-5 before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-orange-500/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-[100%]" onclick="toggleSidebarSection('reference-orbit')">
+                            <span class="section-icon text-xl drop-shadow-[0_0_8px_rgba(255,127,80,0.3)]">🌍</span>
+                            <h4 class="section-title flex-1 text-orange-400 text-base font-bold m-0 border-none p-0 drop-shadow-[0_0_15px_rgba(255,127,80,0.3)] tracking-[0.5px]">基準軌道</h4>
+                            <span id="reference-orbit-toggle" class="section-toggle text-orange-400 text-sm transition-transform duration-300 drop-shadow-[0_0_4px_rgba(255,127,80,0.3)]">▶</span>
                         </div>
                         <div id="reference-orbit" class="sidebar-section-content collapsed">
                             <div class="control-row">
@@ -263,7 +263,7 @@
                     </div>
                 </div>
             </div>
-            <canvas id="canvas"></canvas>
+            <canvas id="canvas" class="w-full h-full touch-none"></canvas>
             <div id="axes-info">
                 <div class="axis-label" style="color: #ff6b6b">R軸: Radial (径方向 - 地心→衛星)</div>
                 <div class="axis-label" style="color: #2ECC71">S軸: Along-track (軌道進行方向)</div>
@@ -271,12 +271,12 @@
             </div>
             
             <!-- 折りたたみ可能な基準衛星情報パネル -->
-            <div id="reference-satellite-panel">
-                <button id="reference-satellite-toggle" class="panel-toggle" onclick="toggleReferenceSatelliteInfo()">
-                    <span class="icon">📍 </span>
-                    <span class="toggle-arrow">▼</span>
+            <div id="reference-satellite-panel" class="absolute top-[130px] right-5 z-[12] flex flex-col items-end">
+                <button id="reference-satellite-toggle" class="panel-toggle flex items-center gap-1.5 px-3 py-2 bg-black/75 border border-orange-500/25 rounded-lg text-white/90 text-xs cursor-pointer transition-all duration-200 backdrop-blur-lg hover:bg-black/85 hover:border-orange-500/40" onclick="toggleReferenceSatelliteInfo()">
+                    <span class="icon text-sm">📍 </span>
+                    <span class="toggle-arrow text-[10px] transition-transform duration-200">▼</span>
                 </button>
-                <div id="reference-satellite-content" class="panel-content">
+                <div id="reference-satellite-content" class="panel-content mt-0 p-2 bg-black/80 border border-orange-500/20 rounded-lg text-[11px] text-white/85 backdrop-blur-lg max-w-[360px] transition-all duration-300 overflow-hidden grid grid-cols-2 gap-3">
                     <div class="panel-column">
                         <div class="info-section">
                             <div class="panel-section-title">📍 位置情報</div>
@@ -297,10 +297,10 @@
             </div>
             
             <!-- 時間制御パネル -->
-            <div id="time-controls-panel">
-                <div id="time-scale-control">
-                    <span class="icon">⏱️</span>
-                    <select id="timeScale">
+            <div id="time-controls-panel" class="absolute bottom-5 right-5 flex flex-col gap-2.5 items-end">
+                <div id="time-scale-control" class="flex items-center gap-1.5 px-2 py-1 bg-black/80 rounded-lg border border-orange-500/30 backdrop-blur-lg transition-all duration-300 opacity-80 hover:bg-orange-500/15 hover:opacity-80 hover:shadow-[0_0_15px_rgba(255,127,80,0.3)]">
+                    <span class="icon text-sm drop-shadow-[0_0_3px_rgba(255,127,80,0.4)]">⏱️</span>
+                    <select id="timeScale" class="bg-transparent border-none text-orange-500 text-sm font-normal outline-none cursor-pointer px-1 py-0 font-mono">
                         <option value="1">1x</option>
                         <option value="5">5x</option>
                         <option value="10">10x</option>
@@ -311,7 +311,7 @@
                         <option value="960">960x</option>
                     </select>
                 </div>
-                <div id="time-display" onclick="togglePause()" title="クリックで一時停止/再開">
+                <div id="time-display" onclick="togglePause()" title="クリックで一時停止/再開" class="px-4 py-3 bg-black/70 rounded-lg text-base font-bold text-orange-500 border border-orange-500/30 drop-shadow-[0_0_10px_rgba(255,127,80,0.5)] font-mono tracking-[0.5px] cursor-pointer select-none transition-all duration-300 hover:bg-orange-500/20 hover:scale-105">
                     <span id="simulationTime">00分00秒</span>
                 </div>
             </div>

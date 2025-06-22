@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite'
+// @ts-expect-error - @tailwindcss/vite doesn't ship with TypeScript types
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
+  plugins: [
+    tailwindcss(),
+  ],
   base: './',
   publicDir: 'public',
   build: {
