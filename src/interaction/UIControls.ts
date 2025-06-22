@@ -7,6 +7,7 @@ export interface UIControlElements {
     simulationTime: HTMLSpanElement;
     showTrails: HTMLInputElement;
     showGrid: HTMLInputElement;
+    showLatLongGrid: HTMLInputElement;
     showEarth: HTMLInputElement;
     earthTexture: HTMLSelectElement;
     trailLength: HTMLInputElement;
@@ -62,6 +63,7 @@ export class UIControls {
             simulationTime: document.getElementById('simulationTime') as HTMLSpanElement,
             showTrails: document.getElementById('showTrails') as HTMLInputElement,
             showGrid: document.getElementById('showGrid') as HTMLInputElement,
+            showLatLongGrid: document.getElementById('showLatLongGrid') as HTMLInputElement,
             showEarth: document.getElementById('showEarth') as HTMLInputElement,
             earthTexture: document.getElementById('earthTexture') as HTMLSelectElement,
             trailLength: document.getElementById('trailLength') as HTMLInputElement,

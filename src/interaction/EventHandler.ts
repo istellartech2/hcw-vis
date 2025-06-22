@@ -117,6 +117,10 @@ export class EventHandler {
             this.celestialBodies.setEarthVisibility(this.uiControls.elements.showEarth.checked);
         });
         
+        this.uiControls.elements.showLatLongGrid.addEventListener('change', () => {
+            this.celestialBodies.setLatLongGridVisibility(this.uiControls.elements.showLatLongGrid.checked);
+        });
+        
         this.uiControls.elements.earthTexture.addEventListener('change', () => {
             this.callbacks.updateOrbitElementsFromUI(); // This will recreate earth with new texture
         });

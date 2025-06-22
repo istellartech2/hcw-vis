@@ -10,6 +10,7 @@ export class CelestialBodies {
     private earthGroup: THREE.Group;
     private showEarth: boolean = false;
     private loadingIndicator: LoadingIndicator;
+    private latLongLines: THREE.Object3D[] = [];
     
     constructor(scene: THREE.Scene) {
         this.scene = scene;
@@ -136,6 +137,9 @@ export class CelestialBodies {
     
     
     private addLatitudeLongitudeLines(earthRadius: number): void {
+        // Clear existing lat/long lines
+        this.clearLatLongLines();
+        
         // 線を地球表面から少し浮かせて見やすくする
         const lineRadius = earthRadius * 1.001;
         
@@ -168,6 +172,7 @@ export class CelestialBodies {
                 const geometry = new THREE.BufferGeometry().setFromPoints(points);
                 const line = new THREE.Line(geometry, normalLineMaterial.clone());
                 this.earth!.add(line);
+                this.latLongLines.push(line);
             }
         }
         
@@ -192,6 +197,7 @@ export class CelestialBodies {
                 const geometry = new THREE.BufferGeometry().setFromPoints(points);
                 const line = new THREE.Line(geometry, normalLineMaterial.clone());
                 this.earth!.add(line);
+                this.latLongLines.push(line);
             }
         }
         
@@ -215,6 +221,7 @@ export class CelestialBodies {
         });
         const equatorLine = new THREE.Line(equatorGeometry, equatorMaterial);
         this.earth!.add(equatorLine);
+        this.latLongLines.push(equatorLine);
         
         // グリニッジ子午線を特別に強調（青色）
         const greenwichPoints: THREE.Vector3[] = [];
@@ -236,6 +243,7 @@ export class CelestialBodies {
         });
         const greenwichLine = new THREE.Line(greenwichGeometry, greenwichMaterial);
         this.earth!.add(greenwichLine);
+        this.latLongLines.push(greenwichLine);
         
         // 北極点マーカー（赤い球）
         const northPoleGeometry = new THREE.SphereGeometry(earthRadius * 0.03, 16, 16);
@@ -243,6 +251,7 @@ export class CelestialBodies {
         const northPole = new THREE.Mesh(northPoleGeometry, northPoleMaterial);
         northPole.position.set(0, 0, lineRadius);
         this.earth!.add(northPole);
+        this.latLongLines.push(northPole);
         
         // 南極点マーカー（青い球）
         const southPoleGeometry = new THREE.SphereGeometry(earthRadius * 0.03, 16, 16);
@@ -250,6 +259,7 @@ export class CelestialBodies {
         const southPole = new THREE.Mesh(southPoleGeometry, southPoleMaterial);
         southPole.position.set(0, 0, -lineRadius);
         this.earth!.add(southPole);
+        this.latLongLines.push(southPole);
         
         // 回転軸を表示（薄い線で北極-南極を結ぶ）
         const axisGeometry = new THREE.BufferGeometry().setFromPoints([
@@ -264,6 +274,7 @@ export class CelestialBodies {
         });
         const axisLine = new THREE.Line(axisGeometry, axisMaterial);
         this.earth!.add(axisLine);
+        this.latLongLines.push(axisLine);
     }
     
     
@@ -297,6 +308,31 @@ export class CelestialBodies {
         if (this.earthGroup) {
             this.earthGroup.visible = visible;
         }
+    }
+    
+    setLatLongGridVisibility(visible: boolean): void {
+        this.latLongLines.forEach(line => {
+            line.visible = visible;
+        });
+    }
+    
+    private clearLatLongLines(): void {
+        this.latLongLines.forEach(line => {
+            if (this.earth) {
+                this.earth.remove(line);
+            }
+            if (line instanceof THREE.Line || line instanceof THREE.Mesh) {
+                if (line.geometry) line.geometry.dispose();
+                if (line.material) {
+                    if (Array.isArray(line.material)) {
+                        line.material.forEach(mat => mat.dispose());
+                    } else {
+                        line.material.dispose();
+                    }
+                }
+            }
+        });
+        this.latLongLines = [];
     }
     
     private getTextureDisplayName(textureFile: string): string {

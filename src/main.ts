@@ -158,11 +158,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 
                 if (content && toggleIcon) {
                     if (content.style.display === 'none') {
-                        content.style.display = 'block';
-                        toggleIcon.classList.add('expanded');
+                        content.style.display = 'flex';
+                        toggleIcon.textContent = '▼';
                     } else {
                         content.style.display = 'none';
-                        toggleIcon.classList.remove('expanded');
+                        toggleIcon.textContent = '▶';
                     }
                 }
             };
