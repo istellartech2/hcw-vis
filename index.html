@@ -228,6 +228,109 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- CSV再生モード -->
+                    <div class="sidebar-section mb-3 border border-orange-500/15 rounded-2xl overflow-hidden bg-gradient-to-br from-white/[0.03] to-white/[0.01] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_40px_rgba(255,127,80,0.1)]">
+                        <div class="sidebar-section-header px-4 py-3 bg-gradient-to-br from-orange-500/10 to-orange-500/[0.05] cursor-pointer select-none flex items-center gap-2.5 transition-all duration-300 relative overflow-hidden hover:from-orange-500/15 hover:to-orange-500/[0.08] hover:pl-5 before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-orange-500/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-[100%]" onclick="toggleSidebarSection('csv-playback')">
+                            <span class="section-icon text-xl drop-shadow-[0_0_8px_rgba(255,127,80,0.3)]">📊</span>
+                            <h4 class="section-title flex-1 text-orange-400 text-base font-bold m-0 border-none p-0 drop-shadow-[0_0_15px_rgba(255,127,80,0.3)] tracking-[0.5px]">CSV再生モード</h4>
+                            <span id="csv-playback-toggle" class="section-toggle text-orange-400 text-sm transition-transform duration-300 drop-shadow-[0_0_4px_rgba(255,127,80,0.3)]">▶</span>
+                        </div>
+                        <div id="csv-playback" class="sidebar-section-content collapsed">
+                            <!-- CSV File Input -->
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>CSVファイル:</label>
+                                    <input type="file" id="csvPlaybackInput" accept=".csv" class="w-full px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-[13px] font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40">
+                                </div>
+                            </div>
+                            
+                            <!-- File Status -->
+                            <div id="csvFileStatus" class="control-row hidden">
+                                <div class="status-indicator p-2 rounded-lg text-[13px]">
+                                    <span id="csvStatusText">ファイルが選択されていません</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Sample Files -->
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>サンプルファイル:</label>
+                                    <div class="flex gap-2 flex-wrap">
+                                        <button id="loadSampleSingle" class="text-xs px-2 py-1 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all">1機</button>
+                                        <button id="loadSampleMultiple" class="text-xs px-2 py-1 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all">3機</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Playback Controls -->
+                            <div id="csvPlaybackControls" class="control-section hidden">
+                                <h6 class="text-orange-400 text-[13px] font-semibold mb-2 border-b border-orange-500/20 pb-1">再生制御</h6>
+                                
+                                <!-- Play/Pause/Stop Controls -->
+                                <div class="control-row">
+                                    <div class="control-group">
+                                        <div class="flex gap-1">
+                                            <button id="csvPlayPause" class="text-sm px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all">▶ 再生</button>
+                                            <button id="csvStop" class="text-sm px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all">⏹ 停止</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Time Slider -->
+                                <div class="control-row">
+                                    <div class="control-group">
+                                        <label>時刻:</label>
+                                        <input type="range" id="csvTimeSlider" min="0" max="100" step="0.1" value="0" class="flex-1 h-1 bg-white/10 rounded-sm appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-orange-400 [&::-webkit-slider-thumb]:to-orange-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_8px_rgba(255,127,80,0.4)]">
+                                    </div>
+                                </div>
+                                
+                                <!-- Time Display -->
+                                <div class="control-row">
+                                    <div class="control-group">
+                                        <span class="text-[12px] text-orange-300/80">
+                                            <span id="csvCurrentTime">0.0</span>s / <span id="csvTotalTime">0.0</span>s
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Playback Speed -->
+                                <div class="control-row">
+                                    <div class="control-group">
+                                        <label>再生速度:</label>
+                                        <select id="csvPlaybackSpeed" class="flex-1 px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-[13px] font-medium">
+                                            <option value="0.1">0.1x</option>
+                                            <option value="0.25">0.25x</option>
+                                            <option value="0.5">0.5x</option>
+                                            <option value="1" selected>1x</option>
+                                            <option value="2">2x</option>
+                                            <option value="5">5x</option>
+                                            <option value="10">10x</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Loop Control -->
+                                <div class="control-row">
+                                    <div class="control-group">
+                                        <input type="checkbox" id="csvLoopEnabled" checked class="w-4 h-4 cursor-pointer accent-orange-500">
+                                        <label class="text-[13px]">ループ再生</label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Data Info -->
+                                <div class="control-row">
+                                    <div class="data-info p-2 bg-orange-500/[0.08] border border-orange-500/20 rounded-lg">
+                                        <div class="text-[12px] text-orange-300/80">
+                                            衛星数: <span id="csvSatelliteCount">0</span><br>
+                                            データ点数: <span id="csvDataPoints">0</span><br>
+                                            時間範囲: <span id="csvTimeRange">0.0-0.0s</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
             
                     <!-- 基準軌道 -->
                     <div class="sidebar-section mb-3 border border-orange-500/15 rounded-2xl overflow-hidden bg-gradient-to-br from-white/[0.03] to-white/[0.01] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_40px_rgba(255,127,80,0.1)]">

@@ -10,6 +10,7 @@ import { EventHandler } from './interaction/EventHandler.js';
 import type { EventHandlerCallbacks } from './interaction/EventHandler.js';
 import { RenderingSystem } from './visualization/RenderingSystem.js';
 import { LoadingIndicator } from './ui/LoadingIndicator.js';
+import { CSVPlaybackController } from './interaction/CSVPlaybackController.js';
 
 class HillEquationSimulation implements EventHandlerCallbacks {
     private container: HTMLElement;
@@ -36,6 +37,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private eventHandler: EventHandler;
     private renderingSystem: RenderingSystem;
     private loadingIndicator: LoadingIndicator;
+    private csvPlaybackController: CSVPlaybackController;
     
     // Orbital elements
     private currentOrbitElements!: OrbitalElements;
@@ -64,6 +66,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.cameraController = new CameraController(this.camera, this.container);
         this.renderingSystem = new RenderingSystem(this.scene, this.camera, this.renderer, this.container, this.uiControls);
         this.loadingIndicator = new LoadingIndicator();
+        this.csvPlaybackController = new CSVPlaybackController(this.uiControls, this.loadingIndicator);
+        this.csvPlaybackController.setUpdateCallback(() => this.updateSatellitesFromPlayback());
         this.cameraController.resetView(); // Set initial camera position
         this.eventHandler = new EventHandler(this.uiControls, this.renderingSystem.getCelestialBodies(), this, this.container);
         
@@ -319,32 +323,49 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         if (!this.paused) {
             this.animationFrameCounter++;
-            const timeScale = parseFloat(this.uiControls.elements.timeScale.value);
-            const deltaTime = 0.016 * timeScale;
-            this.time += deltaTime;
+            const deltaTime = 0.016;
             
-            // Physics integration
-            const adaptiveDt = Math.min(this.dt * Math.max(1, timeScale / 10), deltaTime);
-            const satelliteCount = this.satellites.length - 1;
-            const skipIntegration = satelliteCount > 20 && this.animationFrameCounter % 2 !== 0;
+            // Update CSV playback controller
+            this.csvPlaybackController.update(deltaTime * 1000); // Convert to milliseconds
             
-            if (!skipIntegration) {
-                const integrationSteps = Math.max(1, Math.ceil(deltaTime / adaptiveDt));
-                const stepDt = deltaTime / integrationSteps;
+            // Check if we're in CSV playback mode
+            if (this.csvPlaybackController.isPlaybackActive()) {
+                // CSV playback mode - satellites are updated by playback controller
+                this.renderingSystem.updateSatellitePositions(this.satellites);
+            } else {
+                // Normal simulation mode
+                const timeScale = parseFloat(this.uiControls.elements.timeScale.value);
+                const scaledDeltaTime = deltaTime * timeScale;
+                this.time += scaledDeltaTime;
                 
-                for (let step = 0; step < integrationSteps; step++) {
-                    this.satellites.forEach((sat, index) => {
-                        if (index > 0) {
-                            this.hillSolver.rungeKutta4Step(sat, stepDt);
-                        }
-                    });
+                // Physics integration
+                const adaptiveDt = Math.min(this.dt * Math.max(1, timeScale / 10), scaledDeltaTime);
+                const satelliteCount = this.satellites.length - 1;
+                const skipIntegration = satelliteCount > 20 && this.animationFrameCounter % 2 !== 0;
+                
+                if (!skipIntegration) {
+                    const integrationSteps = Math.max(1, Math.ceil(scaledDeltaTime / adaptiveDt));
+                    const stepDt = scaledDeltaTime / integrationSteps;
+                    
+                    for (let step = 0; step < integrationSteps; step++) {
+                        this.satellites.forEach((sat, index) => {
+                            if (index > 0) {
+                                this.hillSolver.rungeKutta4Step(sat, stepDt);
+                            }
+                        });
+                    }
+                }
+                
+                // Update rendering
+                this.renderingSystem.updateSatellitePositions(this.satellites);
+                
+                // Update time display for normal simulation
+                if (this.animationFrameCounter % 5 === 0) {
+                    this.uiControls.updateTimeDisplay(this.time);
                 }
             }
             
-            // Update rendering
-            this.renderingSystem.updateSatellitePositions(this.satellites);
-            
-            // Update info and plots
+            // Update info and plots (for both modes)
             if (this.animationFrameCounter % 10 === 0) {
                 this.updateInfo();
                 this.updateOrbitInfoRealtime();
@@ -353,11 +374,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             // Update selected satellite info (only when selected and much less frequently)
             if (this.renderingSystem.getSelectedSatelliteIndex() >= 0 && this.animationFrameCounter % 60 === 0) {
                 this.updateSelectedSatelliteInfo();
-            }
-            
-            // Update time display
-            if (this.animationFrameCounter % 5 === 0) {
-                this.uiControls.updateTimeDisplay(this.time);
             }
             
             // Update celestial bodies
@@ -670,6 +686,53 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     public loadFile3D(file: File): void {
         this.renderingSystem.loadFile3D(file);
+    }
+
+    private updateSatellitesFromPlayback(): void {
+        const playbackEngine = this.csvPlaybackController.getPlaybackEngine();
+        const interpolatedStates = playbackEngine.getInterpolatedStates();
+        
+        if (interpolatedStates.length === 0) return;
+        
+        // Adjust satellite count to match CSV data
+        const targetSatelliteCount = interpolatedStates.length;
+        
+        // If we need more satellites, create them
+        while (this.satellites.length < targetSatelliteCount) {
+            const newSatellite = new Satellite(0, 0, 0, 0, 0, 0, '#ffffff');
+            this.satellites.push(newSatellite);
+        }
+        
+        // If we have too many satellites, remove the extras
+        while (this.satellites.length > targetSatelliteCount) {
+            const removedSatellite = this.satellites.pop();
+            if (removedSatellite) {
+                removedSatellite.dispose();
+            }
+        }
+        
+        // Update satellite positions and attitudes from CSV data
+        for (let i = 0; i < interpolatedStates.length; i++) {
+            const state = interpolatedStates[i];
+            const satellite = this.satellites[i];
+            
+            // Update position
+            satellite.x = state.position.x;
+            satellite.y = state.position.y;
+            satellite.z = state.position.z;
+            
+            // Update velocity
+            satellite.vx = state.velocity.x;
+            satellite.vy = state.velocity.y;
+            satellite.vz = state.velocity.z;
+            
+            // Store quaternion for future use (when rendering system supports it)
+            (satellite as any).quaternion = state.quaternion;
+        }
+        
+        // Recreate satellite meshes if the count changed
+        // Always recreate for now to ensure proper mesh setup
+        this.renderingSystem.createSatelliteMeshes(this.satellites);
     }
     
 }

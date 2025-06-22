@@ -292,13 +292,34 @@ export class RenderingSystem {
                 // Reset rotation first
                 this.satelliteMeshes[index].rotation.set(0, 0, 0);
                 
-                // Apply rotations in Hill coordinate frame
-                // Hill to Three.js mapping: X=W, Y=R, Z=S
-                // R axis rotation (Radial axis) -> Y axis in Three.js
-                this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 1, 0), rotationR);
-                
-                // S axis rotation (Along-track axis) -> Z axis in Three.js
-                this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 0, 1), rotationS);
+                // Check if satellite has CSV quaternion data
+                const satelliteQuaternion = (sat as any).quaternion;
+                if (satelliteQuaternion) {
+                    // Apply quaternion from CSV data (body2RSW rotation)
+                    // CSV quaternion: body frame to RSW frame rotation
+                    // RSW: X=R(radial), Y=S(along-track), Z=W(cross-track)
+                    // Three.js: X=W(cross-track), Y=R(radial), Z=S(along-track)
+                    
+                    // Transform quaternion from RSW to Three.js coordinate system
+                    // Mapping: RSW(x,y,z) -> Three.js(z,x,y)
+                    const transformedQuat = new THREE.Quaternion(
+                        satelliteQuaternion.z,  // RSW Z -> Three.js X
+                        satelliteQuaternion.x,  // RSW X -> Three.js Y
+                        satelliteQuaternion.y,  // RSW Y -> Three.js Z
+                        satelliteQuaternion.w   // W component stays the same
+                    );
+                    
+                    this.satelliteMeshes[index].quaternion.copy(transformedQuat);
+                } else {
+                    // Use UI controls for manual rotation (normal simulation mode)
+                    // Apply rotations in Hill coordinate frame
+                    // Hill to Three.js mapping: X=W, Y=R, Z=S
+                    // R axis rotation (Radial axis) -> Y axis in Three.js
+                    this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 1, 0), rotationR);
+                    
+                    // S axis rotation (Along-track axis) -> Z axis in Three.js
+                    this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 0, 1), rotationS);
+                }
             }
             
             // Highlight selected satellite

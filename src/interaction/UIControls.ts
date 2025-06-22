@@ -48,6 +48,23 @@ export interface UIControlElements {
     raan: HTMLInputElement;
     argOfPerigee: HTMLInputElement;
     meanAnomaly: HTMLInputElement;
+    // CSV Playback controls
+    csvPlaybackInput: HTMLInputElement;
+    csvFileStatus: HTMLDivElement;
+    csvStatusText: HTMLSpanElement;
+    loadSampleSingle: HTMLButtonElement;
+    loadSampleMultiple: HTMLButtonElement;
+    csvPlaybackControls: HTMLDivElement;
+    csvPlayPause: HTMLButtonElement;
+    csvStop: HTMLButtonElement;
+    csvTimeSlider: HTMLInputElement;
+    csvCurrentTime: HTMLSpanElement;
+    csvTotalTime: HTMLSpanElement;
+    csvPlaybackSpeed: HTMLSelectElement;
+    csvLoopEnabled: HTMLInputElement;
+    csvSatelliteCount: HTMLSpanElement;
+    csvDataPoints: HTMLSpanElement;
+    csvTimeRange: HTMLSpanElement;
 }
 
 export class UIControls {
@@ -103,7 +120,24 @@ export class UIControls {
             inclination: document.getElementById('inclination') as HTMLInputElement,
             raan: document.getElementById('raan') as HTMLInputElement,
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,
-            meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement
+            meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement,
+            // CSV Playback controls
+            csvPlaybackInput: document.getElementById('csvPlaybackInput') as HTMLInputElement,
+            csvFileStatus: document.getElementById('csvFileStatus') as HTMLDivElement,
+            csvStatusText: document.getElementById('csvStatusText') as HTMLSpanElement,
+            loadSampleSingle: document.getElementById('loadSampleSingle') as HTMLButtonElement,
+            loadSampleMultiple: document.getElementById('loadSampleMultiple') as HTMLButtonElement,
+            csvPlaybackControls: document.getElementById('csvPlaybackControls') as HTMLDivElement,
+            csvPlayPause: document.getElementById('csvPlayPause') as HTMLButtonElement,
+            csvStop: document.getElementById('csvStop') as HTMLButtonElement,
+            csvTimeSlider: document.getElementById('csvTimeSlider') as HTMLInputElement,
+            csvCurrentTime: document.getElementById('csvCurrentTime') as HTMLSpanElement,
+            csvTotalTime: document.getElementById('csvTotalTime') as HTMLSpanElement,
+            csvPlaybackSpeed: document.getElementById('csvPlaybackSpeed') as HTMLSelectElement,
+            csvLoopEnabled: document.getElementById('csvLoopEnabled') as HTMLInputElement,
+            csvSatelliteCount: document.getElementById('csvSatelliteCount') as HTMLSpanElement,
+            csvDataPoints: document.getElementById('csvDataPoints') as HTMLSpanElement,
+            csvTimeRange: document.getElementById('csvTimeRange') as HTMLSpanElement
         };
     }
     
