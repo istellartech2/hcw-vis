@@ -2,17 +2,20 @@ import * as THREE from 'three';
 import { Satellite } from '../simulation/Satellite.js';
 import { gstime } from 'satellite.js';
 import { FrameTransforms } from '../simulation/FrameTransforms.js';
+import { LoadingIndicator } from '../ui/LoadingIndicator.js';
 
 export class CelestialBodies {
     private scene: THREE.Scene;
     private earth: THREE.Mesh | null = null;
     private earthGroup: THREE.Group;
     private showEarth: boolean = false;
+    private loadingIndicator: LoadingIndicator;
     
     constructor(scene: THREE.Scene) {
         this.scene = scene;
         this.earthGroup = new THREE.Group();
         this.scene.add(this.earthGroup);
+        this.loadingIndicator = new LoadingIndicator();
     }
     
     // orbitRadius: m (meters)
@@ -47,10 +50,15 @@ export class CelestialBodies {
         // 地球のテクスチャを読み込み
         const textureLoader = new THREE.TextureLoader();
         
+        // Show loading indicator for texture loading
+        const textureDisplayName = this.getTextureDisplayName(textureFile);
+        this.loadingIndicator.showTextureLoading(textureDisplayName);
+        
         // 複数のパスを順番に試行する方式に変更
         const tryLoadTexture = (paths: string[], index: number = 0): void => {
             if (index >= paths.length) {
                 console.error(`All texture paths failed: ${paths.join(', ')}`);
+                this.loadingIndicator.hide();
                 return;
             }
             
@@ -64,9 +72,15 @@ export class CelestialBodies {
                         (this.earth.material as THREE.MeshPhongMaterial).map = texture;
                         (this.earth.material as THREE.MeshPhongMaterial).needsUpdate = true;
                     }
+                    this.loadingIndicator.hide();
                 },
                 // 進行中
-                undefined,
+                (progress) => {
+                    if (progress.lengthComputable) {
+                        const percentage = progress.loaded / progress.total;
+                        this.loadingIndicator.updateProgress(percentage);
+                    }
+                },
                 // エラー時 - 次のパスを試行
                 (error) => {
                     console.warn(`Failed to load texture from ${currentPath}, trying next path...`);
@@ -285,6 +299,18 @@ export class CelestialBodies {
         }
     }
     
+    private getTextureDisplayName(textureFile: string): string {
+        const textureNames: Record<string, string> = {
+            'earth00.webp': 'シンプル地球テクスチャ',
+            'earth01.webp': '標準地球テクスチャ',
+            'earth03.webp': '淡白地球テクスチャ',
+            'earth04.webp': 'ブルーマーブル地球テクスチャ',
+            'earth05_highres.webp': '高解像度地球テクスチャ'
+        };
+        
+        return textureNames[textureFile] || `地球テクスチャ (${textureFile})`;
+    }
+
     dispose(): void {
         if (this.earth) {
             if (this.earth.geometry) this.earth.geometry.dispose();

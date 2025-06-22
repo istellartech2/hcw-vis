@@ -9,6 +9,7 @@ import { CameraController } from './interaction/CameraController.js';
 import { EventHandler } from './interaction/EventHandler.js';
 import type { EventHandlerCallbacks } from './interaction/EventHandler.js';
 import { RenderingSystem } from './visualization/RenderingSystem.js';
+import { LoadingIndicator } from './ui/LoadingIndicator.js';
 
 class HillEquationSimulation implements EventHandlerCallbacks {
     private container: HTMLElement;
@@ -34,6 +35,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private cameraController: CameraController;
     private eventHandler: EventHandler;
     private renderingSystem: RenderingSystem;
+    private loadingIndicator: LoadingIndicator;
     
     // Orbital elements
     private currentOrbitElements!: OrbitalElements;
@@ -61,6 +63,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.uiControls = new UIControls();
         this.cameraController = new CameraController(this.camera, this.container);
         this.renderingSystem = new RenderingSystem(this.scene, this.camera, this.renderer, this.container, this.uiControls);
+        this.loadingIndicator = new LoadingIndicator();
         this.cameraController.resetView(); // Set initial camera position
         this.eventHandler = new EventHandler(this.uiControls, this.renderingSystem.getCelestialBodies(), this, this.container);
         
@@ -247,6 +250,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         const radius = parseFloat(this.uiControls.elements.orbitRadius.value);
         const pattern = this.uiControls.elements.placementPattern.value;
         
+        // Show loading indicator for large simulations
+        if (count > 50) {
+            this.loadingIndicator.showProcessing(`${count}個の衛星配置を生成`);
+        }
+        
         this.satellites = [];
         
         // Create center satellite
@@ -293,6 +301,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // Create meshes in rendering system
         this.renderingSystem.createSatelliteMeshes(this.satellites);
+        
+        // Hide loading indicator if shown
+        if (count > 50) {
+            this.loadingIndicator.hide();
+        }
         
         this.time = 0;
         this.simulationStartTime = new Date();
@@ -624,6 +637,9 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             return;
         }
         
+        // Show loading for orbit calculation and Earth texture change
+        this.loadingIndicator.showProcessing('軌道要素を計算');
+        
         // 軌道要素を再計算
         this.currentOrbitElements = OrbitElementsCalculator.calculateOrbitalElements(
             inclination, raan, eccentricity, argOfPerigee, meanAnomaly, altitude
@@ -637,6 +653,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         // 基準衛星パネルの軌道情報を即座に更新
         this.updateReferenceSatellitePanel();
+        
+        // Hide loading indicator after a short delay to show completion
+        setTimeout(() => {
+            this.loadingIndicator.hide();
+        }, 500);
     }
     
     public clearTrails(): void {

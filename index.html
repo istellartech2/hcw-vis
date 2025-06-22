@@ -151,6 +151,7 @@
                                     <option value="earth01.webp">標準</option>
                                     <option value="earth03.webp">淡白</option>
                                     <option value="earth04.webp">ブルーマーブル</option>
+                                    <option value="earth05_highres.webp">高解像度</option>
                                 </select>
                             </div>
                         </div>
@@ -264,6 +265,40 @@
                 </div>
             </div>
             <canvas id="canvas" class="w-full h-full touch-none"></canvas>
+            
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] hidden">
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <div class="bg-gradient-to-br from-slate-900/95 to-slate-800/90 rounded-2xl border border-orange-500/30 p-8 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_80px_rgba(255,127,80,0.1)] max-w-sm">
+                        <div class="flex flex-col items-center gap-4">
+                            <!-- Spinner -->
+                            <div class="relative w-16 h-16">
+                                <div class="absolute inset-0 border-4 border-orange-500/20 rounded-full"></div>
+                                <div class="absolute inset-0 border-4 border-transparent border-t-orange-500 rounded-full animate-spin"></div>
+                                <div class="absolute inset-2 border-2 border-transparent border-t-orange-400 rounded-full animate-spin animate-[spin_1.5s_linear_infinite_reverse]"></div>
+                            </div>
+                            
+                            <!-- Text -->
+                            <div class="text-center">
+                                <h3 id="loading-title" class="text-orange-400 text-lg font-bold mb-2">読み込み中...</h3>
+                                <p id="loading-message" class="text-orange-300/80 text-sm">ファイルを処理しています</p>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div id="loading-progress-container" class="w-full hidden">
+                                <div class="bg-orange-500/20 rounded-full h-2 overflow-hidden">
+                                    <div id="loading-progress-bar" class="bg-gradient-to-r from-orange-500 to-orange-400 h-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-orange-300/60 mt-1">
+                                    <span id="loading-progress-text">0%</span>
+                                    <span id="loading-file-size"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div id="axes-info">
                 <div class="axis-label" style="color: #ff6b6b">R軸: Radial (径方向 - 地心→衛星)</div>
                 <div class="axis-label" style="color: #2ECC71">S軸: Along-track (軌道進行方向)</div>

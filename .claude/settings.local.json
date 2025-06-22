@@ -12,7 +12,8 @@
       "Bash(npm run build:*)",
       "Bash(npm run dev:*)",
       "Bash(find:*)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

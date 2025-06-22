@@ -33,6 +33,35 @@ h1 {
     50% { opacity: 0.8; }
 }
 
+@keyframes loadingPulse {
+    0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% { 
+        transform: scale(1.05);
+        opacity: 0.8;
+    }
+}
+
+/* Loading indicator custom styles */
+#loading-indicator {
+    backdrop-filter: blur(8px);
+}
+
+#loading-indicator .animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 /* Top controls bar - now using Tailwind classes in HTML */
 
 /* Hamburger menu animations */
