@@ -332,6 +332,12 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             if (this.csvPlaybackController.isPlaybackActive()) {
                 // CSV playback mode - satellites are updated by playback controller
                 this.renderingSystem.updateSatellitePositions(this.satellites);
+                
+                // Update time display with CSV playback time
+                if (this.animationFrameCounter % 5 === 0) {
+                    const playbackTime = this.csvPlaybackController.getPlaybackEngine().getState().currentTime;
+                    this.uiControls.updateTimeDisplay(playbackTime);
+                }
             } else {
                 // Normal simulation mode
                 const timeScale = parseFloat(this.uiControls.elements.timeScale.value);
@@ -377,7 +383,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             }
             
             // Update celestial bodies
-            this.renderingSystem.updateCelestialBodies(this.time, this.simulationStartTime);
+            // Use CSV playback time if in playback mode, otherwise use simulation time
+            const currentTime = this.csvPlaybackController.isPlaybackActive() 
+                ? this.csvPlaybackController.getPlaybackEngine().getState().currentTime
+                : this.time;
+            this.renderingSystem.updateCelestialBodies(currentTime, this.simulationStartTime);
         }
         
         this.renderingSystem.render();
@@ -406,7 +416,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         }
         
         // ECI座標を取得（現在時刻で計算）
-        const currentDate = new Date(Date.now() + this.time * 1000);
+        // Use CSV playback time if in playback mode, otherwise use simulation time
+        const currentTime = this.csvPlaybackController.isPlaybackActive() 
+            ? this.csvPlaybackController.getPlaybackEngine().getState().currentTime
+            : this.time;
+        const currentDate = new Date(Date.now() + currentTime * 1000);
         const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements, currentDate);
         
         if (eciData) {
@@ -440,7 +454,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         if (!this.currentOrbitElements) return;
         
         // 現在時刻でECI座標と緯度経度高度を計算
-        const currentDate = new Date(Date.now() + this.time * 1000);
+        // Use CSV playback time if in playback mode, otherwise use simulation time
+        const currentTime = this.csvPlaybackController.isPlaybackActive() 
+            ? this.csvPlaybackController.getPlaybackEngine().getState().currentTime
+            : this.time;
+        const currentDate = new Date(Date.now() + currentTime * 1000);
         const eciData = OrbitElementsCalculator.getECIPosition(this.currentOrbitElements, currentDate);
 
         // 基準衛星パネルをリアルタイム更新

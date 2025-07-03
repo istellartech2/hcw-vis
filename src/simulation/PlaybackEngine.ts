@@ -41,7 +41,7 @@ export class PlaybackEngine {
     }
 
     public setPlaybackSpeed(speed: number): void {
-        this.state.playbackSpeed = Math.max(0.1, Math.min(10.0, speed));
+        this.state.playbackSpeed = Math.max(1.0, Math.min(960.0, speed));
     }
 
     public setCurrentTime(time: number): void {
