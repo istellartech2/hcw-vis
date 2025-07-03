@@ -170,6 +170,22 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                     }
                 }
             };
+
+            // CSV制御パネルのトグル
+            (window as any).toggleCSVControls = () => {
+                const content = document.getElementById('csv-controls-content');
+                const toggleIcon = document.getElementById('csv-controls-toggle');
+                
+                if (content && toggleIcon) {
+                    if (content.style.display === 'none') {
+                        content.style.display = 'flex';
+                        toggleIcon.textContent = '▼';
+                    } else {
+                        content.style.display = 'none';
+                        toggleIcon.textContent = '▶';
+                    }
+                }
+            };
         }
     }
     

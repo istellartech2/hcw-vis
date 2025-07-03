@@ -35,34 +35,80 @@ export class CSVPlaybackController {
             this.loadSampleFile('/public/samples/three_satellite_6dof.csv');
         });
 
-        // Playback controls
-        this.uiControls.elements.csvPlayPause.addEventListener('click', () => {
-            this.togglePlayPause();
-        });
+        // Playback controls (sidebar - legacy)
+        if (this.uiControls.elements.csvPlayPause) {
+            this.uiControls.elements.csvPlayPause.addEventListener('click', () => {
+                this.togglePlayPause();
+            });
+        }
 
-        this.uiControls.elements.csvStop.addEventListener('click', () => {
-            this.stop();
-        });
+        if (this.uiControls.elements.csvStop) {
+            this.uiControls.elements.csvStop.addEventListener('click', () => {
+                this.stop();
+            });
+        }
 
-        // Time slider
-        this.uiControls.elements.csvTimeSlider.addEventListener('input', (e) => {
-            const slider = e.target as HTMLInputElement;
-            const progress = parseFloat(slider.value) / 100;
-            this.seekToProgress(progress);
-        });
+        // Time slider (sidebar - legacy)
+        if (this.uiControls.elements.csvTimeSlider) {
+            this.uiControls.elements.csvTimeSlider.addEventListener('input', (e) => {
+                const slider = e.target as HTMLInputElement;
+                const progress = parseFloat(slider.value) / 100;
+                this.seekToProgress(progress);
+            });
+        }
 
-        // Playback speed
-        this.uiControls.elements.csvPlaybackSpeed.addEventListener('change', (e) => {
-            const select = e.target as HTMLSelectElement;
-            const speed = parseFloat(select.value);
-            this.playbackEngine.setPlaybackSpeed(speed);
-        });
+        // Playback speed (sidebar - legacy)
+        if (this.uiControls.elements.csvPlaybackSpeed) {
+            this.uiControls.elements.csvPlaybackSpeed.addEventListener('change', (e) => {
+                const select = e.target as HTMLSelectElement;
+                const speed = parseFloat(select.value);
+                this.playbackEngine.setPlaybackSpeed(speed);
+            });
+        }
 
-        // Loop enabled
-        this.uiControls.elements.csvLoopEnabled.addEventListener('change', (e) => {
-            const checkbox = e.target as HTMLInputElement;
-            this.playbackEngine.setLoopEnabled(checkbox.checked);
-        });
+        // Loop enabled (sidebar - legacy)
+        if (this.uiControls.elements.csvLoopEnabled) {
+            this.uiControls.elements.csvLoopEnabled.addEventListener('change', (e) => {
+                const checkbox = e.target as HTMLInputElement;
+                this.playbackEngine.setLoopEnabled(checkbox.checked);
+            });
+        }
+
+        // Main CSV controls (top-left panel) - with null checks
+        if (this.uiControls.elements.csvPlayPauseMain) {
+            this.uiControls.elements.csvPlayPauseMain.addEventListener('click', () => {
+                this.togglePlayPause();
+            });
+        }
+
+        if (this.uiControls.elements.csvStopMain) {
+            this.uiControls.elements.csvStopMain.addEventListener('click', () => {
+                this.stop();
+            });
+        }
+
+        if (this.uiControls.elements.csvTimeSliderMain) {
+            this.uiControls.elements.csvTimeSliderMain.addEventListener('input', (e) => {
+                const slider = e.target as HTMLInputElement;
+                const progress = parseFloat(slider.value) / 100;
+                this.seekToProgress(progress);
+            });
+        }
+
+        if (this.uiControls.elements.csvPlaybackSpeedMain) {
+            this.uiControls.elements.csvPlaybackSpeedMain.addEventListener('change', (e) => {
+                const select = e.target as HTMLSelectElement;
+                const speed = parseFloat(select.value);
+                this.playbackEngine.setPlaybackSpeed(speed);
+            });
+        }
+
+        if (this.uiControls.elements.csvLoopEnabledMain) {
+            this.uiControls.elements.csvLoopEnabledMain.addEventListener('change', (e) => {
+                const checkbox = e.target as HTMLInputElement;
+                this.playbackEngine.setLoopEnabled(checkbox.checked);
+            });
+        }
     }
 
     private async loadCSVFile(file: File): Promise<void> {
@@ -146,14 +192,35 @@ export class CSVPlaybackController {
         this.uiControls.elements.csvTimeRange.textContent = 
             `${data.timeRange.min.toFixed(1)}-${data.timeRange.max.toFixed(1)}s`;
         
-        // Update time slider range
-        this.uiControls.elements.csvTimeSlider.min = '0';
-        this.uiControls.elements.csvTimeSlider.max = '100';
-        this.uiControls.elements.csvTimeSlider.value = '0';
+        // Update total time for main controls (integer display)
+        const totalTimeMain = Math.round(data.timeRange.max).toString();
+        if (this.uiControls.elements.csvTotalTimeMain) {
+            this.uiControls.elements.csvTotalTimeMain.textContent = totalTimeMain;
+        }
         
-        // Update time display
-        this.uiControls.elements.csvCurrentTime.textContent = data.timeRange.min.toFixed(1);
-        this.uiControls.elements.csvTotalTime.textContent = data.timeRange.max.toFixed(1);
+        // Update time slider range for both controls
+        if (this.uiControls.elements.csvTimeSlider) {
+            this.uiControls.elements.csvTimeSlider.min = '0';
+            this.uiControls.elements.csvTimeSlider.max = '100';
+            this.uiControls.elements.csvTimeSlider.value = '0';
+        }
+        
+        if (this.uiControls.elements.csvTimeSliderMain) {
+            this.uiControls.elements.csvTimeSliderMain.min = '0';
+            this.uiControls.elements.csvTimeSliderMain.max = '100';
+            this.uiControls.elements.csvTimeSliderMain.value = '0';
+        }
+        
+        // Update time display for both controls
+        if (this.uiControls.elements.csvCurrentTime) {
+            this.uiControls.elements.csvCurrentTime.textContent = data.timeRange.min.toFixed(1);
+        }
+        if (this.uiControls.elements.csvTotalTime) {
+            this.uiControls.elements.csvTotalTime.textContent = data.timeRange.max.toFixed(1);
+        }
+        if (this.uiControls.elements.csvCurrentTimeMain) {
+            this.uiControls.elements.csvCurrentTimeMain.textContent = Math.round(data.timeRange.min).toString();
+        }
     }
 
     private showPlaybackControls(): void {
@@ -186,10 +253,23 @@ export class CSVPlaybackController {
 
     private updatePlayPauseButton(): void {
         const state = this.playbackEngine.getState();
+        const playText = '▶ 再生';
+        const pauseText = '⏸ 一時停止';
+        
         if (state.isPlaying) {
-            this.uiControls.elements.csvPlayPause.innerHTML = '⏸ 一時停止';
+            if (this.uiControls.elements.csvPlayPause) {
+                this.uiControls.elements.csvPlayPause.innerHTML = pauseText;
+            }
+            if (this.uiControls.elements.csvPlayPauseMain) {
+                this.uiControls.elements.csvPlayPauseMain.innerHTML = pauseText;
+            }
         } else {
-            this.uiControls.elements.csvPlayPause.innerHTML = '▶ 再生';
+            if (this.uiControls.elements.csvPlayPause) {
+                this.uiControls.elements.csvPlayPause.innerHTML = playText;
+            }
+            if (this.uiControls.elements.csvPlayPauseMain) {
+                this.uiControls.elements.csvPlayPauseMain.innerHTML = playText;
+            }
         }
     }
 
@@ -198,11 +278,27 @@ export class CSVPlaybackController {
         const timeRange = this.playbackEngine.getTimeRange();
         
         if (timeRange) {
-            this.uiControls.elements.csvCurrentTime.textContent = state.currentTime.toFixed(1);
+            const currentTimeSidebar = state.currentTime.toFixed(1); // Sidebar keeps decimal
+            const currentTimeMain = Math.round(state.currentTime).toString(); // Main uses integer
+            
+            // Update sidebar controls (keep decimal for precision)
+            if (this.uiControls.elements.csvCurrentTime) {
+                this.uiControls.elements.csvCurrentTime.textContent = currentTimeSidebar;
+            }
+            
+            // Update main controls (integer display)
+            if (this.uiControls.elements.csvCurrentTimeMain) {
+                this.uiControls.elements.csvCurrentTimeMain.textContent = currentTimeMain;
+            }
             
             // Update slider position
             const progress = this.playbackEngine.getCurrentProgress();
-            this.uiControls.elements.csvTimeSlider.value = (progress * 100).toString();
+            if (this.uiControls.elements.csvTimeSlider) {
+                this.uiControls.elements.csvTimeSlider.value = (progress * 100).toString();
+            }
+            if (this.uiControls.elements.csvTimeSliderMain) {
+                this.uiControls.elements.csvTimeSliderMain.value = (progress * 100).toString();
+            }
         }
     }
 
@@ -221,6 +317,7 @@ export class CSVPlaybackController {
     public activatePlaybackMode(): void {
         this.isActive = true;
         this.updateSatelliteConfigPanel(true);
+        this.uiControls.switchToCSVMode();
     }
 
     public deactivatePlaybackMode(): void {
@@ -229,6 +326,7 @@ export class CSVPlaybackController {
         this.hidePlaybackControls();
         this.uiControls.elements.csvFileStatus.classList.add('hidden');
         this.updateSatelliteConfigPanel(false);
+        this.uiControls.switchToSimulationMode();
     }
 
     private updateSatelliteConfigPanel(playbackMode: boolean): void {

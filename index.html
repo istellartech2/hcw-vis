@@ -105,6 +105,37 @@
                 </div>
             </div>
             
+            <!-- CSV再生制御パネル -->
+            <div id="csv-playback-panel" class="absolute top-[70px] left-5 bg-gradient-to-br from-slate-900/95 to-slate-800/90 rounded-2xl border border-orange-500/25 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_80px_rgba(255,127,80,0.1)] max-w-xs z-[100] overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/50 before:to-transparent before:animate-[shimmer_3s_ease-in-out_infinite]" style="display: none;">
+                <div class="panel-header px-3.5 py-2.5 cursor-pointer select-none flex justify-between items-center bg-orange-500/[0.08] border-b border-orange-500/15 transition-all duration-300 hover:bg-orange-500/15 hover:pl-4" onclick="toggleCSVControls()">
+                    <h4 class="section-title text-orange-400 text-[15px] font-bold m-0 border-none p-0 drop-shadow-[0_0_20px_rgba(255,127,80,0.5)] tracking-[0.5px]">📊 CSV再生モード</h4>
+                    <span id="csv-controls-toggle" class="toggle-icon text-orange-400 text-xs transition-transform duration-300">▼</span>
+                </div>
+                <div id="csv-controls-content" class="panel-content p-3 overflow-hidden transition-all duration-300 flex flex-col gap-2.5">
+                    <!-- Playback Controls -->
+                    <div class="control-group flex items-center gap-2">
+                        <button id="csvPlayPauseMain" class="px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-lg text-orange-400 text-[13px] font-semibold cursor-pointer transition-all duration-300 hover:bg-orange-500/30 hover:border-orange-500 hover:text-white">▶ 再生</button>
+                        <button id="csvStopMain" class="px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded-lg text-orange-400 text-[13px] font-semibold cursor-pointer transition-all duration-300 hover:bg-orange-500/30 hover:border-orange-500 hover:text-white">⏹ 停止</button>
+                    </div>
+                    
+                    <!-- Time Control -->
+                    <div class="control-group">
+                        <input type="range" id="csvTimeSliderMain" min="0" max="100" step="0.1" value="0" class="w-full h-1 bg-white/10 rounded-sm appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-gradient-to-br [&::-webkit-slider-thumb]:from-orange-400 [&::-webkit-slider-thumb]:to-orange-600 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-[0_2px_6px_rgba(0,0,0,0.3),0_0_8px_rgba(255,127,80,0.4)] [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:duration-200 [&::-webkit-slider-thumb]:hover:scale-125 [&::-webkit-slider-thumb]:hover:shadow-[0_2px_10px_rgba(0,0,0,0.4),0_0_16px_rgba(255,127,80,0.6)]">
+                        <div class="flex justify-between items-center mt-1">
+                            <span class="text-[12px] text-orange-300/80 font-mono">
+                                <span id="csvCurrentTimeMain">0</span>s / <span id="csvTotalTimeMain">0</span>s
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Loop Control -->
+                    <div class="control-group flex items-center gap-2">
+                        <input type="checkbox" id="csvLoopEnabledMain" checked class="w-4 h-4 cursor-pointer accent-orange-500">
+                        <label class="text-[13px] text-orange-400">ループ再生</label>
+                    </div>
+                </div>
+            </div>
+            
             <!-- サイドバー -->
             <div id="sidebar" class="sidebar fixed top-0 left-[-400px] w-[380px] h-screen bg-gradient-to-b from-slate-900/98 to-slate-800/95 border-r border-orange-500/25 transition-[left] duration-300 ease-out z-[9999] overflow-y-auto backdrop-blur-[30px] shadow-[4px_0_24px_rgba(0,0,0,0.5),0_0_80px_rgba(255,127,80,0.05)] before:content-[''] before:absolute before:top-0 before:right-0 before:bottom-0 before:w-[1px] before:bg-gradient-to-b before:from-transparent before:via-orange-500/50 before:to-transparent before:animate-[pulseGlow_4s_ease-in-out_infinite]">
                 <div class="sidebar-header px-5 py-3 bg-orange-500/[0.08] border-b border-orange-500/20 flex justify-between items-center relative overflow-hidden after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gradient-to-r after:from-transparent after:via-orange-500/60 after:to-transparent after:animate-[shimmer_3s_ease-in-out_infinite]">
@@ -294,23 +325,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Playback Speed -->
-                                <div class="control-row">
-                                    <div class="control-group">
-                                        <label>再生速度:</label>
-                                        <select id="csvPlaybackSpeed" class="flex-1 px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-[13px] font-medium">
-                                            <option value="1">1x</option>
-                                            <option value="5">5x</option>
-                                            <option value="10">10x</option>
-                                            <option value="30">30x</option>
-                                            <option value="60" selected>60x</option>
-                                            <option value="180">180x</option>
-                                            <option value="480">480x</option>
-                                            <option value="960">960x</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
                                 <!-- Loop Control -->
                                 <div class="control-row">
                                     <div class="control-group">
@@ -446,7 +460,19 @@
             <div id="time-controls-panel" class="absolute bottom-5 right-5 flex flex-col gap-2.5 items-end">
                 <div id="time-scale-control" class="flex items-center gap-1.5 px-2 py-1 bg-black/80 rounded-lg border border-orange-500/30 backdrop-blur-lg transition-all duration-300 opacity-80 hover:bg-orange-500/15 hover:opacity-80 hover:shadow-[0_0_15px_rgba(255,127,80,0.3)]">
                     <span class="icon text-sm drop-shadow-[0_0_3px_rgba(255,127,80,0.4)]">⏱️</span>
+                    <!-- Simulation speed control -->
                     <select id="timeScale" class="bg-transparent border-none text-orange-500 text-sm font-normal outline-none cursor-pointer px-1 py-0 font-mono">
+                        <option value="1">1x</option>
+                        <option value="5">5x</option>
+                        <option value="10">10x</option>
+                        <option value="30">30x</option>
+                        <option value="60" selected>60x</option>
+                        <option value="180">180x</option>
+                        <option value="480">480x</option>
+                        <option value="960">960x</option>
+                    </select>
+                    <!-- CSV playback speed control -->
+                    <select id="csvPlaybackSpeedMain" class="bg-transparent border-none text-orange-500 text-sm font-normal outline-none cursor-pointer px-1 py-0 font-mono" style="display: none;">
                         <option value="1">1x</option>
                         <option value="5">5x</option>
                         <option value="10">10x</option>

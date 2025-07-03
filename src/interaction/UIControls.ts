@@ -65,6 +65,16 @@ export interface UIControlElements {
     csvSatelliteCount: HTMLSpanElement;
     csvDataPoints: HTMLSpanElement;
     csvTimeRange: HTMLSpanElement;
+    // Main CSV controls (top-left panel)
+    csvPlaybackSpeedMain: HTMLSelectElement;
+    csvPlayPauseMain: HTMLButtonElement;
+    csvStopMain: HTMLButtonElement;
+    csvTimeSliderMain: HTMLInputElement;
+    csvCurrentTimeMain: HTMLSpanElement;
+    csvTotalTimeMain: HTMLSpanElement;
+    csvLoopEnabledMain: HTMLInputElement;
+    csvPlaybackPanel: HTMLDivElement;
+    satelliteConfigPanel: HTMLDivElement;
 }
 
 export class UIControls {
@@ -137,7 +147,17 @@ export class UIControls {
             csvLoopEnabled: document.getElementById('csvLoopEnabled') as HTMLInputElement,
             csvSatelliteCount: document.getElementById('csvSatelliteCount') as HTMLSpanElement,
             csvDataPoints: document.getElementById('csvDataPoints') as HTMLSpanElement,
-            csvTimeRange: document.getElementById('csvTimeRange') as HTMLSpanElement
+            csvTimeRange: document.getElementById('csvTimeRange') as HTMLSpanElement,
+            // Main CSV controls (top-left panel)
+            csvPlaybackSpeedMain: document.getElementById('csvPlaybackSpeedMain') as HTMLSelectElement,
+            csvPlayPauseMain: document.getElementById('csvPlayPauseMain') as HTMLButtonElement,
+            csvStopMain: document.getElementById('csvStopMain') as HTMLButtonElement,
+            csvTimeSliderMain: document.getElementById('csvTimeSliderMain') as HTMLInputElement,
+            csvCurrentTimeMain: document.getElementById('csvCurrentTimeMain') as HTMLSpanElement,
+            csvTotalTimeMain: document.getElementById('csvTotalTimeMain') as HTMLSpanElement,
+            csvLoopEnabledMain: document.getElementById('csvLoopEnabledMain') as HTMLInputElement,
+            csvPlaybackPanel: document.getElementById('csv-playback-panel') as HTMLDivElement,
+            satelliteConfigPanel: document.getElementById('satellite-config-panel') as HTMLDivElement
         };
     }
     
@@ -309,6 +329,47 @@ export class UIControls {
             this.elements.zAmplitudeControl.style.display = 'none';
             this.elements.periodicParamsControl.style.display = 'none';
             this.elements.circularZDirectionControl.style.display = 'none';
+        }
+    }
+
+    // Mode switching methods
+    switchToCSVMode(): void {
+        // Hide satellite configuration panel
+        if (this.elements.satelliteConfigPanel) {
+            this.elements.satelliteConfigPanel.style.display = 'none';
+        }
+        
+        // Show CSV playback panel
+        if (this.elements.csvPlaybackPanel) {
+            this.elements.csvPlaybackPanel.style.display = 'block';
+        }
+        
+        // Switch speed controls
+        if (this.elements.timeScale) {
+            this.elements.timeScale.style.display = 'none';
+        }
+        if (this.elements.csvPlaybackSpeedMain) {
+            this.elements.csvPlaybackSpeedMain.style.display = 'block';
+        }
+    }
+
+    switchToSimulationMode(): void {
+        // Show satellite configuration panel
+        if (this.elements.satelliteConfigPanel) {
+            this.elements.satelliteConfigPanel.style.display = 'block';
+        }
+        
+        // Hide CSV playback panel
+        if (this.elements.csvPlaybackPanel) {
+            this.elements.csvPlaybackPanel.style.display = 'none';
+        }
+        
+        // Switch speed controls
+        if (this.elements.timeScale) {
+            this.elements.timeScale.style.display = 'block';
+        }
+        if (this.elements.csvPlaybackSpeedMain) {
+            this.elements.csvPlaybackSpeedMain.style.display = 'none';
         }
     }
 }
