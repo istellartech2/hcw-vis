@@ -48,12 +48,11 @@ export interface UIControlElements {
     raan: HTMLInputElement;
     argOfPerigee: HTMLInputElement;
     meanAnomaly: HTMLInputElement;
+    j2Perturbation: HTMLInputElement;
     // CSV Playback controls
     csvPlaybackInput: HTMLInputElement;
     csvFileStatus: HTMLDivElement;
     csvStatusText: HTMLSpanElement;
-    loadSampleSingle: HTMLButtonElement;
-    loadSampleMultiple: HTMLButtonElement;
     csvPlaybackControls: HTMLDivElement;
     csvPlayPause: HTMLButtonElement;
     csvStop: HTMLButtonElement;
@@ -131,12 +130,11 @@ export class UIControls {
             raan: document.getElementById('raan') as HTMLInputElement,
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,
             meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement,
+            j2Perturbation: document.getElementById('j2Perturbation') as HTMLInputElement,
             // CSV Playback controls
             csvPlaybackInput: document.getElementById('csvPlaybackInput') as HTMLInputElement,
             csvFileStatus: document.getElementById('csvFileStatus') as HTMLDivElement,
             csvStatusText: document.getElementById('csvStatusText') as HTMLSpanElement,
-            loadSampleSingle: document.getElementById('loadSampleSingle') as HTMLButtonElement,
-            loadSampleMultiple: document.getElementById('loadSampleMultiple') as HTMLButtonElement,
             csvPlaybackControls: document.getElementById('csvPlaybackControls') as HTMLDivElement,
             csvPlayPause: document.getElementById('csvPlayPause') as HTMLButtonElement,
             csvStop: document.getElementById('csvStop') as HTMLButtonElement,

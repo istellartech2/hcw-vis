@@ -101,6 +101,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             this.updateSatelliteSize();
         });
         
+        // J2 perturbation checkbox
+        this.uiControls.elements.j2Perturbation?.addEventListener('change', () => {
+            this.updateOrbitParameters();
+        });
+        
         // Periodic parameters sliders
         this.uiControls.elements.paramB.addEventListener('input', () => {
             this.uiControls.updatePeriodicParamsDisplay();
@@ -222,6 +227,12 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         
         this.hillSolver.updateMeanMotion(this.n);
         this.orbitInitializer.updateMeanMotion(this.n);
+        
+        // J2摂動の設定を更新
+        const j2Enabled = this.uiControls.elements.j2Perturbation?.checked || false;
+        const inclinationRad = this.currentOrbitElements.inclination * Math.PI / 180;
+        this.hillSolver.setOrbitParameters(this.orbitRadius, inclinationRad);
+        this.hillSolver.setJ2Perturbation(j2Enabled);
         
         if (this.renderingSystem) {
             const selectedTexture = this.uiControls.elements.earthTexture.value;

@@ -131,7 +131,7 @@
                     <!-- Loop Control -->
                     <div class="control-group flex items-center gap-2">
                         <input type="checkbox" id="csvLoopEnabledMain" checked class="w-4 h-4 cursor-pointer accent-orange-500">
-                        <label class="text-[13px] text-orange-400">ループ再生</label>
+                        <label for="csvLoopEnabledMain" class="text-[13px] text-orange-400">ループ再生</label>
                     </div>
                 </div>
             </div>
@@ -145,19 +145,29 @@
                         <button class="close-button w-9 h-9 p-0 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-xl cursor-pointer flex items-center justify-center transition-all duration-300 hover:rotate-90 hover:scale-110 hover:bg-orange-500/20 hover:border-orange-500 hover:text-white hover:shadow-[0_0_20px_rgba(255,127,80,0.4)]" onclick="toggleSidebar()">×</button>
                     </div>
                 </div>
-                <div class="sidebar-content p-4">
+                <div class="sidebar-content p-3">
                     <!-- シミュレーション制御 -->
-                    <div class="subsection mb-2.5 p-2.5 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
-                        <h5 class="subsection-title text-orange-400 text-[13px] font-bold m-0 mb-1.5 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">⚡ シミュレーション</h5>
-                        <div class="control-group flex items-center gap-2">
-                            <label class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 whitespace-nowrap">推力:</label>
-                            <input type="number" id="thrustAmount" min="0.0001" max="1" step="0.0001" value="0.001" class="w-[100px] px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-[13px] font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.15)] focus:bg-white/[0.12] focus:border-orange-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,127,80,0.2),0_4px_12px_rgba(255,127,80,0.25)]">
-                            <span class="text-[11px]">m/s</span>
+                    <div class="subsection mb-2 p-2 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
+                        <h5 class="subsection-title text-orange-400 text-xs font-bold m-0 mb-1 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">⚡ シミュレーション</h5>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <input type="checkbox" id="j2Perturbation" class="w-4 h-4 cursor-pointer accent-orange-500">
+                                <label for="j2Perturbation" class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 cursor-pointer">J2摂動を考慮</label>
+                            </div>
                         </div>
-                        <div class="control-group flex items-center gap-2">
-                            <label class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 whitespace-nowrap">摂動:</label>
-                            <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02" class="w-[100px] px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-[13px] font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.15)] focus:bg-white/[0.12] focus:border-orange-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,127,80,0.2),0_4px_12px_rgba(255,127,80,0.25)]">
-                            <span class="text-[11px]">m/s</span>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>推力:</label>
+                                <input type="number" id="thrustAmount" min="0.0001" max="1" step="0.0001" value="0.001" style="width: 100px;">
+                                <span class="text-[11px]">m/s</span>
+                            </div>
+                        </div>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>摂動:</label>
+                                <input type="number" id="perturbationAmount" min="0.001" max="0.1" step="0.001" value="0.02" style="width: 100px;">
+                                <span class="text-[11px]">m/s</span>
+                            </div>
                         </div>
                         <div class="control-buttons flex flex-wrap gap-1.5 mt-1.5">
                             <button onclick="addPerturbation()" class="text-xs px-3 py-1.5">💥摂動</button>
@@ -165,62 +175,66 @@
                     </div>
             
                     <!-- 3D空間サブセクション -->
-                    <div class="subsection mb-2.5 p-2.5 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
-                        <h5 class="subsection-title text-orange-400 text-[13px] font-bold m-0 mb-1.5 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🌌 3D空間表示</h5>
-                        <div class="control-row">
-                            <div class="control-group" style="flex: 1;">
-                                <input type="checkbox" id="showGrid" checked>
-                                <label style="min-width: auto;">グリッド</label>
+                    <div class="subsection mb-2 p-2 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
+                        <h5 class="subsection-title text-orange-400 text-xs font-bold m-0 mb-1 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🌌 3D空間表示</h5>
+                        <div class="checkbox-grid grid grid-cols-3 gap-3 mb-3">
+                            <div class="checkbox-item flex items-center gap-2">
+                                <input type="checkbox" id="showGrid" checked class="w-4 h-4 cursor-pointer accent-orange-500">
+                                <label for="showGrid" class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 cursor-pointer min-w-0">グリッド</label>
                             </div>
-                            <div class="control-group" style="flex: 1;">
-                                <input type="checkbox" id="showLatLongGrid" checked>
-                                <label style="min-width: auto;">緯度経度</label>
+                            <div class="checkbox-item flex items-center gap-2">
+                                <input type="checkbox" id="showLatLongGrid" checked class="w-4 h-4 cursor-pointer accent-orange-500">
+                                <label for="showLatLongGrid" class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 cursor-pointer min-w-0">緯度経度</label>
                             </div>
-                            <div class="control-group" style="flex: 1;">
-                                <input type="checkbox" id="showEarth" checked>
-                                <label style="min-width: auto;">地球</label>
+                            <div class="checkbox-item flex items-center gap-2">
+                                <input type="checkbox" id="showEarth" checked class="w-4 h-4 cursor-pointer accent-orange-500">
+                                <label for="showEarth" class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 cursor-pointer min-w-0">地球</label>
                             </div>
                         </div>
-                        <div class="control-group">
-                            <label>地球テクスチャ:</label>
-                            <select id="earthTexture" style="width: 100%;">
-                                <option value="earth00.webp">シンプル</option>
-                                <option value="earth01.webp">標準</option>
-                                <option value="earth03.webp">淡白</option>
-                                <option value="earth04.webp">ブルーマーブル</option>
-                                <option value="earth05_highres.webp">高解像度</option>
-                            </select>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>テクスチャ:</label>
+                                <select id="earthTexture">
+                                    <option value="earth00.webp">シンプル</option>
+                                    <option value="earth01.webp">標準</option>
+                                    <option value="earth03.webp">淡白</option>
+                                    <option value="earth04.webp">ブルーマーブル</option>
+                                    <option value="earth05_highres.webp">高解像度</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- 衛星サブセクション -->
-                    <div class="subsection mb-2.5 p-2.5 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
-                        <h5 class="subsection-title text-orange-400 text-[13px] font-bold m-0 mb-1.5 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🛰️ 衛星表示</h5>
-                        <div class="control-group">
-                            <label>サイズ:</label>
-                            <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8" style="width: 80px;">
-                            <span style="font-size: 11px;">px</span>
-                        </div>
-                        <div class="control-group">
-                            <label>形状:</label>
-                            <select id="satelliteShape" style="width: 120px;">
-                                <option value="sphere">球体</option>
-                                <option value="cube">立方体</option>
-                                <option value="3dfile">3Dファイル読込</option>
-                            </select>
+                    <div class="subsection mb-2 p-2 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
+                        <h5 class="subsection-title text-orange-400 text-xs font-bold m-0 mb-1 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🛰️ 衛星表示</h5>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>サイズ:</label>
+                                <input type="number" id="satelliteSize" min="0.1" max="100" step="0.1" value="0.8" style="width: 80px;">
+                                <span style="font-size: 11px;">px</span>
+                            </div>
                         </div>
                         <div class="control-row">
-                            <div class="control-group" style="flex: 1;">
-                                <input type="checkbox" id="uniformSatelliteColor">
-                                <label style="min-width: auto;">色を統一</label>
+                            <div class="control-group">
+                                <label>形状:</label>
+                                <select id="satelliteShape">
+                                    <option value="sphere">球体</option>
+                                    <option value="cube">立方体</option>
+                                    <option value="3dfile">3Dファイル読込</option>
+                                </select>
                             </div>
-                            <div class="control-group" style="flex: 1;">
-                                <input type="color" id="satelliteColor" value="#ffffff" style="width: 50px;">
+                        </div>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <input type="checkbox" id="uniformSatelliteColor" class="w-4 h-4 cursor-pointer accent-orange-500">
+                                <label for="uniformSatelliteColor">色を統一</label>
+                                <input type="color" id="satelliteColor" value="#ffffff" class="w-12 h-8 border border-orange-500/30 rounded cursor-pointer transition-all duration-300 hover:border-orange-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,127,80,0.3)]">
                             </div>
                         </div>
                         <div id="cubeRotationControls" style="display: none;">
                             <div class="control-group" style="flex-direction: column; align-items: stretch;">
-                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; margin-bottom: 4px;">
                                     <label style="min-width: 70px;">R軸回転:</label>
                                     <input type="range" id="cubeRotationR" min="0" max="90" step="5" value="0" style="width: 120px; flex: 1;">
                                     <span id="cubeRotationRValue" style="min-width: 30px; text-align: right;">0°</span>
@@ -233,28 +247,39 @@
                             </div>
                         </div>
                         <div id="file3dControls" style="display: none;">
-                            <div class="control-group">
-                                <input type="file" id="file3dInput" accept=".glb,.gltf,.stl" style="width: 100%;">
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>3Dファイル:</label>
+                                    <input type="file" id="file3dInput" accept=".glb,.gltf,.stl" class="w-0 flex-1 min-w-0 px-2 py-1 bg-white/[0.06] border border-orange-500/20 rounded-md text-white text-xs font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 overflow-hidden file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-orange-500/20 file:text-orange-300 hover:file:bg-orange-500/30">
+                                </div>
                             </div>
-                            <div class="control-group">
-                                <label>R軸回転:</label>
-                                <input type="range" id="file3dRotationR" min="-180" max="180" step="5" value="0" style="width: 120px;">
-                                <span id="file3dRotationRValue">0°</span>
-                            </div>
-                            <div class="control-group">
-                                <label>S軸回転:</label>
-                                <input type="range" id="file3dRotationS" min="-180" max="180" step="5" value="0" style="width: 120px;">
-                                <span id="file3dRotationSValue">0°</span>
+                            <div class="rotation-controls">
+                                <div class="control-row" style="margin-bottom: 4px;">
+                                    <div class="control-group">
+                                        <label style="min-width: 70px;">R軸回転:</label>
+                                        <input type="range" id="file3dRotationR" min="-180" max="180" step="5" value="0" style="flex: 1;">
+                                        <span id="file3dRotationRValue" style="min-width: 30px; text-align: right;">0°</span>
+                                    </div>
+                                </div>
+                                <div class="control-row">
+                                    <div class="control-group">
+                                        <label style="min-width: 70px;">S軸回転:</label>
+                                        <input type="range" id="file3dRotationS" min="-180" max="180" step="5" value="0" style="flex: 1;">
+                                        <span id="file3dRotationSValue" style="min-width: 30px; text-align: right;">0°</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="control-row">
-                            <div class="control-group" style="flex: 1;">
+                            <div class="control-group">
                                 <input type="checkbox" id="showTrails" checked>
-                                <label style="min-width: auto;">軌跡表示</label>
+                                <label>軌跡表示</label>
                             </div>
-                            <div class="control-group" style="flex: 2;">
+                        </div>
+                        <div class="control-row">
+                            <div class="control-group">
                                 <label>軌跡長さ:</label>
-                                <input type="range" id="trailLength" min="50" max="500" step="50" value="200" style="width: 80px;">
+                                <input type="range" id="trailLength" min="50" max="500" step="50" value="200">
                                 <span id="trailLengthValue" style="font-size: 11px;">200</span>
                             </div>
                         </div>
@@ -262,9 +287,9 @@
 
                     <!-- CSV再生モード -->
                     <div class="sidebar-section mb-3 border border-orange-500/15 rounded-2xl overflow-hidden bg-gradient-to-br from-white/[0.03] to-white/[0.01] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_40px_rgba(255,127,80,0.1)]">
-                        <div class="sidebar-section-header px-4 py-3 bg-gradient-to-br from-orange-500/10 to-orange-500/[0.05] cursor-pointer select-none flex items-center gap-2.5 transition-all duration-300 relative overflow-hidden hover:from-orange-500/15 hover:to-orange-500/[0.08] hover:pl-5 before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-orange-500/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-[100%]" onclick="toggleSidebarSection('csv-playback')">
+                        <div class="sidebar-section-header px-3 py-2 bg-gradient-to-br from-orange-500/10 to-orange-500/[0.05] cursor-pointer select-none flex items-center gap-2 transition-all duration-300 relative overflow-hidden hover:from-orange-500/15 hover:to-orange-500/[0.08] hover:pl-4 before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-orange-500/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-[100%]" onclick="toggleSidebarSection('csv-playback')">
                             <span class="section-icon text-xl drop-shadow-[0_0_8px_rgba(255,127,80,0.3)]">📊</span>
-                            <h4 class="section-title flex-1 text-orange-400 text-base font-bold m-0 border-none p-0 drop-shadow-[0_0_15px_rgba(255,127,80,0.3)] tracking-[0.5px]">CSV再生モード</h4>
+                            <h4 class="section-title flex-1 text-orange-400 text-sm font-bold m-0 border-none p-0 drop-shadow-[0_0_15px_rgba(255,127,80,0.3)] tracking-[0.5px]">CSV再生モード</h4>
                             <span id="csv-playback-toggle" class="section-toggle text-orange-400 text-sm transition-transform duration-300 drop-shadow-[0_0_4px_rgba(255,127,80,0.3)]">▶</span>
                         </div>
                         <div id="csv-playback" class="sidebar-section-content collapsed">
@@ -272,27 +297,19 @@
                             <div class="control-row">
                                 <div class="control-group">
                                     <label>CSVファイル:</label>
-                                    <input type="file" id="csvPlaybackInput" accept=".csv" class="w-full px-2.5 py-1.5 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-[13px] font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40">
+                                    <input type="file" id="csvPlaybackInput" accept=".csv" class="w-0 flex-1 min-w-0 px-2 py-1 bg-white/[0.06] border border-orange-500/20 rounded-md text-white text-xs font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 overflow-hidden file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-orange-500/20 file:text-orange-300 hover:file:bg-orange-500/30">
                                 </div>
                             </div>
                             
                             <!-- File Status -->
-                            <div id="csvFileStatus" class="control-row hidden">
-                                <div class="status-indicator p-2 rounded-lg text-[13px]">
-                                    <span id="csvStatusText">ファイルが選択されていません</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Sample Files -->
-                            <div class="control-row">
+                            <div id="csvFileStatus" class="control-row">
                                 <div class="control-group">
-                                    <label>サンプルファイル:</label>
-                                    <div class="flex gap-2 flex-wrap">
-                                        <button id="loadSampleSingle" class="text-xs px-2 py-1 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all">1機</button>
-                                        <button id="loadSampleMultiple" class="text-xs px-2 py-1 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all">3機</button>
+                                    <div class="status-indicator p-2 rounded-lg text-xs bg-orange-500/[0.08] border border-orange-500/20 w-full text-center overflow-hidden">
+                                        <span id="csvStatusText" class="text-orange-300/80 block truncate">ファイル未選択</span>
                                     </div>
                                 </div>
                             </div>
+                            
                             
                             <!-- Playback Controls -->
                             <div id="csvPlaybackControls" class="control-section hidden">
@@ -301,7 +318,8 @@
                                 <!-- Play/Pause/Stop Controls -->
                                 <div class="control-row">
                                     <div class="control-group">
-                                        <div class="flex gap-1">
+                                        <label>再生制御:</label>
+                                        <div class="flex gap-2">
                                             <button id="csvPlayPause" class="text-sm px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all">▶ 再生</button>
                                             <button id="csvStop" class="text-sm px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all">⏹ 停止</button>
                                         </div>
@@ -319,7 +337,8 @@
                                 <!-- Time Display -->
                                 <div class="control-row">
                                     <div class="control-group">
-                                        <span class="text-[12px] text-orange-300/80">
+                                        <label>時間:</label>
+                                        <span class="text-[12px] text-orange-300/80 font-mono">
                                             <span id="csvCurrentTime">0.0</span>s / <span id="csvTotalTime">0.0</span>s
                                         </span>
                                     </div>
@@ -329,7 +348,7 @@
                                 <div class="control-row">
                                     <div class="control-group">
                                         <input type="checkbox" id="csvLoopEnabled" checked class="w-4 h-4 cursor-pointer accent-orange-500">
-                                        <label class="text-[13px]">ループ再生</label>
+                                        <label for="csvLoopEnabled" class="text-[13px]">ループ再生</label>
                                     </div>
                                 </div>
                                 
@@ -349,39 +368,39 @@
             
                     <!-- 基準軌道 -->
                     <div class="sidebar-section mb-3 border border-orange-500/15 rounded-2xl overflow-hidden bg-gradient-to-br from-white/[0.03] to-white/[0.01] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_40px_rgba(255,127,80,0.1)]">
-                        <div class="sidebar-section-header px-4 py-3 bg-gradient-to-br from-orange-500/10 to-orange-500/[0.05] cursor-pointer select-none flex items-center gap-2.5 transition-all duration-300 relative overflow-hidden hover:from-orange-500/15 hover:to-orange-500/[0.08] hover:pl-5 before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-orange-500/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-[100%]" onclick="toggleSidebarSection('reference-orbit')">
+                        <div class="sidebar-section-header px-3 py-2 bg-gradient-to-br from-orange-500/10 to-orange-500/[0.05] cursor-pointer select-none flex items-center gap-2 transition-all duration-300 relative overflow-hidden hover:from-orange-500/15 hover:to-orange-500/[0.08] hover:pl-4 before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-orange-500/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-[100%]" onclick="toggleSidebarSection('reference-orbit')">
                             <span class="section-icon text-xl drop-shadow-[0_0_8px_rgba(255,127,80,0.3)]">🌍</span>
-                            <h4 class="section-title flex-1 text-orange-400 text-base font-bold m-0 border-none p-0 drop-shadow-[0_0_15px_rgba(255,127,80,0.3)] tracking-[0.5px]">基準軌道</h4>
+                            <h4 class="section-title flex-1 text-orange-400 text-sm font-bold m-0 border-none p-0 drop-shadow-[0_0_15px_rgba(255,127,80,0.3)] tracking-[0.5px]">基準軌道</h4>
                             <span id="reference-orbit-toggle" class="section-toggle text-orange-400 text-sm transition-transform duration-300 drop-shadow-[0_0_4px_rgba(255,127,80,0.3)]">▶</span>
                         </div>
                         <div id="reference-orbit" class="sidebar-section-content collapsed">
                             <div class="control-row">
                                 <div class="control-group">
-                                    <label>高度(km):</label>
+                                    <label>高度(KM):</label>
                                     <input type="number" id="orbitAltitude" min="200" max="36000" step="50" value="500">
                                 </div>
                             </div>
                             <div class="control-row">
                                 <div class="control-group">
-                                    <label>軌道傾斜角(°):</label>
+                                    <label>傾斜角(°):</label>
                                     <input type="number" id="inclination" min="0" max="180" step="0.1" value="51.6">
                                 </div>
                             </div>
                             <div class="control-row">
                                 <div class="control-group">
-                                    <label>昇交点経度(°):</label>
+                                    <label>昇交点(°):</label>
                                     <input type="number" id="raan" min="0" max="360" step="1" value="0">
                                 </div>
                             </div>
                             <div class="control-row">
                                 <div class="control-group">
-                                    <label>近地点引数(°):</label>
+                                    <label>近地点(°):</label>
                                     <input type="number" id="argOfPerigee" min="0" max="360" step="1" value="0">
                                 </div>
                             </div>
                             <div class="control-row">
                                 <div class="control-group">
-                                    <label>平均近点角(°):</label>
+                                    <label>平均近点(°):</label>
                                     <input type="number" id="meanAnomaly" min="0" max="360" step="1" value="0">
                                 </div>
                             </div>

@@ -26,14 +26,6 @@ export class CSVPlaybackController {
             }
         });
 
-        // Sample file buttons
-        this.uiControls.elements.loadSampleSingle.addEventListener('click', () => {
-            this.loadSampleFile('/public/samples/single_satellite_6dof.csv');
-        });
-
-        this.uiControls.elements.loadSampleMultiple.addEventListener('click', () => {
-            this.loadSampleFile('/public/samples/three_satellite_6dof.csv');
-        });
 
         // Playback controls (sidebar - legacy)
         if (this.uiControls.elements.csvPlayPause) {
