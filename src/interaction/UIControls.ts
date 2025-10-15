@@ -38,6 +38,8 @@ export interface UIControlElements {
     uniformSatelliteColor: HTMLInputElement;
     satelliteColor: HTMLInputElement;
     satelliteSize: HTMLInputElement;
+    satelliteSizeLabel: HTMLLabelElement;
+    satelliteSizeUnit: HTMLSpanElement;
     satelliteShape: HTMLSelectElement;
     cubeRotationControls: HTMLDivElement;
     cubeRotationR: HTMLInputElement;
@@ -126,6 +128,8 @@ export class UIControls {
             uniformSatelliteColor: document.getElementById('uniformSatelliteColor') as HTMLInputElement,
             satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement,
             satelliteSize: document.getElementById('satelliteSize') as HTMLInputElement,
+            satelliteSizeLabel: document.getElementById('satelliteSizeLabel') as HTMLLabelElement,
+            satelliteSizeUnit: document.getElementById('satelliteSizeUnit') as HTMLSpanElement,
             satelliteShape: document.getElementById('satelliteShape') as HTMLSelectElement,
             cubeRotationControls: document.getElementById('cubeRotationControls') as HTMLDivElement,
             cubeRotationR: document.getElementById('cubeRotationR') as HTMLInputElement,
@@ -324,12 +328,12 @@ export class UIControls {
         this.elements.satelliteCount.min = '1';
         this.elements.satelliteCount.value = defaultValue.toString();
         
-        // 円盤軌道の場合は衛星サイズを0.2に、それ以外は0.8に設定
+        // 円盤軌道の場合は衛星サイズを0.3m に、それ以外は1.0mに設定
         if (pattern === 'hexagonal_disk' || pattern === 'concentric_disk') {
-            this.elements.satelliteSize.value = '0.2';
+            this.elements.satelliteSize.value = '0.3';
             this.elements.diskPlacementControls.style.display = 'block';
         } else {
-            this.elements.satelliteSize.value = '0.8';
+            this.elements.satelliteSize.value = '1.0';
             this.elements.diskPlacementControls.style.display = 'none';
         }
         
@@ -357,6 +361,18 @@ export class UIControls {
         } else {
             this.elements.orbitRadiusControl.style.display = 'flex';
             this.elements.satelliteSpacingControl.style.display = 'none';
+        }
+    }
+
+    updateSatelliteSizeLabel(): void {
+        const shape = this.elements.satelliteShape.value;
+
+        if (shape === 'sphere') {
+            this.elements.satelliteSizeLabel.textContent = '直径:';
+        } else if (shape === 'cube') {
+            this.elements.satelliteSizeLabel.textContent = '一辺:';
+        } else {
+            this.elements.satelliteSizeLabel.textContent = 'サイズ:';
         }
     }
 

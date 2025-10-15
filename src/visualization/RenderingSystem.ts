@@ -215,13 +215,22 @@ export class RenderingSystem {
         const uniformColor = this.uiControls.elements.satelliteColor.value;
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
 
-        // 色配列を生成
+        // 色配列を生成（基準衛星の色も含める）
         const colorArray: number[] = [];
+
+        // 基準衛星（index=0）の色
+        if (useUniformColor) {
+            colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
+        } else {
+            colorArray.push(colors[0]); // 最初の色を基準衛星に割り当て
+        }
+
+        // 他の衛星の色
         for (let i = 1; i < satellites.length; i++) {
             if (useUniformColor) {
                 colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
             } else {
-                colorArray.push(colors[(i - 1) % colors.length]);
+                colorArray.push(colors[i % colors.length]);
             }
         }
 
@@ -520,11 +529,20 @@ export class RenderingSystem {
         if (this.useInstancedRendering && this.instancedRenderer) {
             // InstancedMesh mode: update colors through renderer
             const colorArray: number[] = [];
-            for (let i = 1; i < this.satelliteMeshes.length || i < 1000; i++) { // Assume max 1000 satellites
+
+            // 基準衛星（index=0）の色
+            if (isUniform) {
+                colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
+            } else {
+                colorArray.push(colors[0]);
+            }
+
+            // 他の衛星の色
+            for (let i = 1; i < this.satelliteMeshes.length || i < 1000; i++) {
                 if (isUniform) {
                     colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
                 } else {
-                    colorArray.push(colors[(i - 1) % colors.length]);
+                    colorArray.push(colors[i % colors.length]);
                 }
                 // Break if we've covered all satellites (approximation)
                 if (i > 500) break; // Safety limit

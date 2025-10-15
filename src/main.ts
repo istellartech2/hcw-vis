@@ -78,6 +78,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.updateOrbitParameters();
         this.uiControls.setupPlacementPatternLimits();
         this.uiControls.updatePeriodicParamsDisplay(); // Initialize slider displays
+        this.uiControls.updateSatelliteSizeLabel(); // Initialize size label
         this.initSimulation();
         
         // Create Earth (orbit radius in meters)

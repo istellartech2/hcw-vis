@@ -27,11 +27,12 @@ export class InstancedSatelliteRenderer {
     constructor(scene: THREE.Scene) {
         this.scene = scene;
 
-        // 基準衛星（中心、白色）を個別メッシュとして作成
+        // 基準衛星を個別メッシュとして作成（色は後で設定）
         const centerGeometry = new THREE.SphereGeometry(1, 32, 32);
         const centerMaterial = new THREE.MeshPhongMaterial({
-            color: 0xffffff
-            // 発光なし（外部光源のみで照らす）
+            color: 0xffffff,
+            emissive: 0xffffff,
+            emissiveIntensity: 0.0 // 発光を抑える（他の衛星と同じ設定）
         });
         this.centerSatelliteMesh = new THREE.Mesh(centerGeometry, centerMaterial);
         this.scene.add(this.centerSatelliteMesh);
@@ -40,7 +41,7 @@ export class InstancedSatelliteRenderer {
     /**
      * 衛星メッシュを生成
      * @param satelliteCount 衛星数（基準衛星を除く）
-     * @param satelliteSize 衛星サイズ
+     * @param satelliteSize 衛星サイズ（球体：直径[m]、立方体：一辺[m]）
      * @param satelliteShape 形状（'sphere' or 'cube'）
      * @param colors 各衛星の色配列
      */
@@ -57,6 +58,15 @@ export class InstancedSatelliteRenderer {
         this.instanceIdToSatelliteIndex.clear();
         this.originalColors = [...colors]; // 元の色を保存
 
+        // 基準衛星（index=0）の色を設定
+        if (colors.length > 0) {
+            const centerColor = colors[0];
+            this.tempColor.setHex(centerColor);
+            const material = this.centerSatelliteMesh.material as THREE.MeshPhongMaterial;
+            material.color.copy(this.tempColor);
+            material.emissive.copy(this.tempColor);
+        }
+
         if (satelliteCount === 0) return;
 
         // 基準衛星のサイズと形状を更新
@@ -65,10 +75,12 @@ export class InstancedSatelliteRenderer {
         // ジオメトリ作成
         let geometry: THREE.BufferGeometry;
         if (satelliteShape === 'cube') {
-            geometry = new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2);
+            // 立方体: satelliteSizeは一辺の長さ（m）
+            geometry = new THREE.BoxGeometry(satelliteSize, satelliteSize, satelliteSize);
         } else {
-            // 球体: 解像度を下げて頂点数を削減（32 → 16）
-            geometry = new THREE.SphereGeometry(satelliteSize, 16, 16);
+            // 球体: satelliteSizeは直径（m）なので、半径は diameter / 2
+            // 解像度を下げて頂点数を削減（32 → 16）
+            geometry = new THREE.SphereGeometry(satelliteSize / 2, 16, 16);
         }
 
         // マテリアル作成（カラーはインスタンス属性で制御）
@@ -92,8 +104,9 @@ export class InstancedSatelliteRenderer {
             this.tempMatrix.identity();
             this.instancedMesh.setMatrixAt(i, this.tempMatrix);
 
-            // 色を設定
-            const color = colors[i % colors.length];
+            // 色を設定（colors[0]は基準衛星用なので、一般衛星はcolors[i+1]から取得）
+            const colorIndex = (i + 1) % colors.length;
+            const color = colors[colorIndex];
             this.tempColor.setHex(color);
             this.instancedMesh.setColorAt(i, this.tempColor);
         }
@@ -109,6 +122,8 @@ export class InstancedSatelliteRenderer {
 
     /**
      * 基準衛星のジオメトリとサイズを更新
+     * @param satelliteSize 衛星サイズ（球体：直径[m]、立方体：一辺[m]）
+     * @param satelliteShape 形状（'sphere' or 'cube'）
      */
     private updateCenterSatellite(satelliteSize: number, satelliteShape: 'sphere' | 'cube'): void {
         // 既存ジオメトリを破棄
@@ -116,13 +131,15 @@ export class InstancedSatelliteRenderer {
 
         // 新しいジオメトリを作成
         if (satelliteShape === 'cube') {
+            // 立方体: satelliteSizeは一辺の長さ（m）
             this.centerSatelliteMesh.geometry = new THREE.BoxGeometry(
-                satelliteSize * 2,
-                satelliteSize * 2,
-                satelliteSize * 2
+                satelliteSize,
+                satelliteSize,
+                satelliteSize
             );
         } else {
-            this.centerSatelliteMesh.geometry = new THREE.SphereGeometry(satelliteSize, 32, 32);
+            // 球体: satelliteSizeは直径（m）なので、半径は diameter / 2
+            this.centerSatelliteMesh.geometry = new THREE.SphereGeometry(satelliteSize / 2, 32, 32);
         }
     }
 
@@ -202,7 +219,9 @@ export class InstancedSatelliteRenderer {
             this.instancedMesh.setMatrixAt(i, this.tempMatrix);
 
             // 色の設定（毎フレーム元の色に戻してから、選択時のみハイライト）
-            const originalColor = this.originalColors[i % this.originalColors.length];
+            // originalColors[0]は基準衛星用なので、一般衛星はoriginalColors[i+1]から取得
+            const colorIndex = (i + 1) % this.originalColors.length;
+            const originalColor = this.originalColors[colorIndex];
 
             if (selectedIndex === i + 1) {
                 // 選択時: 元の色を2倍明るくする（より目立つように）
@@ -225,7 +244,7 @@ export class InstancedSatelliteRenderer {
 
     /**
      * 全衛星の色を更新
-     * @param colors 新しい色配列
+     * @param colors 新しい色配列（colors[0]は基準衛星、colors[1]以降は一般衛星）
      */
     updateColors(colors: number[]): void {
         if (!this.instancedMesh) return;
@@ -233,8 +252,19 @@ export class InstancedSatelliteRenderer {
         // 元の色配列を更新
         this.originalColors = [...colors];
 
+        // 基準衛星の色を更新
+        if (colors.length > 0) {
+            const centerColor = colors[0];
+            this.tempColor.setHex(centerColor);
+            const material = this.centerSatelliteMesh.material as THREE.MeshPhongMaterial;
+            material.color.copy(this.tempColor);
+            material.emissive.copy(this.tempColor);
+        }
+
+        // 一般衛星の色を更新（colors[i+1]を使用）
         for (let i = 0; i < this.satelliteCount; i++) {
-            const color = colors[i % colors.length];
+            const colorIndex = (i + 1) % colors.length;
+            const color = colors[colorIndex];
             this.tempColor.setHex(color);
             this.instancedMesh.setColorAt(i, this.tempColor);
         }

@@ -150,7 +150,7 @@ export class EventHandler {
         this.uiControls.elements.satelliteShape.addEventListener('change', () => {
             // Show/hide shape-specific controls
             const shapeValue = this.uiControls.elements.satelliteShape.value;
-            
+
             if (shapeValue === 'cube') {
                 this.uiControls.elements.cubeRotationControls.style.display = 'flex';
                 this.uiControls.elements.file3dControls.style.display = 'none';
@@ -161,6 +161,10 @@ export class EventHandler {
                 this.uiControls.elements.cubeRotationControls.style.display = 'none';
                 this.uiControls.elements.file3dControls.style.display = 'none';
             }
+
+            // Update size label based on shape
+            this.uiControls.updateSatelliteSizeLabel();
+
             this.callbacks.resetSimulation(); // Recreate satellites with new shape
         });
         
