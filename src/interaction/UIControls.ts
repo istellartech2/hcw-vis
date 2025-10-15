@@ -1,7 +1,12 @@
 export interface UIControlElements {
     satelliteCount: HTMLInputElement;
     placementPattern: HTMLSelectElement;
+    diskPlacementMode: HTMLSelectElement;
+    diskPlacementControls: HTMLDivElement;
     orbitRadius: HTMLInputElement;
+    orbitRadiusControl: HTMLDivElement;
+    satelliteSpacing: HTMLInputElement;
+    satelliteSpacingControl: HTMLDivElement;
     orbitAltitude: HTMLInputElement;
     timeScale: HTMLSelectElement;
     simulationTime: HTMLSpanElement;
@@ -84,7 +89,12 @@ export class UIControls {
         this.elements = {
             satelliteCount: document.getElementById('satelliteCount') as HTMLInputElement,
             placementPattern: document.getElementById('placementPattern') as HTMLSelectElement,
+            diskPlacementMode: document.getElementById('diskPlacementMode') as HTMLSelectElement,
+            diskPlacementControls: document.getElementById('diskPlacementControls') as HTMLDivElement,
             orbitRadius: document.getElementById('orbitRadius') as HTMLInputElement,
+            orbitRadiusControl: document.getElementById('orbitRadiusControl') as HTMLDivElement,
+            satelliteSpacing: document.getElementById('satelliteSpacing') as HTMLInputElement,
+            satelliteSpacingControl: document.getElementById('satelliteSpacingControl') as HTMLDivElement,
             orbitAltitude: document.getElementById('orbitAltitude') as HTMLInputElement,
             timeScale: document.getElementById('timeScale') as HTMLSelectElement,
             simulationTime: document.getElementById('simulationTime') as HTMLSpanElement,
@@ -317,8 +327,10 @@ export class UIControls {
         // 円盤軌道の場合は衛星サイズを0.2に、それ以外は0.8に設定
         if (pattern === 'hexagonal_disk' || pattern === 'concentric_disk') {
             this.elements.satelliteSize.value = '0.2';
+            this.elements.diskPlacementControls.style.display = 'block';
         } else {
             this.elements.satelliteSize.value = '0.8';
+            this.elements.diskPlacementControls.style.display = 'none';
         }
         
         if (pattern === 'periodic_orbit') {
@@ -333,6 +345,18 @@ export class UIControls {
             this.elements.zAmplitudeControl.style.display = 'none';
             this.elements.periodicParamsControl.style.display = 'none';
             this.elements.circularZDirectionControl.style.display = 'none';
+        }
+    }
+
+    updateDiskPlacementMode(): void {
+        const mode = this.elements.diskPlacementMode.value;
+
+        if (mode === 'spacing') {
+            this.elements.orbitRadiusControl.style.display = 'none';
+            this.elements.satelliteSpacingControl.style.display = 'flex';
+        } else {
+            this.elements.orbitRadiusControl.style.display = 'flex';
+            this.elements.satelliteSpacingControl.style.display = 'none';
         }
     }
 

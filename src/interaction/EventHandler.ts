@@ -53,6 +53,17 @@ export class EventHandler {
             this.uiControls.setupPlacementPatternLimits();
             this.callbacks.resetSimulation();
         });
+
+        // Disk placement mode control
+        this.uiControls.elements.diskPlacementMode.addEventListener('change', () => {
+            this.uiControls.updateDiskPlacementMode();
+            this.callbacks.resetSimulation();
+        });
+
+        // Satellite spacing control
+        this.uiControls.elements.satelliteSpacing.addEventListener('change', () => {
+            this.callbacks.resetSimulation();
+        });
         
         this.uiControls.elements.circularZDirection.addEventListener('change', () => {
             this.callbacks.resetSimulation();

@@ -242,15 +242,22 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     
     private generatePlacementPositions(
-        pattern: string, 
-        count: number, 
-        radius: number, 
-        zSpread: number, 
-        zAmplitudeMultiplier?: number, 
+        pattern: string,
+        count: number,
+        radius: number,
+        zSpread: number,
+        zAmplitudeMultiplier?: number,
         positiveZ?: boolean,
         periodicParams?: { A: number, B: number, D: number, E: number, F: number }
     ): Array<{x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number}> {
-        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier, positiveZ, periodicParams);
+        // Check if spacing mode is selected for disk patterns
+        let spacing: number | undefined;
+        if ((pattern === 'hexagonal_disk' || pattern === 'concentric_disk') &&
+            this.uiControls.elements.diskPlacementMode.value === 'spacing') {
+            spacing = parseFloat(this.uiControls.elements.satelliteSpacing.value);
+        }
+
+        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier, positiveZ, periodicParams, spacing);
     }
     
     public updateAllSatelliteColors(): void {

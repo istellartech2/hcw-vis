@@ -39,7 +39,8 @@ export class OrbitInitializer {
         zSpread: number,      // m
         zAmplitudeMultiplier?: number,
         positiveZ?: boolean,
-        periodicParams?: { A: number, B: number, D: number, E: number, F: number }
+        periodicParams?: { A: number, B: number, D: number, E: number, F: number },
+        spacing?: number      // m - satellite spacing (alternative to radius for disk patterns)
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
         
@@ -72,9 +73,9 @@ export class OrbitInitializer {
                 return this.generateRBarApproach(count, radius);
                 
             case 'hexagonal_disk':
-                return this.generateHexagonalDisk(count, radius);
+                return this.generateHexagonalDisk(count, radius, spacing);
             case 'concentric_disk':
-                return this.generateConcentricDisk(count, radius);
+                return this.generateConcentricDisk(count, radius, spacing);
                 
             default:
                 return this.generateAxisPositions(count, radius);
@@ -390,15 +391,15 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateHexagonalDisk(count: number, radius: number): InitialCondition[] {
+    private generateHexagonalDisk(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        
+
         // docs/diskOrbit.mdに基づいた実装
         // 正六角形タイル張り（ハニカム格子）を使用
-        
+
         // Step 1: 必要な最小リング数kを計算
         const k = Math.ceil((-3 + Math.sqrt(12 * count - 3)) / 6);
-        
+
         // Step 2: 軸座標(m, n)の点を生成し、半径の二乗を計算
         interface HexPoint {
             m: number;
@@ -407,15 +408,15 @@ export class OrbitInitializer {
             x: number;
             y: number;
         }
-        
+
         const points: HexPoint[] = [];
-        
+
         // 範囲 m = -k ... k でループ
         for (let m = -k; m <= k; m++) {
             // n の有効範囲を d ≤ k 条件で絞る
             const n_min = Math.max(-k, -m - k);
             const n_max = Math.min(k, -m + k);
-            
+
             for (let n = n_min; n <= n_max; n++) {
                 // 距離条件をチェック
                 const d = (Math.abs(m) + Math.abs(n) + Math.abs(m + n)) / 2;
@@ -423,15 +424,15 @@ export class OrbitInitializer {
                     // 直交座標への変換
                     const x = m + 0.5 * n;
                     const y = (Math.sqrt(3) / 2) * n;
-                    
+
                     // 半径の二乗
                     const r_sq = m * m + m * n + n * n;
-                    
+
                     points.push({ m, n, r_sq, x, y });
                 }
             }
         }
-        
+
         // Step 3: r_sq昇順 → theta昇順にソート
         points.sort((a, b) => {
             if (a.r_sq !== b.r_sq) {
@@ -442,19 +443,31 @@ export class OrbitInitializer {
             const theta_b = Math.atan2(b.y, b.x);
             return theta_a - theta_b;
         });
-        
+
         // Step 4: 先頭count個を取得し、円軌道の初期条件に変換
         const sqrt5 = Math.sqrt(5);
-        
+
+        // スケール係数を計算
+        // spacing指定の場合: 六角格子の単位距離がspacingになるようスケール
+        // radius指定の場合: 最外殻がradiusになるようスケール
+        let scaleFactor: number;
+        if (spacing !== undefined && spacing > 0) {
+            // 衛星間距離ベース: spacing * k が全体の半径になる
+            scaleFactor = spacing * k;
+        } else {
+            // 範囲ベース: radiusが全体の半径
+            scaleFactor = radius;
+        }
+
         for (let i = 0; i < Math.min(count, points.length); i++) {
             const point = points[i];
-            
+
             // 極座標に変換
             const r_normalized = Math.sqrt(point.r_sq);
             const theta = Math.atan2(point.y, point.x);
-            
+
             // 実際の半径にスケール
-            const r = (r_normalized / k) * radius;
+            const r = (r_normalized / k) * scaleFactor;
             
             // 円軌道の初期条件（docs/diskOrbit.mdの式を使用）
             const x0 = (r / sqrt5) * Math.cos(theta);
@@ -478,24 +491,39 @@ export class OrbitInitializer {
         return positions;
     }
 
-    private generateConcentricDisk(count: number, radius: number): InitialCondition[] {
+    private generateConcentricDisk(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
 
         if (count <= 0) {
             return positions;
         }
 
-        if (radius <= 0) {
-            for (let i = 0; i < count; i++) {
-                positions.push({ x0: 0, y0: 0, z0: 0, vx0: 0, vy0: 0, vz0: 0 });
-            }
-            return positions;
-        }
-
         const sqrt5 = Math.sqrt(5);
         const sqrt3 = Math.sqrt(3);
-        const normalizedCount = Math.max(1, count);
-        const spacing = Math.max(radius / Math.ceil(Math.sqrt(normalizedCount)), radius / normalizedCount, 1e-6);
+
+        // スペーシングを決定
+        // spacing指定の場合: ユーザー指定の衛星間距離を使用
+        // radius指定の場合: 衛星数から自動計算
+        let ringSpacing: number;
+        let maxRadius: number;
+
+        if (spacing !== undefined && spacing > 0) {
+            // 衛星間距離ベース
+            ringSpacing = spacing;
+            // 最大半径は制限なし（必要なリング数から自動決定）
+            maxRadius = Infinity;
+        } else {
+            // 範囲ベース（従来の方法）
+            if (radius <= 0) {
+                for (let i = 0; i < count; i++) {
+                    positions.push({ x0: 0, y0: 0, z0: 0, vx0: 0, vy0: 0, vz0: 0 });
+                }
+                return positions;
+            }
+            const normalizedCount = Math.max(1, count);
+            ringSpacing = Math.max(radius / Math.ceil(Math.sqrt(normalizedCount)), radius / normalizedCount, 1e-6);
+            maxRadius = radius;
+        }
 
         interface RingConfig {
             radius: number;
@@ -511,10 +539,10 @@ export class OrbitInitializer {
                 rings.push({ radius: 0, nodes: 1 });
                 remaining -= 1;
             } else {
-                const rawRadius = level * spacing;
-                const r = Math.min(rawRadius, radius);
-                const circumference = 2 * Math.PI * Math.max(r, spacing);
-                const estimatedNodes = Math.round(circumference / spacing);
+                const rawRadius = level * ringSpacing;
+                const r = Math.min(rawRadius, maxRadius);
+                const circumference = 2 * Math.PI * Math.max(r, ringSpacing);
+                const estimatedNodes = Math.round(circumference / ringSpacing);
                 let nodes = Math.max(6, estimatedNodes);
                 nodes = Math.max(1, Math.min(nodes, remaining));
                 rings.push({ radius: r, nodes });
