@@ -4,6 +4,7 @@ import { TrailRenderer } from './TrailRenderer.js';
 import { CelestialBodies } from './CelestialBodies.js';
 import { UIControls } from '../interaction/UIControls.js';
 import { ModelLoader } from './ModelLoader.js';
+import { InstancedSatelliteRenderer } from './InstancedSatelliteRenderer.js';
 
 export class RenderingSystem {
     private scene: THREE.Scene;
@@ -19,7 +20,11 @@ export class RenderingSystem {
     private animationFrameCounter: number = 0;
     private modelLoader: ModelLoader;
     private loadedModel: THREE.Group | THREE.Mesh | null = null;
-    
+
+    // InstancedMesh renderer (for sphere/cube shapes)
+    private instancedRenderer: InstancedSatelliteRenderer | null = null;
+    private useInstancedRendering: boolean = false; // true if using InstancedMesh
+
     // Selection system
     private selectedSatelliteIndex: number = -1;
     private raycaster: THREE.Raycaster;
@@ -37,14 +42,15 @@ export class RenderingSystem {
         this.renderer = renderer;
         this.container = container;
         this.uiControls = uiControls;
-        
+
         this.trailRenderer = new TrailRenderer(this.scene);
         this.celestialBodies = new CelestialBodies(this.scene);
         this.modelLoader = new ModelLoader();
-        
+        this.instancedRenderer = new InstancedSatelliteRenderer(this.scene);
+
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
-        
+
         this.setupRenderer();
         this.setupLighting();
         this.axesGroup = this.createAxes();
@@ -61,14 +67,31 @@ export class RenderingSystem {
     }
 
     private setupLighting(): void {
-        const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+        // 環境光を強化（全体的な明るさ）
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         this.scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(100, 100, 50);
-        this.scene.add(directionalLight);
-        
-        const pointLight = new THREE.PointLight(0xff7f50, 0.5);
+
+        // メインの指向性ライト（上前方から）
+        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+        directionalLight1.position.set(100, 100, 50);
+        this.scene.add(directionalLight1);
+
+        // サブの指向性ライト（下後方から、影を柔らかく）
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+        directionalLight2.position.set(-50, -50, -50);
+        this.scene.add(directionalLight2);
+
+        // サイドライト（左右から）
+        const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight3.position.set(100, 0, -100);
+        this.scene.add(directionalLight3);
+
+        const directionalLight4 = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight4.position.set(-100, 0, 100);
+        this.scene.add(directionalLight4);
+
+        // 中心のポイントライト（アクセント）
+        const pointLight = new THREE.PointLight(0xffffff, 0.3);
         pointLight.position.set(0, 0, 0);
         this.scene.add(pointLight);
     }
@@ -132,7 +155,7 @@ export class RenderingSystem {
         // Clean up existing meshes
         this.satelliteMeshes.forEach(meshOrGroup => {
             this.scene.remove(meshOrGroup);
-            
+
             // If it's a group (3D model), traverse and dispose all children
             if (meshOrGroup instanceof THREE.Group) {
                 meshOrGroup.traverse((child) => {
@@ -161,16 +184,69 @@ export class RenderingSystem {
                 }
             }
         });
-        
+
         this.satelliteMeshes = [];
-        
+
         // Get satellite size and shape from UI controls
         const satelliteSize = parseFloat(this.uiControls.elements.satelliteSize.value);
         const satelliteShape = this.uiControls.elements.satelliteShape.value;
-        
+
+        // Determine rendering mode: InstancedMesh for sphere/cube, fallback for 3dfile
+        this.useInstancedRendering = (satelliteShape === 'sphere' || satelliteShape === 'cube') && satellites.length > 1;
+
+        if (this.useInstancedRendering) {
+            // Use InstancedMesh for sphere/cube shapes
+            this.createSatelliteMeshesInstanced(satellites, satelliteSize, satelliteShape);
+        } else {
+            // Fallback to traditional individual meshes for 3D files or single satellite
+            this.createSatelliteMeshesTraditional(satellites, satelliteSize, satelliteShape);
+        }
+    }
+
+    /**
+     * InstancedMeshを使用した衛星メッシュ作成（球体・立方体専用）
+     */
+    private createSatelliteMeshesInstanced(
+        satellites: Satellite[],
+        satelliteSize: number,
+        satelliteShape: string
+    ): void {
+        const useUniformColor = this.uiControls.elements.uniformSatelliteColor.checked;
+        const uniformColor = this.uiControls.elements.satelliteColor.value;
+        const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
+
+        // 色配列を生成
+        const colorArray: number[] = [];
+        for (let i = 1; i < satellites.length; i++) {
+            if (useUniformColor) {
+                colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
+            } else {
+                colorArray.push(colors[(i - 1) % colors.length]);
+            }
+        }
+
+        // InstancedSatelliteRendererを使用して衛星を作成
+        if (this.instancedRenderer) {
+            this.instancedRenderer.createSatellites(
+                satellites.length - 1, // 基準衛星を除く
+                satelliteSize,
+                satelliteShape as 'sphere' | 'cube',
+                colorArray
+            );
+        }
+    }
+
+    /**
+     * 従来方式の個別メッシュ作成（3Dファイル用、またはフォールバック）
+     */
+    private createSatelliteMeshesTraditional(
+        satellites: Satellite[],
+        satelliteSize: number,
+        satelliteShape: string
+    ): void {
         // Create center satellite
         let centerMesh: THREE.Mesh | THREE.Group;
-        
+
         if (satelliteShape === '3dfile' && this.loadedModel) {
             // Clone the loaded model for the center satellite
             centerMesh = this.loadedModel.clone();
@@ -266,13 +342,77 @@ export class RenderingSystem {
     }
 
     public updateSatellitePositions(satellites: Satellite[]): void {
+        // Use InstancedMesh rendering if enabled
+        if (this.useInstancedRendering && this.instancedRenderer) {
+            this.updateSatellitePositionsInstanced(satellites);
+            return;
+        }
+
+        // Fallback to traditional rendering
+        this.updateSatellitePositionsTraditional(satellites);
+    }
+
+    /**
+     * InstancedMeshを使用した衛星位置更新
+     */
+    private updateSatellitePositionsInstanced(satellites: Satellite[]): void {
+        const satelliteShape = this.uiControls.elements.satelliteShape.value;
+        const isCube = satelliteShape === 'cube';
+
+        let rotationR = 0;
+        let rotationS = 0;
+
+        if (isCube) {
+            rotationR = parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180;
+            rotationS = parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180;
+        }
+
+        if (this.instancedRenderer) {
+            this.instancedRenderer.updateSatellitePositions(
+                satellites,
+                rotationR,
+                rotationS,
+                this.selectedSatelliteIndex
+            );
+        }
+
+        // Update trails (same as traditional mode)
+        if (this.uiControls.elements.showTrails.checked) {
+            const trailMax = parseInt(this.uiControls.elements.trailLength.value);
+            const scale = 1;
+
+            for (let index = 1; index < satellites.length; index++) {
+                const sat = satellites[index];
+                const pos = sat.getPosition();
+
+                // Get color for this satellite
+                const useUniformColor = this.uiControls.elements.uniformSatelliteColor.checked;
+                const uniformColor = this.uiControls.elements.satelliteColor.value;
+                const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
+
+                let color: THREE.Color;
+                if (useUniformColor) {
+                    color = new THREE.Color(parseInt(uniformColor.replace('#', ''), 16));
+                } else {
+                    color = new THREE.Color(colors[(index - 1) % colors.length]);
+                }
+
+                this.trailRenderer.updateTrail(sat, pos, scale, color, trailMax);
+            }
+        }
+    }
+
+    /**
+     * 従来方式の衛星位置更新
+     */
+    private updateSatellitePositionsTraditional(satellites: Satellite[]): void {
         const satelliteShape = this.uiControls.elements.satelliteShape.value;
         const isCube = satelliteShape === 'cube';
         const is3DFile = satelliteShape === '3dfile';
-        
+
         let rotationR = 0;
         let rotationS = 0;
-        
+
         if (isCube) {
             rotationR = parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180;
             rotationS = parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180;
@@ -280,7 +420,7 @@ export class RenderingSystem {
             rotationR = parseFloat(this.uiControls.elements.file3dRotationR.value) * Math.PI / 180;
             rotationS = parseFloat(this.uiControls.elements.file3dRotationS.value) * Math.PI / 180;
         }
-        
+
         satellites.forEach((sat, index) => {
             const pos = sat.getPosition();
             const scale = 1; // 1m in Hill coords = 1 units in Three.js
@@ -376,8 +516,26 @@ export class RenderingSystem {
         const isUniform = this.uiControls.elements.uniformSatelliteColor.checked;
         const uniformColor = this.uiControls.elements.satelliteColor.value;
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
+
+        if (this.useInstancedRendering && this.instancedRenderer) {
+            // InstancedMesh mode: update colors through renderer
+            const colorArray: number[] = [];
+            for (let i = 1; i < this.satelliteMeshes.length || i < 1000; i++) { // Assume max 1000 satellites
+                if (isUniform) {
+                    colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
+                } else {
+                    colorArray.push(colors[(i - 1) % colors.length]);
+                }
+                // Break if we've covered all satellites (approximation)
+                if (i > 500) break; // Safety limit
+            }
+            this.instancedRenderer.updateColors(colorArray);
+            return;
+        }
+
+        // Traditional mode
         const is3DFile = this.uiControls.elements.satelliteShape.value === '3dfile';
-        
+
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
             const mesh = this.satelliteMeshes[i];
             
@@ -417,33 +575,70 @@ export class RenderingSystem {
     private checkSatelliteSelection(): void {
         try {
             this.raycaster.setFromCamera(this.mouse, this.camera);
-            // Use recursive intersection to handle Groups
-            const intersects = this.raycaster.intersectObjects(this.satelliteMeshes, true);
-            
-            if (intersects.length > 0) {
-                const clickedObject = intersects[0].object;
-                
-                // Find which satellite mesh/group contains the clicked object
-                let index = -1;
-                for (let i = 0; i < this.satelliteMeshes.length; i++) {
-                    const satelliteMesh = this.satelliteMeshes[i];
-                    if (satelliteMesh === clickedObject || 
-                        (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))) {
-                        index = i;
-                        break;
+
+            if (this.useInstancedRendering && this.instancedRenderer) {
+                // InstancedMesh mode: check both center satellite and instanced mesh
+                const objectsToTest: THREE.Object3D[] = [];
+
+                const centerMesh = this.instancedRenderer.getCenterSatelliteMesh();
+                if (centerMesh) objectsToTest.push(centerMesh);
+
+                const instancedMesh = this.instancedRenderer.getInstancedMesh();
+                if (instancedMesh) objectsToTest.push(instancedMesh);
+
+                const intersects = this.raycaster.intersectObjects(objectsToTest, true);
+
+                if (intersects.length > 0) {
+                    const intersection = intersects[0];
+
+                    // Check if it's the center satellite
+                    if (intersection.object === centerMesh) {
+                        this.selectedSatelliteIndex = 0;
+                        console.log(`Selected satellite 0 (center)`);
+                        this.updateSelectedSatelliteInfo();
                     }
-                }
-                
-                if (index >= 0 && index < this.satelliteMeshes.length) {
-                    this.selectedSatelliteIndex = index;
-                    console.log(`Selected satellite ${index}`);
-                    this.updateSelectedSatelliteInfo();
+                    // Check if it's an instance from InstancedMesh
+                    else if (intersection.object === instancedMesh && intersection.instanceId !== undefined) {
+                        const satelliteIndex = this.instancedRenderer.getSatelliteIndexFromInstanceId(intersection.instanceId);
+                        if (satelliteIndex >= 0) {
+                            this.selectedSatelliteIndex = satelliteIndex;
+                            console.log(`Selected satellite ${satelliteIndex} (instanceId: ${intersection.instanceId})`);
+                            this.updateSelectedSatelliteInfo();
+                        }
+                    }
                 } else {
-                    console.warn(`Invalid satellite index: ${index}`);
+                    this.selectedSatelliteIndex = -1;
+                    this.updateSelectedSatelliteInfo();
                 }
             } else {
-                this.selectedSatelliteIndex = -1;
-                this.updateSelectedSatelliteInfo();
+                // Traditional mode: use recursive intersection to handle Groups
+                const intersects = this.raycaster.intersectObjects(this.satelliteMeshes, true);
+
+                if (intersects.length > 0) {
+                    const clickedObject = intersects[0].object;
+
+                    // Find which satellite mesh/group contains the clicked object
+                    let index = -1;
+                    for (let i = 0; i < this.satelliteMeshes.length; i++) {
+                        const satelliteMesh = this.satelliteMeshes[i];
+                        if (satelliteMesh === clickedObject ||
+                            (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))) {
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    if (index >= 0 && index < this.satelliteMeshes.length) {
+                        this.selectedSatelliteIndex = index;
+                        console.log(`Selected satellite ${index}`);
+                        this.updateSelectedSatelliteInfo();
+                    } else {
+                        console.warn(`Invalid satellite index: ${index}`);
+                    }
+                } else {
+                    this.selectedSatelliteIndex = -1;
+                    this.updateSelectedSatelliteInfo();
+                }
             }
         } catch (error) {
             console.error('Error in satellite selection:', error);
