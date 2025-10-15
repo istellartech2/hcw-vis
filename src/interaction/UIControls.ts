@@ -298,6 +298,10 @@ export class UIControls {
                 maxSatellites = 127; // 1 + 3*1*2 + 3*2*2 + ... + 3*6*2 = 127 (up to 6 layers)
                 defaultValue = 100; // Set to 100 as requested
                 break;
+            case 'concentric_disk':
+                maxSatellites = 180; // 同心リング配置の想定上限
+                defaultValue = 100;
+                break;
             default:
                 maxSatellites = 5;
                 defaultValue = 1;
@@ -309,7 +313,7 @@ export class UIControls {
         this.elements.satelliteCount.value = defaultValue.toString();
         
         // 円盤軌道の場合は衛星サイズを0.2に、それ以外は0.8に設定
-        if (pattern === 'hexagonal_disk') {
+        if (pattern === 'hexagonal_disk' || pattern === 'concentric_disk') {
             this.elements.satelliteSize.value = '0.2';
         } else {
             this.elements.satelliteSize.value = '0.8';

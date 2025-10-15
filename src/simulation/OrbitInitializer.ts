@@ -17,7 +17,8 @@ export type PlacementPattern =
     | 'circular_orbit'
     | 'vbar_approach'
     | 'rbar_approach'
-    | 'hexagonal_disk';
+    | 'hexagonal_disk'
+    | 'concentric_disk';
 
 export class OrbitInitializer {
     // 平均運動 (rad/s)
@@ -72,6 +73,8 @@ export class OrbitInitializer {
                 
             case 'hexagonal_disk':
                 return this.generateHexagonalDisk(count, radius);
+            case 'concentric_disk':
+                return this.generateConcentricDisk(count, radius);
                 
             default:
                 return this.generateAxisPositions(count, radius);
@@ -472,6 +475,84 @@ export class OrbitInitializer {
             });
         }
         
+        return positions;
+    }
+
+    private generateConcentricDisk(count: number, radius: number): InitialCondition[] {
+        const positions: InitialCondition[] = [];
+
+        if (count <= 0) {
+            return positions;
+        }
+
+        if (radius <= 0) {
+            for (let i = 0; i < count; i++) {
+                positions.push({ x0: 0, y0: 0, z0: 0, vx0: 0, vy0: 0, vz0: 0 });
+            }
+            return positions;
+        }
+
+        const sqrt5 = Math.sqrt(5);
+        const sqrt3 = Math.sqrt(3);
+        const normalizedCount = Math.max(1, count);
+        const spacing = Math.max(radius / Math.ceil(Math.sqrt(normalizedCount)), radius / normalizedCount, 1e-6);
+
+        interface RingConfig {
+            radius: number;
+            nodes: number;
+        }
+
+        const rings: RingConfig[] = [];
+        let remaining = count;
+        let level = 0;
+
+        while (remaining > 0 && level < 1000) {
+            if (level === 0) {
+                rings.push({ radius: 0, nodes: 1 });
+                remaining -= 1;
+            } else {
+                const rawRadius = level * spacing;
+                const r = Math.min(rawRadius, radius);
+                const circumference = 2 * Math.PI * Math.max(r, spacing);
+                const estimatedNodes = Math.round(circumference / spacing);
+                let nodes = Math.max(6, estimatedNodes);
+                nodes = Math.max(1, Math.min(nodes, remaining));
+                rings.push({ radius: r, nodes });
+                remaining -= nodes;
+            }
+            level += 1;
+        }
+
+        for (let ringIndex = 0; ringIndex < rings.length && positions.length < count; ringIndex++) {
+            const { radius: ringRadius, nodes } = rings[ringIndex];
+            if (nodes <= 0) {
+                continue;
+            }
+
+            const deltaTheta = (2 * Math.PI) / nodes;
+            const offset = ringIndex % 2 === 0 ? 0 : deltaTheta / 2;
+
+            for (let node = 0; node < nodes && positions.length < count; node++) {
+                const theta = offset + node * deltaTheta;
+                const cosTheta = Math.cos(theta);
+                const sinTheta = Math.sin(theta);
+
+                const x0 = (ringRadius / sqrt5) * cosTheta;
+                const y0 = (2 * ringRadius / sqrt5) * sinTheta;
+                const z0 = (sqrt3 * ringRadius / sqrt5) * cosTheta;
+
+                const vx0 = (ringRadius * this.n / sqrt5) * sinTheta;
+                const vy0 = -(2 * ringRadius * this.n / sqrt5) * cosTheta;
+                const vz0 = (sqrt3 * ringRadius * this.n / sqrt5) * sinTheta;
+
+                positions.push({ x0, y0, z0, vx0, vy0, vz0 });
+            }
+        }
+
+        while (positions.length < count) {
+            positions.push({ x0: 0, y0: 0, z0: 0, vx0: 0, vy0: 0, vz0: 0 });
+        }
+
         return positions;
     }
 }
