@@ -12,6 +12,7 @@ export class RenderingSystem {
     private container: HTMLElement;
     private satelliteMeshes: (THREE.Mesh | THREE.Group)[] = [];
     private gridHelper: THREE.GridHelper;
+    private axesGroup: THREE.Group;
     private trailRenderer: TrailRenderer;
     private celestialBodies: CelestialBodies;
     private uiControls: UIControls;
@@ -46,7 +47,7 @@ export class RenderingSystem {
         
         this.setupRenderer();
         this.setupLighting();
-        this.createAxes();
+        this.axesGroup = this.createAxes();
         this.gridHelper = this.createGrid();
         this.setupSatelliteSelection();
     }
@@ -72,7 +73,7 @@ export class RenderingSystem {
         this.scene.add(pointLight);
     }
 
-    private createAxes(): void {
+    private createAxes(): THREE.Group {
         const axesGroup = new THREE.Group();
         
         // X-axis (Along-track)
@@ -103,6 +104,8 @@ export class RenderingSystem {
         axesGroup.add(zAxis);
         
         this.scene.add(axesGroup);
+        axesGroup.visible = this.uiControls.elements.showAxes.checked;
+        return axesGroup;
     }
 
     private createGrid(): THREE.GridHelper {
@@ -468,6 +471,7 @@ export class RenderingSystem {
 
     public render(): void {
         this.gridHelper.visible = this.uiControls.elements.showGrid.checked;
+        this.axesGroup.visible = this.uiControls.elements.showAxes.checked;
         this.renderer.render(this.scene, this.camera);
     }
 
