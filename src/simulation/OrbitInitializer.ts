@@ -7,6 +7,15 @@ export interface InitialCondition {
     vz0: number;
 }
 
+interface HexLatticePoint {
+    q: number;
+    r: number;
+    x: number;
+    y: number;
+    theta: number;
+    radiusEuclid: number;
+}
+
 export type PlacementPattern = 
     | 'axis' 
     | 'grid' 
@@ -394,101 +403,125 @@ export class OrbitInitializer {
     private generateHexagonalDisk(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
 
-        // docs/diskOrbit.mdに基づいた実装
-        // 正六角形タイル張り（ハニカム格子）を使用
-
-        // Step 1: 必要な最小リング数kを計算
-        const k = Math.ceil((-3 + Math.sqrt(12 * count - 3)) / 6);
-
-        // Step 2: 軸座標(m, n)の点を生成し、半径の二乗を計算
-        interface HexPoint {
-            m: number;
-            n: number;
-            r_sq: number;
-            x: number;
-            y: number;
+        if (count <= 0) {
+            return positions;
         }
 
-        const points: HexPoint[] = [];
-
-        // 範囲 m = -k ... k でループ
-        for (let m = -k; m <= k; m++) {
-            // n の有効範囲を d ≤ k 条件で絞る
-            const n_min = Math.max(-k, -m - k);
-            const n_max = Math.min(k, -m + k);
-
-            for (let n = n_min; n <= n_max; n++) {
-                // 距離条件をチェック
-                const d = (Math.abs(m) + Math.abs(n) + Math.abs(m + n)) / 2;
-                if (d <= k) {
-                    // 直交座標への変換
-                    const x = m + 0.5 * n;
-                    const y = (Math.sqrt(3) / 2) * n;
-
-                    // 半径の二乗
-                    const r_sq = m * m + m * n + n * n;
-
-                    points.push({ m, n, r_sq, x, y });
-                }
-            }
-        }
-
-        // Step 3: r_sq昇順 → theta昇順にソート
-        points.sort((a, b) => {
-            if (a.r_sq !== b.r_sq) {
-                return a.r_sq - b.r_sq;
-            }
-            // r_sqが同じ場合はthetaでソート
-            const theta_a = Math.atan2(a.y, a.x);
-            const theta_b = Math.atan2(b.y, b.x);
-            return theta_a - theta_b;
-        });
-
-        // Step 4: 先頭count個を取得し、円軌道の初期条件に変換
+        const hexPoints = this.generateHexLatticePoints(count);
         const sqrt5 = Math.sqrt(5);
+        const sqrt3 = Math.sqrt(3);
 
-        // スケール係数を計算
-        // spacing指定の場合: 六角格子の単位距離がspacingになるようスケール
-        // radius指定の場合: 最外殻がradiusになるようスケール
-        let scaleFactor: number;
-        if (spacing !== undefined && spacing > 0) {
-            // 衛星間距離ベース: spacing * k が全体の半径になる
-            scaleFactor = spacing * k;
+        const hasSpacing = spacing !== undefined && Number.isFinite(spacing) && (spacing as number) > 0;
+        const maxEuclidRadius = hexPoints.reduce((max, point) => Math.max(max, point.radiusEuclid), 0);
+
+        let radialScale: number;
+        if (hasSpacing) {
+            radialScale = spacing as number;
+        } else if (maxEuclidRadius > 0 && radius > 0) {
+            radialScale = radius / maxEuclidRadius;
+        } else if (maxEuclidRadius > 0) {
+            // radius未指定時の安全な正規化
+            radialScale = 1 / maxEuclidRadius;
         } else {
-            // 範囲ベース: radiusが全体の半径
-            scaleFactor = radius;
+            radialScale = 0;
         }
 
-        for (let i = 0; i < Math.min(count, points.length); i++) {
-            const point = points[i];
+        for (const point of hexPoints) {
+            const rPhysical = point.radiusEuclid * radialScale;
+            const theta = point.theta;
 
-            // 極座標に変換
-            const r_normalized = Math.sqrt(point.r_sq);
-            const theta = Math.atan2(point.y, point.x);
+            const x0 = (rPhysical / sqrt5) * Math.cos(theta);
+            const y0 = (2 * rPhysical / sqrt5) * Math.sin(theta);
+            const z0 = (sqrt3 * rPhysical / sqrt5) * Math.cos(theta);
 
-            // 実際の半径にスケール
-            const r = (r_normalized / k) * scaleFactor;
-            
-            // 円軌道の初期条件（docs/diskOrbit.mdの式を使用）
-            const x0 = (r / sqrt5) * Math.cos(theta);
-            const y0 = (2 * r / sqrt5) * Math.sin(theta);
-            const z0 = (Math.sqrt(3) * r / sqrt5) * Math.cos(theta);
-            
-            const vx0 = (r * this.n / sqrt5) * Math.sin(theta);
-            const vy0 = -(2 * r * this.n / sqrt5) * Math.cos(theta);
-            const vz0 = (Math.sqrt(3) * r * this.n / sqrt5) * Math.sin(theta);
-            
+            const vx0 = (rPhysical * this.n / sqrt5) * Math.sin(theta);
+            const vy0 = -(2 * rPhysical * this.n / sqrt5) * Math.cos(theta);
+            const vz0 = (sqrt3 * rPhysical * this.n / sqrt5) * Math.sin(theta);
+
             positions.push({
-                x0: x0,
-                y0: y0,
-                z0: z0,
-                vx0: vx0,
-                vy0: vy0,
-                vz0: vz0
+                x0,
+                y0,
+                z0,
+                vx0,
+                vy0,
+                vz0
             });
         }
         
         return positions;
+    }
+
+    private generateHexLatticePoints(count: number): HexLatticePoint[] {
+        const candidates: HexLatticePoint[] = [];
+
+        if (count <= 0) {
+            return candidates;
+        }
+
+        const requiredRings = this.computeRequiredHexRings(count) + 1; // 余剰リングを追加して円形クリッピングに余裕を持たせる
+
+        for (let ring = 0; ring <= requiredRings; ring++) {
+            candidates.push(...this.enumerateHexRing(ring));
+        }
+
+        candidates.sort((a, b) => {
+            if (a.radiusEuclid !== b.radiusEuclid) {
+                return a.radiusEuclid - b.radiusEuclid;
+            }
+            return a.theta - b.theta;
+        });
+
+        return candidates.slice(0, count);
+    }
+
+    private enumerateHexRing(ring: number): HexLatticePoint[] {
+        const ringPoints: HexLatticePoint[] = [];
+
+        if (ring === 0) {
+            ringPoints.push(this.createHexLatticePoint(0, 0));
+            return ringPoints;
+        }
+
+        let q = ring;
+        let r = 0;
+        const directions = [
+            { dq: -1, dr: 1 },
+            { dq: -1, dr: 0 },
+            { dq: 0, dr: -1 },
+            { dq: 1, dr: -1 },
+            { dq: 1, dr: 0 },
+            { dq: 0, dr: 1 }
+        ];
+
+        for (const dir of directions) {
+            for (let step = 0; step < ring; step++) {
+                ringPoints.push(this.createHexLatticePoint(q, r));
+                q += dir.dq;
+                r += dir.dr;
+            }
+        }
+
+        return ringPoints;
+    }
+
+    private createHexLatticePoint(q: number, r: number): HexLatticePoint {
+        const x = q + 0.5 * r;
+        const y = (Math.sqrt(3) / 2) * r;
+        const radiusEuclid = Math.hypot(x, y);
+        const theta = radiusEuclid === 0 ? 0 : Math.atan2(y, x);
+
+        return { q, r, x, y, theta, radiusEuclid };
+    }
+
+    private computeRequiredHexRings(count: number): number {
+        if (count <= 1) {
+            return 0;
+        }
+
+        const safeCount = Math.max(1, count);
+        const discriminant = Math.max(0, 12 * safeCount - 3);
+        const rings = Math.ceil((-3 + Math.sqrt(discriminant)) / 6);
+        return Math.max(0, rings);
     }
 
     private generateConcentricDisk(count: number, radius: number, spacing?: number): InitialCondition[] {
