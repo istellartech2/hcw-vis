@@ -151,7 +151,7 @@
             </div>
             
             <!-- サイドバー -->
-            <div id="sidebar" class="sidebar fixed top-0 left-[-400px] w-[380px] h-screen bg-gradient-to-b from-slate-900/98 to-slate-800/95 border-r border-orange-500/25 transition-[left] duration-300 ease-out z-[9999] overflow-y-auto backdrop-blur-[30px] shadow-[4px_0_24px_rgba(0,0,0,0.5),0_0_80px_rgba(255,127,80,0.05)] before:content-[''] before:absolute before:top-0 before:right-0 before:bottom-0 before:w-[1px] before:bg-gradient-to-b before:from-transparent before:via-orange-500/50 before:to-transparent before:animate-[pulseGlow_4s_ease-in-out_infinite]">
+            <div id="sidebar" class="sidebar fixed top-0 left-[-400px] w-[380px] h-screen bg-gradient-to-b from-slate-900/98 to-slate-800/95 border-r border-orange-500/25 transition-[left] duration-300 ease-out z-[9999] overflow-hidden backdrop-blur-[30px] shadow-[4px_0_24px_rgba(0,0,0,0.5),0_0_80px_rgba(255,127,80,0.05)] before:content-[''] before:absolute before:top-0 before:right-0 before:bottom-0 before:w-[1px] before:bg-gradient-to-b before:from-transparent before:via-orange-500/50 before:to-transparent before:animate-[pulseGlow_4s_ease-in-out_infinite] flex flex-col">
                 <div class="sidebar-header px-5 py-3 bg-orange-500/[0.08] border-b border-orange-500/20 flex justify-between items-center relative overflow-hidden after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gradient-to-r after:from-transparent after:via-orange-500/60 after:to-transparent after:animate-[shimmer_3s_ease-in-out_infinite]">
                     <h3 class="text-orange-400 m-0 text-xl font-bold drop-shadow-[0_0_20px_rgba(255,127,80,0.5)] tracking-[1px]">設定</h3>
                     <div class="header-buttons flex gap-2">
@@ -159,7 +159,29 @@
                         <button class="close-button w-9 h-9 p-0 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-xl cursor-pointer flex items-center justify-center transition-all duration-300 hover:rotate-90 hover:scale-110 hover:bg-orange-500/20 hover:border-orange-500 hover:text-white hover:shadow-[0_0_20px_rgba(255,127,80,0.4)]" onclick="toggleSidebar()">×</button>
                     </div>
                 </div>
-                <div class="sidebar-content p-3">
+
+                <!-- タブナビゲーション -->
+                <div class="tab-navigation flex border-b border-orange-500/20 bg-gradient-to-b from-slate-900/80 to-slate-900/60 backdrop-blur-sm">
+                    <button class="tab-button active flex-1 flex flex-col items-center gap-1 py-3 px-2 bg-transparent border-none text-orange-400/60 cursor-pointer transition-all duration-300 relative hover:text-orange-400 hover:bg-white/[0.02]" onclick="switchTab('simulation')" data-tab="simulation">
+                        <span class="tab-icon text-xl">⚡</span>
+                        <span class="tab-label text-[11px] font-semibold uppercase tracking-[0.5px]">シミュレーション</span>
+                        <div class="tab-indicator absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-orange-500/0 via-orange-500 to-orange-500/0 opacity-0 transition-opacity duration-300"></div>
+                    </button>
+                    <button class="tab-button flex-1 flex flex-col items-center gap-1 py-3 px-2 bg-transparent border-none text-orange-400/60 cursor-pointer transition-all duration-300 relative hover:text-orange-400 hover:bg-white/[0.02]" onclick="switchTab('display')" data-tab="display">
+                        <span class="tab-icon text-xl">🎨</span>
+                        <span class="tab-label text-[11px] font-semibold uppercase tracking-[0.5px]">表示</span>
+                        <div class="tab-indicator absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-orange-500/0 via-orange-500 to-orange-500/0 opacity-0 transition-opacity duration-300"></div>
+                    </button>
+                    <button class="tab-button flex-1 flex flex-col items-center gap-1 py-3 px-2 bg-transparent border-none text-orange-400/60 cursor-pointer transition-all duration-300 relative hover:text-orange-400 hover:bg-white/[0.02]" onclick="switchTab('playback')" data-tab="playback">
+                        <span class="tab-icon text-xl">📊</span>
+                        <span class="tab-label text-[11px] font-semibold uppercase tracking-[0.5px]">再生モード</span>
+                        <div class="tab-indicator absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-orange-500/0 via-orange-500 to-orange-500/0 opacity-0 transition-opacity duration-300"></div>
+                    </button>
+                </div>
+
+                <div class="sidebar-content p-3 overflow-y-auto flex-1">
+                    <!-- タブコンテンツ: シミュレーション -->
+                    <div id="tab-simulation" class="tab-content active">
                     <!-- シミュレーション制御 -->
                     <div class="subsection mb-2 p-2 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
                         <h5 class="subsection-title text-orange-400 text-xs font-bold m-0 mb-1 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">⚡ シミュレーション</h5>
@@ -172,7 +194,47 @@
                         <div class="control-row">
                             <div class="control-group">
                                 <input type="checkbox" id="j2StableArrangement" class="w-4 h-4 cursor-pointer accent-orange-500">
-                                <label for="j2StableArrangement" class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 cursor-pointer">J2安定配置</label>
+                                <label for="j2StableArrangement" class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 cursor-pointer">衛星配置をJ2安定配置にする</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基準軌道 -->
+                    <div class="subsection mb-2 p-2 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
+                        <h5 class="subsection-title text-orange-400 text-xs font-bold m-0 mb-1 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🌍 基準軌道</h5>
+                        <div id="reference-orbit">
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label class="label-no-uppercase">高度(km):</label>
+                                    <input type="number" id="orbitAltitude" min="200" max="36000" step="50" value="500">
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>傾斜角(°):</label>
+                                    <input type="number" id="inclination" min="0" max="180" step="0.1" value="51.6">
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>昇交点(°):</label>
+                                    <input type="number" id="raan" min="0" max="360" step="1" value="0">
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>近地点(°):</label>
+                                    <input type="number" id="argOfPerigee" min="0" max="360" step="1" value="0">
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>平均近点(°):</label>
+                                    <input type="number" id="meanAnomaly" min="0" max="360" step="1" value="0">
+                                </div>
+                            </div>
+                            <div class="control-buttons flex flex-wrap gap-1.5 mt-2">
+                                <button id="orbitUpdateButton" class="orbit-update-button text-xs px-3 py-1.5" disabled title="入力値を基準軌道に反映">更新</button>
                             </div>
                         </div>
                     </div>
@@ -198,7 +260,11 @@
                             <button onclick="addPerturbation()" class="text-xs px-3 py-1.5">💥摂動</button>
                         </div>
                     </div>
-            
+                    </div>
+                    <!-- タブコンテンツ終了: シミュレーション -->
+
+                    <!-- タブコンテンツ: 表示 -->
+                    <div id="tab-display" class="tab-content" style="display: none;">
                     <!-- 3D空間サブセクション -->
                     <div class="subsection mb-2 p-2 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
                         <h5 class="subsection-title text-orange-400 text-xs font-bold m-0 mb-1 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🌌 3D空間表示</h5>
@@ -313,15 +379,21 @@
                             </div>
                         </div>
                     </div>
+                    </div>
+                    <!-- タブコンテンツ終了: 表示 -->
 
+                    <!-- タブコンテンツ: 再生モード -->
+                    <div id="tab-playback" class="tab-content" style="display: none;">
                     <!-- CSV再生モード -->
-                    <div class="sidebar-section mb-3 border border-orange-500/15 rounded-2xl overflow-hidden bg-gradient-to-br from-white/[0.03] to-white/[0.01] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_40px_rgba(255,127,80,0.1)]">
-                        <div class="sidebar-section-header px-3 py-2 bg-gradient-to-br from-orange-500/10 to-orange-500/[0.05] cursor-pointer select-none flex items-center gap-2 transition-all duration-300 relative overflow-hidden hover:from-orange-500/15 hover:to-orange-500/[0.08] hover:pl-4 before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-orange-500/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-[100%]" onclick="toggleSidebarSection('csv-playback')">
-                            <span class="section-icon text-xl drop-shadow-[0_0_8px_rgba(255,127,80,0.3)]">📊</span>
-                            <h4 class="section-title flex-1 text-orange-400 text-sm font-bold m-0 border-none p-0 drop-shadow-[0_0_15px_rgba(255,127,80,0.3)] tracking-[0.5px]">CSV再生モード</h4>
-                            <span id="csv-playback-toggle" class="section-toggle text-orange-400 text-sm transition-transform duration-300 drop-shadow-[0_0_4px_rgba(255,127,80,0.3)]">▶</span>
+                    <div class="subsection mb-2 p-2 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
+                        <div class="flex items-center justify-between mb-1 pb-1 border-b border-orange-500/20">
+                            <h5 class="subsection-title text-orange-400 text-xs font-bold m-0 uppercase tracking-[1px] flex items-center gap-2">📊 CSV再生モード</h5>
+                            <a href="https://github.com/istellartech2/hcw-vis/blob/main/docs/csv-playback-format.md" target="_blank" rel="noopener noreferrer" class="text-orange-400/60 hover:text-orange-400 transition-colors duration-200 text-[10px] flex items-center gap-1" title="CSV形式のヘルプを見る">
+                                <span>?</span>
+                                <span class="text-[9px] uppercase tracking-wider">形式</span>
+                            </a>
                         </div>
-                        <div id="csv-playback" class="sidebar-section-content collapsed">
+                        <div id="csv-playback">
                             <!-- CSV File Input -->
                             <div class="control-row">
                                 <div class="control-group">
@@ -394,50 +466,8 @@
                             </div>
                         </div>
                     </div>
-            
-                    <!-- 基準軌道 -->
-                    <div class="sidebar-section mb-3 border border-orange-500/15 rounded-2xl overflow-hidden bg-gradient-to-br from-white/[0.03] to-white/[0.01] shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-300 hover:border-orange-500/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_40px_rgba(255,127,80,0.1)]">
-                        <div class="sidebar-section-header px-3 py-2 bg-gradient-to-br from-orange-500/10 to-orange-500/[0.05] cursor-pointer select-none flex items-center gap-2 transition-all duration-300 relative overflow-hidden hover:from-orange-500/15 hover:to-orange-500/[0.08] hover:pl-4 before:content-[''] before:absolute before:top-0 before:left-[-100%] before:w-full before:h-full before:bg-gradient-to-r before:from-transparent before:via-orange-500/20 before:to-transparent before:transition-[left] before:duration-500 hover:before:left-[100%]" onclick="toggleSidebarSection('reference-orbit')">
-                            <span class="section-icon text-xl drop-shadow-[0_0_8px_rgba(255,127,80,0.3)]">🌍</span>
-                            <h4 class="section-title flex-1 text-orange-400 text-sm font-bold m-0 border-none p-0 drop-shadow-[0_0_15px_rgba(255,127,80,0.3)] tracking-[0.5px]">基準軌道</h4>
-                            <span id="reference-orbit-toggle" class="section-toggle text-orange-400 text-sm transition-transform duration-300 drop-shadow-[0_0_4px_rgba(255,127,80,0.3)]">▶</span>
-                        </div>
-                        <div id="reference-orbit" class="sidebar-section-content collapsed">
-                            <div class="control-row">
-                                <div class="control-group">
-                                    <label class="label-no-uppercase">高度(km):</label>
-                                    <input type="number" id="orbitAltitude" min="200" max="36000" step="50" value="500">
-                                </div>
-                            </div>
-                            <div class="control-row">
-                                <div class="control-group">
-                                    <label>傾斜角(°):</label>
-                                    <input type="number" id="inclination" min="0" max="180" step="0.1" value="51.6">
-                                </div>
-                            </div>
-                            <div class="control-row">
-                                <div class="control-group">
-                                    <label>昇交点(°):</label>
-                                    <input type="number" id="raan" min="0" max="360" step="1" value="0">
-                                </div>
-                            </div>
-                            <div class="control-row">
-                                <div class="control-group">
-                                    <label>近地点(°):</label>
-                                    <input type="number" id="argOfPerigee" min="0" max="360" step="1" value="0">
-                                </div>
-                            </div>
-                            <div class="control-row">
-                                <div class="control-group">
-                                    <label>平均近点(°):</label>
-                                    <input type="number" id="meanAnomaly" min="0" max="360" step="1" value="0">
-                                </div>
-                            </div>
-                            <div class="control-buttons flex flex-wrap gap-1.5 mt-2">
-                                <button id="orbitUpdateButton" class="orbit-update-button text-xs px-3 py-1.5" disabled title="入力値を基準軌道に反映">更新</button>
-                            </div>
-                        </div>
                     </div>
+                    <!-- タブコンテンツ終了: 再生モード -->
                 </div>
             </div>
             <canvas id="canvas" class="w-full h-full touch-none"></canvas>
@@ -566,7 +596,7 @@
         function toggleSatelliteConfig() {
             const content = document.getElementById('satellite-config-content');
             const toggle = document.getElementById('satellite-config-toggle');
-            
+
             if (content.style.display === 'none' || !content.style.display) {
                 content.style.display = 'flex';
                 toggle.textContent = '▼';
@@ -575,7 +605,61 @@
                 toggle.textContent = '▶';
             }
         }
-        
+
+        function toggleCSVControls() {
+            const content = document.getElementById('csv-controls-content');
+            const toggle = document.getElementById('csv-controls-toggle');
+
+            if (content.style.display === 'none' || !content.style.display) {
+                content.style.display = 'flex';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+
+        // タブ切り替え関数
+        function switchTab(tabName) {
+            // すべてのタブボタンとコンテンツを取得
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // すべてのタブボタンからactiveクラスを削除
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+                const indicator = button.querySelector('.tab-indicator');
+                if (indicator) {
+                    indicator.style.opacity = '0';
+                }
+            });
+
+            // すべてのタブコンテンツを非表示にする
+            tabContents.forEach(content => {
+                content.style.display = 'none';
+                content.classList.remove('active');
+            });
+
+            // 選択されたタブをアクティブにする
+            const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
+            const activeContent = document.getElementById(`tab-${tabName}`);
+
+            if (activeButton && activeContent) {
+                activeButton.classList.add('active');
+                const indicator = activeButton.querySelector('.tab-indicator');
+                if (indicator) {
+                    indicator.style.opacity = '1';
+                }
+                activeContent.style.display = 'block';
+                activeContent.classList.add('active');
+            }
+        }
+
+        // ページ読み込み時にデフォルトのタブを表示
+        document.addEventListener('DOMContentLoaded', function() {
+            switchTab('simulation');
+        });
+
         // サイドバー外をクリックしたときに閉じる
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');

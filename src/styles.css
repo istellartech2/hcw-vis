@@ -105,6 +105,61 @@ h1 {
     left: 0;
 }
 
+/* Tab navigation styles */
+.tab-navigation {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.tab-button {
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-button.active {
+    color: #ff7f50 !important;
+    background: rgba(255, 127, 80, 0.08) !important;
+}
+
+.tab-button.active .tab-icon {
+    filter: drop-shadow(0 0 8px rgba(255, 127, 80, 0.6));
+    transform: scale(1.1);
+}
+
+.tab-button.active .tab-label {
+    font-weight: 700;
+    letter-spacing: 0.8px;
+}
+
+.tab-button.active .tab-indicator {
+    opacity: 1 !important;
+}
+
+.tab-icon {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-label {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tab content animations */
+.tab-content {
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 
 /* Sidebar sections */
 .sidebar-section-content {
