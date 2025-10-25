@@ -172,6 +172,10 @@ h1 {
     text-align: left;
 }
 
+.sidebar label.label-no-uppercase {
+    text-transform: none;
+}
+
 .sidebar input[type="number"],
 .sidebar input[type="range"],
 .sidebar select {

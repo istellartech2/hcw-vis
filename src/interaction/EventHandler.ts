@@ -209,6 +209,15 @@ export class EventHandler {
 
     private setupKeyboardControls(): void {
         window.addEventListener('keydown', (e) => {
+            const target = e.target as HTMLElement | null;
+            if (target) {
+                const tag = target.tagName?.toLowerCase();
+                const isInteractiveElement = tag === 'input' || tag === 'textarea' || tag === 'select' || tag === 'button' || tag === 'a';
+                if (isInteractiveElement || target.isContentEditable) {
+                    return; // Allow native editing/selection behavior
+                }
+            }
+
             switch(e.key.toLowerCase()) {
                 case ' ':
                     e.preventDefault();

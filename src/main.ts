@@ -197,12 +197,13 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     private initializeOrbitElements(): void {
         // UIから初期値を読み取り
-        const inclination = parseFloat(this.uiControls.elements.inclination.value);
-        const raan = parseFloat(this.uiControls.elements.raan.value);
+        const inputValues = this.readReferenceOrbitInputs();
+        if (!inputValues) {
+            return;
+        }
+
+        const { inclination, raan, argOfPerigee, meanAnomaly, altitudeKm } = inputValues;
         const eccentricity = 0; // 離心率は0で固定
-        const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
-        const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
-        const altitudeKm = parseFloat(this.uiControls.elements.orbitAltitude.value);
         const altitude = altitudeKm * 1000; // Convert km to meters
         
         // 軌道要素を計算
@@ -688,12 +689,13 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     }
     
     public updateOrbitElementsFromUI(): void {
-        const inclination = parseFloat(this.uiControls.elements.inclination.value);
-        const raan = parseFloat(this.uiControls.elements.raan.value);
+        const inputValues = this.readReferenceOrbitInputs();
+        if (!inputValues) {
+            return;
+        }
+
+        const { inclination, raan, argOfPerigee, meanAnomaly, altitudeKm } = inputValues;
         const eccentricity = 0; // 離心率は0で固定
-        const argOfPerigee = parseFloat(this.uiControls.elements.argOfPerigee.value);
-        const meanAnomaly = parseFloat(this.uiControls.elements.meanAnomaly.value);
-        const altitudeKm = parseFloat(this.uiControls.elements.orbitAltitude.value);
         const altitude = altitudeKm * 1000; // Convert km to meters
         
         // 入力値の妥当性チェック
@@ -730,7 +732,65 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             this.loadingIndicator.hide();
         }, 500);
     }
-    
+
+    private readReferenceOrbitInputs(): {
+        inclination: number;
+        raan: number;
+        argOfPerigee: number;
+        meanAnomaly: number;
+        altitudeKm: number;
+    } | null {
+        const fields = {
+            inclination: {
+                element: this.uiControls.elements.inclination,
+                value: parseFloat(this.uiControls.elements.inclination.value)
+            },
+            raan: {
+                element: this.uiControls.elements.raan,
+                value: parseFloat(this.uiControls.elements.raan.value)
+            },
+            argOfPerigee: {
+                element: this.uiControls.elements.argOfPerigee,
+                value: parseFloat(this.uiControls.elements.argOfPerigee.value)
+            },
+            meanAnomaly: {
+                element: this.uiControls.elements.meanAnomaly,
+                value: parseFloat(this.uiControls.elements.meanAnomaly.value)
+            },
+            orbitAltitude: {
+                element: this.uiControls.elements.orbitAltitude,
+                value: parseFloat(this.uiControls.elements.orbitAltitude.value)
+            }
+        } as const;
+
+        let firstInvalid: HTMLInputElement | null = null;
+
+        for (const key of Object.keys(fields) as Array<keyof typeof fields>) {
+            const entry = fields[key];
+            entry.element.setCustomValidity('');
+            if (Number.isNaN(entry.value)) {
+                entry.element.setCustomValidity('数値を入力してください');
+                if (!firstInvalid) {
+                    firstInvalid = entry.element;
+                }
+            }
+        }
+
+        if (firstInvalid) {
+            firstInvalid.reportValidity();
+            firstInvalid.focus();
+            return null;
+        }
+
+        return {
+            inclination: fields.inclination.value,
+            raan: fields.raan.value,
+            argOfPerigee: fields.argOfPerigee.value,
+            meanAnomaly: fields.meanAnomaly.value,
+            altitudeKm: fields.orbitAltitude.value
+        };
+    }
+
     public clearTrails(): void {
         this.renderingSystem.clearTrails(this.satellites);
     }
