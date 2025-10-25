@@ -183,14 +183,17 @@ export class UIControls {
     
     updateTimeDisplay(time: number): void {
         const totalSeconds = Math.floor(time);
-        const hours = Math.floor(totalSeconds / 3600);
+        const days = Math.floor(totalSeconds / 86400);  // 86400 seconds in a day
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
-        
+
         const paddedMinutes = minutes.toString().padStart(2, '0');
         const paddedSeconds = seconds.toString().padStart(2, '0');
-        
-        if (hours > 0) {
+
+        if (days > 0) {
+            this.elements.simulationTime.textContent = `${days}日${hours}時間${paddedMinutes}分${paddedSeconds}秒`;
+        } else if (hours > 0) {
             this.elements.simulationTime.textContent = `${hours}時間${paddedMinutes}分${paddedSeconds}秒`;
         } else {
             this.elements.simulationTime.textContent = `${paddedMinutes}分${paddedSeconds}秒`;

@@ -481,9 +481,20 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         }
         
         // 軌道要素
+        // 軌道周期を時間と分で表示
+        const periodMinutes = this.currentOrbitElements.period;
+        const periodHours = Math.floor(periodMinutes / 60);
+        const periodRemainingMinutes = periodMinutes % 60;
+        let periodDisplay = '';
+        if (periodHours > 0) {
+            periodDisplay = `${periodHours}時間${periodRemainingMinutes.toFixed(1)}分`;
+        } else {
+            periodDisplay = `${periodMinutes.toFixed(1)}分`;
+        }
+
         orbitalInfo.innerHTML = `
             高度: ${(this.currentOrbitElements.altitude / 1000).toFixed(1)} km<br>
-            周期: ${this.currentOrbitElements.period.toFixed(1)} 分<br>
+            周期: ${periodDisplay}<br>
             傾斜角: ${this.currentOrbitElements.inclination.toFixed(1)}°<br>
             離心率: ${this.currentOrbitElements.eccentricity.toFixed(4)}<br>
             昇交点経度: ${this.currentOrbitElements.raan.toFixed(1)}°<br>

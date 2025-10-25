@@ -546,25 +546,23 @@
                     <span class="icon text-sm drop-shadow-[0_0_3px_rgba(255,127,80,0.4)]">⏱️</span>
                     <!-- Simulation speed control -->
                     <select id="timeScale" class="bg-transparent border-none text-orange-500 text-sm font-normal outline-none cursor-pointer px-1 py-0 font-mono">
-                        <option value="1">1x</option>
-                        <option value="5">5x</option>
-                        <option value="10">10x</option>
-                        <option value="30">30x</option>
-                        <option value="60" selected>60x</option>
-                        <option value="180">180x</option>
-                        <option value="480">480x</option>
-                        <option value="960">960x</option>
+                        <option value="1">1x (1秒/秒)</option>
+                        <option value="10">10x (10秒/秒)</option>
+                        <option value="60" selected>60x (1分/秒)</option>
+                        <option value="600">600x (10分/秒)</option>
+                        <option value="1800">1800x (30分/秒)</option>
+                        <option value="3600">3600x (1時間/秒)</option>
+                        <option value="7200">7200x (2時間/秒)</option>
                     </select>
                     <!-- CSV playback speed control -->
                     <select id="csvPlaybackSpeedMain" class="bg-transparent border-none text-orange-500 text-sm font-normal outline-none cursor-pointer px-1 py-0 font-mono" style="display: none;">
-                        <option value="1">1x</option>
-                        <option value="5">5x</option>
-                        <option value="10">10x</option>
-                        <option value="30">30x</option>
-                        <option value="60" selected>60x</option>
-                        <option value="180">180x</option>
-                        <option value="480">480x</option>
-                        <option value="960">960x</option>
+                        <option value="1">1x (1秒/秒)</option>
+                        <option value="10">10x (10秒/秒)</option>
+                        <option value="60" selected>60x (1分/秒)</option>
+                        <option value="600">600x (10分/秒)</option>
+                        <option value="1800">1800x (30分/秒)</option>
+                        <option value="3600">3600x (1時間/秒)</option>
+                        <option value="7200">7200x (2時間/秒)</option>
                     </select>
                 </div>
                 <div id="time-display" onclick="togglePause()" title="クリックで一時停止/再開" class="px-4 py-3 bg-black/70 rounded-lg text-base font-bold text-orange-500 border border-orange-500/30 drop-shadow-[0_0_10px_rgba(255,127,80,0.5)] font-mono tracking-[0.5px] cursor-pointer select-none transition-all duration-300 hover:bg-orange-500/20 hover:scale-105">
