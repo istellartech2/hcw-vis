@@ -32,13 +32,21 @@ export type PlacementPattern =
 export class OrbitInitializer {
     // 平均運動 (rad/s)
     private n: number; // 平均運動（軌道角速度）
-    
+    private useJ2StableArrangement: boolean = false; // J2安定配置を使用するか
+    private ssCoefficient: number = 1.0; // SS係数c（デフォルトは1.0 = J2摂動なし）
+
     constructor(n: number) {
         this.n = n;
     }
-    
+
     updateMeanMotion(n: number): void {
         this.n = n;
+    }
+
+    // J2安定配置の設定
+    setJ2StableArrangement(enabled: boolean, ssCoefficient: number = 1.0): void {
+        this.useJ2StableArrangement = enabled;
+        this.ssCoefficient = ssCoefficient;
     }
     
     generatePositions(
@@ -435,7 +443,12 @@ export class OrbitInitializer {
             const z0 = (sqrt3 * rPhysical / sqrt5) * Math.cos(theta);
 
             const vx0 = (rPhysical * this.n / sqrt5) * Math.sin(theta);
-            const vy0 = -(2 * rPhysical * this.n / sqrt5) * Math.cos(theta);
+
+            // J2安定配置: vy0 = -2nc·x0 を満たす初期速度
+            // 通常: vy0 = -2n·x0
+            const c = this.useJ2StableArrangement ? this.ssCoefficient : 1.0;
+            const vy0 = -(2 * rPhysical * this.n * c / sqrt5) * Math.cos(theta);
+
             const vz0 = (sqrt3 * rPhysical * this.n / sqrt5) * Math.sin(theta);
 
             positions.push({
@@ -603,7 +616,12 @@ export class OrbitInitializer {
                 const z0 = (sqrt3 * ringRadius / sqrt5) * cosTheta;
 
                 const vx0 = (ringRadius * this.n / sqrt5) * sinTheta;
-                const vy0 = -(2 * ringRadius * this.n / sqrt5) * cosTheta;
+
+                // J2安定配置: vy0 = -2nc·x0 を満たす初期速度
+                // 通常: vy0 = -2n·x0
+                const c = this.useJ2StableArrangement ? this.ssCoefficient : 1.0;
+                const vy0 = -(2 * ringRadius * this.n * c / sqrt5) * cosTheta;
+
                 const vz0 = (sqrt3 * ringRadius * this.n / sqrt5) * sinTheta;
 
                 positions.push({ x0, y0, z0, vx0, vy0, vz0 });

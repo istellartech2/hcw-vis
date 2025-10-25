@@ -88,6 +88,11 @@ export class EventHandler {
             this.callbacks.updateOrbitElementsFromUI();
             this.callbacks.resetSimulation();
         });
+
+        // J2安定配置チェックボックス
+        this.uiControls.elements.j2StableArrangement.addEventListener('change', () => {
+            this.callbacks.resetSimulation();
+        });
         
         this.uiControls.elements.orbitRadius.addEventListener('change', () => {
             // 楕円軌道の場合は離心率も更新

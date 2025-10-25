@@ -58,11 +58,41 @@ export class HillEquationSolver {
             this.ssCoefficient = { s: 0, c: 1 };
             return;
         }
-        
-        const s = (3 * J2 * (R_EARTH ** 2) / (8 * this.r0 ** 2)) * 
+
+        const s = (3 * J2 * (R_EARTH ** 2) / (8 * this.r0 ** 2)) *
                   (1 + 3 * Math.cos(this.inclination) ** 2);
         const c = Math.sqrt(1 + s);
         this.ssCoefficient = { s, c };
+    }
+
+    // SS係数を取得（外部から参照用）
+    getSSCoefficient(): { s: number; c: number } {
+        return { ...this.ssCoefficient };
+    }
+
+    // SS係数cのみを取得（便利メソッド）
+    getSSCoefficientC(): number {
+        return this.ssCoefficient.c;
+    }
+
+    // J2安定配置の初期速度を計算
+    // ドリフト項が消える条件: vy0 = -2nc·x0
+    computeStableVy0(x0: number): number {
+        return -2 * this.n * this.ssCoefficient.c * x0;
+    }
+
+    // J2安定配置の初期速度を検証
+    // 許容誤差内で vy0 = -2nc·x0 を満たすか確認
+    verifyStableInitialVelocity(x0: number, vy0: number, tolerance: number = 1e-6): boolean {
+        const expectedVy0 = this.computeStableVy0(x0);
+        const error = Math.abs(vy0 - expectedVy0);
+        return error < tolerance;
+    }
+
+    // ドリフト定数 K = vy + 2nc·x を計算
+    // K = 0 がドリフト消失条件
+    computeDriftConstant(x: number, vy: number): number {
+        return vy + 2 * this.n * this.ssCoefficient.c * x;
     }
     
     // Hill方程式の微分方程式（右辺）

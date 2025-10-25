@@ -57,6 +57,7 @@ export interface UIControlElements {
     argOfPerigee: HTMLInputElement;
     meanAnomaly: HTMLInputElement;
     j2Perturbation: HTMLInputElement;
+    j2StableArrangement: HTMLInputElement;
     orbitUpdateButton: HTMLButtonElement;
     // CSV Playback controls
     csvPlaybackInput: HTMLInputElement;
@@ -149,6 +150,7 @@ export class UIControls {
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,
             meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement,
             j2Perturbation: document.getElementById('j2Perturbation') as HTMLInputElement,
+            j2StableArrangement: document.getElementById('j2StableArrangement') as HTMLInputElement,
             orbitUpdateButton: document.getElementById('orbitUpdateButton') as HTMLButtonElement,
             // CSV Playback controls
             csvPlaybackInput: document.getElementById('csvPlaybackInput') as HTMLInputElement,

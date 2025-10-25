@@ -285,7 +285,12 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.satellites.forEach(sat => {
             sat.dispose();
         });
-        
+
+        // J2安定配置の設定
+        const j2StableEnabled = this.uiControls.elements.j2StableArrangement?.checked || false;
+        const ssCoefficient = this.hillSolver.getSSCoefficientC();
+        this.orbitInitializer.setJ2StableArrangement(j2StableEnabled, ssCoefficient);
+
         const count = parseInt(this.uiControls.elements.satelliteCount.value);
         const radius = parseFloat(this.uiControls.elements.orbitRadius.value);
         const pattern = this.uiControls.elements.placementPattern.value;
