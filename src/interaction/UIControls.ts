@@ -57,6 +57,7 @@ export interface UIControlElements {
     argOfPerigee: HTMLInputElement;
     meanAnomaly: HTMLInputElement;
     j2Perturbation: HTMLInputElement;
+    orbitUpdateButton: HTMLButtonElement;
     // CSV Playback controls
     csvPlaybackInput: HTMLInputElement;
     csvFileStatus: HTMLDivElement;
@@ -86,6 +87,7 @@ export interface UIControlElements {
 
 export class UIControls {
     public elements: UIControlElements;
+    private referenceOrbitPending = false;
     
     constructor() {
         this.elements = {
@@ -147,6 +149,7 @@ export class UIControls {
             argOfPerigee: document.getElementById('argOfPerigee') as HTMLInputElement,
             meanAnomaly: document.getElementById('meanAnomaly') as HTMLInputElement,
             j2Perturbation: document.getElementById('j2Perturbation') as HTMLInputElement,
+            orbitUpdateButton: document.getElementById('orbitUpdateButton') as HTMLButtonElement,
             // CSV Playback controls
             csvPlaybackInput: document.getElementById('csvPlaybackInput') as HTMLInputElement,
             csvFileStatus: document.getElementById('csvFileStatus') as HTMLDivElement,
@@ -173,6 +176,7 @@ export class UIControls {
             csvPlaybackPanel: document.getElementById('csv-playback-panel') as HTMLDivElement,
             satelliteConfigPanel: document.getElementById('satellite-config-panel') as HTMLDivElement
         };
+        this.setReferenceOrbitPending(false);
     }
     
     updateTimeDisplay(time: number): void {
@@ -198,6 +202,21 @@ export class UIControls {
     
     updateZAmplitudeDisplay(): void {
         this.elements.zAmplitudeValue.textContent = parseFloat(this.elements.zAmplitude.value).toFixed(1);
+    }
+
+    markReferenceOrbitDirty(): void {
+        if (!this.referenceOrbitPending) {
+            this.setReferenceOrbitPending(true);
+        }
+    }
+
+    setReferenceOrbitPending(pending: boolean): void {
+        this.referenceOrbitPending = pending;
+        const button = this.elements.orbitUpdateButton;
+        if (!button) return;
+        button.disabled = !pending;
+        button.classList.toggle('pending', pending);
+        button.textContent = pending ? '更新 (未反映)' : '更新';
     }
     
     updatePeriodicParamsDisplay(): void {

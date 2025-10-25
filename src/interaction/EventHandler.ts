@@ -79,14 +79,14 @@ export class EventHandler {
         ];
         
         orbitElementInputs.forEach(input => {
-            input.addEventListener('input', () => {
-                this.callbacks.updateOrbitElementsFromUI();
-            });
-            
-            input.addEventListener('change', () => {
-                this.callbacks.updateOrbitElementsFromUI();
-                this.callbacks.resetSimulation();
-            });
+            const markDirty = () => this.uiControls.markReferenceOrbitDirty();
+            input.addEventListener('input', markDirty);
+            input.addEventListener('change', markDirty);
+        });
+
+        this.uiControls.elements.orbitUpdateButton.addEventListener('click', () => {
+            this.callbacks.updateOrbitElementsFromUI();
+            this.callbacks.resetSimulation();
         });
         
         this.uiControls.elements.orbitRadius.addEventListener('change', () => {

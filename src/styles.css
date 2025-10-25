@@ -330,6 +330,29 @@ h1 {
     transform: translateY(0);
 }
 
+.sidebar .control-buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: rgba(255, 140, 70, 0.2);
+    background: linear-gradient(135deg, rgba(255, 140, 70, 0.08) 0%, rgba(255, 140, 70, 0.05) 100%);
+    box-shadow: none;
+    transform: none;
+}
+
+.orbit-update-button.pending {
+    border-color: #ffb347;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(255, 180, 120, 0.4) 0%, rgba(255, 120, 80, 0.3) 100%);
+    box-shadow: 0 0 20px rgba(255, 180, 120, 0.4);
+    animation: orbit-update-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes orbit-update-pulse {
+    0% { box-shadow: 0 0 12px rgba(255, 180, 120, 0.3); }
+    50% { box-shadow: 0 0 22px rgba(255, 180, 120, 0.55); }
+    100% { box-shadow: 0 0 12px rgba(255, 180, 120, 0.3); }
+}
+
 /* 基準衛星情報パネル */
 #reference-satellite-panel {
     position: absolute;
@@ -533,4 +556,3 @@ h1 {
         font-size: 14px;
     }
 }
-

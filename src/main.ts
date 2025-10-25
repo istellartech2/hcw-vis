@@ -705,6 +705,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             console.warn("軌道要素入力エラー:", errors);
             return;
         }
+
+        this.uiControls.setReferenceOrbitPending(false);
         
         // Show loading for orbit calculation and Earth texture change
         this.loadingIndicator.showProcessing('軌道要素を計算');
