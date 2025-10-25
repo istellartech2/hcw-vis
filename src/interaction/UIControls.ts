@@ -390,14 +390,16 @@ export class UIControls {
 
     updateSatelliteSizeLabel(): void {
         const shape = this.elements.satelliteShape.value;
+        let labelText = 'サイズ';
 
         if (shape === 'sphere') {
-            this.elements.satelliteSizeLabel.textContent = '直径:';
+            labelText = '直径';
         } else if (shape === 'cube') {
-            this.elements.satelliteSizeLabel.textContent = '一辺:';
-        } else {
-            this.elements.satelliteSizeLabel.textContent = 'サイズ:';
+            labelText = '一辺';
         }
+
+        // Update label with unit in smaller font
+        this.elements.satelliteSizeLabel.innerHTML = `${labelText} <span class="text-[10px] opacity-70 font-normal normal-case">(m)</span>:`;
     }
 
     // Mode switching methods
