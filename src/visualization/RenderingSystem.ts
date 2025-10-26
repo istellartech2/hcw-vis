@@ -312,6 +312,9 @@ export class RenderingSystem {
             centerMesh = new THREE.Mesh(centerGeometry, centerMaterial);
         }
 
+        // Hide center satellite mesh (reference satellite)
+        centerMesh.visible = false;
+
         this.scene.add(centerMesh);
         this.satelliteMeshes.push(centerMesh);
         

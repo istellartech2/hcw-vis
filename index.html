@@ -25,17 +25,20 @@
                 <!-- クイックアクションボタン -->
                 <div class="quick-actions flex gap-2">
                     <button class="action-button flex items-center gap-1.5 px-3.5 py-2 bg-black/70 border border-orange-500/30 rounded-lg text-orange-500 text-[13px] font-semibold cursor-pointer transition-all duration-300 backdrop-blur-lg h-10 hover:bg-orange-500/20 hover:border-orange-500 hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(255,127,80,0.4)] active:translate-y-0" onclick="openFormationDesigner()" title="フォーメーション設計">
-                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🔧</span>
-                        <span class="text-xs">フォーメーション</span>
+                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🛰️</span>
+                        <span class="text-xs">設計</span>
                     </button>
                     <button class="action-button flex items-center gap-1.5 px-3.5 py-2 bg-black/70 border border-orange-500/30 rounded-lg text-orange-500 text-[13px] font-semibold cursor-pointer transition-all duration-300 backdrop-blur-lg h-10 hover:bg-orange-500/20 hover:border-orange-500 hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(255,127,80,0.4)] active:translate-y-0" onclick="resetPositions()" title="衛星を初期位置に戻す">
-                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🛰️🔄</span>
+                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🔄</span>
+                        <span class="text-xs">衛星</span>
                     </button>
                     <button class="action-button flex items-center gap-1.5 px-3.5 py-2 bg-black/70 border border-orange-500/30 rounded-lg text-orange-500 text-[13px] font-semibold cursor-pointer transition-all duration-300 backdrop-blur-lg h-10 hover:bg-orange-500/20 hover:border-orange-500 hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(255,127,80,0.4)] active:translate-y-0" onclick="resetFormation()" title="フォーメーション設定をリセット">
-                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">⚙️🔄</span>
+                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🔄</span>
+                        <span class="text-xs">設定</span>
                     </button>
                     <button class="action-button flex items-center gap-1.5 px-3.5 py-2 bg-black/70 border border-orange-500/30 rounded-lg text-orange-500 text-[13px] font-semibold cursor-pointer transition-all duration-300 backdrop-blur-lg h-10 hover:bg-orange-500/20 hover:border-orange-500 hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(255,127,80,0.4)] active:translate-y-0" onclick="resetView()" title="カメラを初期位置に戻す">
-                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🎥🔄</span>
+                        <span class="button-icon text-base drop-shadow-[0_0_3px_rgba(255,127,80,0.5)]">🔄</span>
+                        <span class="text-xs">カメラ</span>
                     </button>
                 </div>
             </div>
@@ -204,6 +207,17 @@
                                 <input type="checkbox" id="showEarth" checked class="w-4 h-4 cursor-pointer accent-orange-500">
                                 <label for="showEarth" class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 cursor-pointer min-w-0">地球</label>
                             </div>
+                            <div class="checkbox-item flex items-center gap-2">
+                                <input type="checkbox" id="showTrails" checked class="w-4 h-4 cursor-pointer accent-orange-500">
+                                <label for="showTrails" class="text-orange-400 text-xs font-semibold uppercase tracking-[0.5px] opacity-90 cursor-pointer min-w-0">軌跡</label>
+                            </div>
+                        </div>
+                        <div class="control-row">
+                            <div class="control-group">
+                                <label>軌跡長さ:</label>
+                                <input type="range" id="trailLength" min="50" max="500" step="50" value="200" class="flex-1">
+                                <span id="trailLengthValue" class="text-[11px] text-orange-300/80 font-mono ml-2">200</span>
+                            </div>
                         </div>
                         <div class="control-row">
                             <div class="control-group">
@@ -219,84 +233,27 @@
                         </div>
                     </div>
                     
-                    <!-- 衛星サブセクション -->
-                    <div class="subsection mb-2 p-2 bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-orange-500/15 rounded-xl relative overflow-hidden transition-all duration-300 hover:from-white/[0.06] hover:to-white/[0.03] hover:border-orange-500/30 hover:-translate-y-[1px] hover:shadow-[0_4px_12px_rgba(255,127,80,0.1)] before:content-[''] before:absolute before:top-[-1px] before:left-[-1px] before:right-[-1px] before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-orange-500/40 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100">
-                        <h5 class="subsection-title text-orange-400 text-xs font-bold m-0 mb-1 pb-1 border-b border-orange-500/20 uppercase tracking-[1px] flex items-center gap-2">🛰️ 衛星表示</h5>
-                        <div class="control-row">
-                            <div class="control-group">
-                                <label id="satelliteSizeLabel" class="label-no-uppercase">サイズ <span class="text-[10px] opacity-70 font-normal normal-case">(m)</span>:</label>
-                                <input type="number" id="satelliteSize" min="0.01" max="100" step="0.01" value="1.0" style="width: 80px;">
-                                <span id="satelliteSizeUnit" style="display: none;"></span>
-                            </div>
-                        </div>
-                        <div class="control-row">
-                            <div class="control-group">
-                                <label>形状:</label>
-                                <select id="satelliteShape">
-                                    <option value="sphere">球体</option>
-                                    <option value="cube">立方体</option>
-                                    <option value="3dfile">3Dファイル読込</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="control-row">
-                            <div class="control-group">
-                                <input type="checkbox" id="uniformSatelliteColor" class="w-4 h-4 cursor-pointer accent-orange-500">
-                                <label for="uniformSatelliteColor">色を統一</label>
-                                <input type="color" id="satelliteColor" value="#ffffff" class="w-12 h-8 border border-orange-500/30 rounded cursor-pointer transition-all duration-300 hover:border-orange-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,127,80,0.3)]">
-                            </div>
-                        </div>
-                        <div id="cubeRotationControls" style="display: none;">
-                            <div class="control-group" style="flex-direction: column; align-items: stretch;">
-                                <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                                    <label style="min-width: 70px;">R軸回転:</label>
-                                    <input type="range" id="cubeRotationR" min="0" max="90" step="5" value="0" style="width: 120px; flex: 1;">
-                                    <span id="cubeRotationRValue" style="min-width: 30px; text-align: right;">0°</span>
-                                </div>
-                                <div style="display: flex; align-items: center;">
-                                    <label style="min-width: 70px;">S軸回転:</label>
-                                    <input type="range" id="cubeRotationS" min="0" max="90" step="5" value="0" style="width: 120px; flex: 1;">
-                                    <span id="cubeRotationSValue" style="min-width: 30px; text-align: right;">0°</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="file3dControls" style="display: none;">
-                            <div class="control-row">
-                                <div class="control-group">
-                                    <label>3Dファイル:</label>
-                                    <input type="file" id="file3dInput" accept=".glb,.gltf,.stl" class="w-0 flex-1 min-w-0 px-2 py-1 bg-white/[0.06] border border-orange-500/20 rounded-md text-white text-xs font-medium transition-all duration-300 hover:bg-white/10 hover:border-orange-500/40 overflow-hidden file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-orange-500/20 file:text-orange-300 hover:file:bg-orange-500/30">
-                                </div>
-                            </div>
-                            <div class="rotation-controls">
-                                <div class="control-row" style="margin-bottom: 4px;">
-                                    <div class="control-group">
-                                        <label style="min-width: 70px;">R軸回転:</label>
-                                        <input type="range" id="file3dRotationR" min="-180" max="180" step="5" value="0" style="flex: 1;">
-                                        <span id="file3dRotationRValue" style="min-width: 30px; text-align: right;">0°</span>
-                                    </div>
-                                </div>
-                                <div class="control-row">
-                                    <div class="control-group">
-                                        <label style="min-width: 70px;">S軸回転:</label>
-                                        <input type="range" id="file3dRotationS" min="-180" max="180" step="5" value="0" style="flex: 1;">
-                                        <span id="file3dRotationSValue" style="min-width: 30px; text-align: right;">0°</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="control-row">
-                            <div class="control-group">
-                                <input type="checkbox" id="showTrails" checked>
-                                <label>軌跡表示</label>
-                            </div>
-                        </div>
-                        <div class="control-row">
-                            <div class="control-group">
-                                <label>軌跡長さ:</label>
-                                <input type="range" id="trailLength" min="50" max="500" step="50" value="200">
-                                <span id="trailLengthValue" style="font-size: 11px;">200</span>
-                            </div>
-                        </div>
+                    <!-- Hidden inputs for backward compatibility -->
+                    <input type="number" id="satelliteSize" value="1.0" style="display: none;">
+                    <label id="satelliteSizeLabel" style="display: none;"></label>
+                    <span id="satelliteSizeUnit" style="display: none;"></span>
+                    <select id="satelliteShape" style="display: none;">
+                        <option value="sphere" selected>球体</option>
+                    </select>
+                    <input type="checkbox" id="uniformSatelliteColor" style="display: none;">
+                    <input type="color" id="satelliteColor" value="#ffffff" style="display: none;">
+                    <div id="cubeRotationControls" style="display: none;">
+                        <input type="range" id="cubeRotationR" value="0" style="display: none;">
+                        <span id="cubeRotationRValue" style="display: none;"></span>
+                        <input type="range" id="cubeRotationS" value="0" style="display: none;">
+                        <span id="cubeRotationSValue" style="display: none;"></span>
+                    </div>
+                    <div id="file3dControls" style="display: none;">
+                        <input type="file" id="file3dInput" style="display: none;">
+                        <input type="range" id="file3dRotationR" value="0" style="display: none;">
+                        <span id="file3dRotationRValue" style="display: none;"></span>
+                        <input type="range" id="file3dRotationS" value="0" style="display: none;">
+                        <span id="file3dRotationSValue" style="display: none;"></span>
                     </div>
                     </div>
                     <!-- タブコンテンツ終了: 表示 -->
@@ -431,7 +388,7 @@
             </div>
             
             <!-- 折りたたみ可能な基準衛星情報パネル -->
-            <div id="reference-satellite-panel" class="absolute top-[130px] right-5 z-[12] flex flex-col items-end">
+            <div id="reference-satellite-panel" class="absolute top-5 right-5 z-[12] flex flex-col items-end">
                 <button id="reference-satellite-toggle" class="panel-toggle flex items-center gap-1.5 px-3 py-2 bg-black/75 border border-orange-500/25 rounded-lg text-white/90 text-xs cursor-pointer transition-all duration-200 backdrop-blur-lg hover:bg-black/85 hover:border-orange-500/40" onclick="toggleReferenceSatelliteInfo()">
                     <span class="icon text-sm">📍 </span>
                     <span class="toggle-arrow text-[10px] transition-transform duration-200">▼</span>
@@ -464,7 +421,9 @@
                     <select id="timeScale" class="bg-transparent border-none text-orange-500 text-sm font-normal outline-none cursor-pointer px-1 py-0 font-mono">
                         <option value="1">1x (1秒/秒)</option>
                         <option value="10">10x (10秒/秒)</option>
-                        <option value="60" selected>60x (1分/秒)</option>
+                        <option value="60">60x (1分/秒)</option>
+                        <option value="180" selected>180x (3分/秒)</option>
+                        <option value="300">300x (5分/秒)</option>
                         <option value="600">600x (10分/秒)</option>
                         <option value="1800">1800x (30分/秒)</option>
                         <option value="3600">3600x (1時間/秒)</option>
@@ -474,7 +433,9 @@
                     <select id="csvPlaybackSpeedMain" class="bg-transparent border-none text-orange-500 text-sm font-normal outline-none cursor-pointer px-1 py-0 font-mono" style="display: none;">
                         <option value="1">1x (1秒/秒)</option>
                         <option value="10">10x (10秒/秒)</option>
-                        <option value="60" selected>60x (1分/秒)</option>
+                        <option value="60">60x (1分/秒)</option>
+                        <option value="180" selected>180x (3分/秒)</option>
+                        <option value="300">300x (5分/秒)</option>
                         <option value="600">600x (10分/秒)</option>
                         <option value="1800">1800x (30分/秒)</option>
                         <option value="3600">3600x (1時間/秒)</option>
@@ -491,31 +452,33 @@
                 <div class="bg-gradient-to-br from-slate-900/98 to-slate-800/95 rounded-2xl border border-orange-500/30 shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
                     <!-- Header -->
                     <div class="flex items-center justify-between px-6 py-4 border-b border-orange-500/20 bg-orange-500/[0.08]">
-                        <h2 class="text-orange-400 text-2xl font-bold drop-shadow-[0_0_20px_rgba(255,127,80,0.5)]">🔧 フォーメーション設計</h2>
-                        <div class="flex gap-2">
-                            <button id="formation-json-export" class="px-4 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg text-orange-400 text-sm font-semibold hover:bg-orange-500/30 transition-all">💾 JSON保存</button>
+                        <h2 class="text-orange-400 text-2xl font-bold drop-shadow-[0_0_20px_rgba(255,127,80,0.5)]">🛰️ フォーメーション設計</h2>
+                        <div class="flex gap-2 items-center">
+                            <button id="formation-json-export" class="w-9 h-9 p-0 bg-white/5 border border-orange-500/20 rounded-lg text-orange-400/60 text-lg hover:bg-orange-500/10 hover:border-orange-500/30 hover:text-orange-400 transition-all" title="JSON保存">💾</button>
                             <input type="file" id="formation-json-input" accept=".json" class="hidden">
-                            <button id="formation-json-import" class="px-4 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg text-orange-400 text-sm font-semibold hover:bg-orange-500/30 transition-all">📂 JSON読込</button>
-                            <button id="formation-preview" class="px-4 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg text-orange-400 text-sm font-semibold hover:bg-orange-500/30 transition-all">👁️ プレビュー</button>
-                            <button id="formation-close" class="px-4 py-2 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-xl hover:bg-orange-500/20 transition-all">×</button>
+                            <button id="formation-json-import" class="w-9 h-9 p-0 bg-white/5 border border-orange-500/20 rounded-lg text-orange-400/60 text-lg hover:bg-orange-500/10 hover:border-orange-500/30 hover:text-orange-400 transition-all" title="JSON読込">📂</button>
+                            <div class="w-px h-6 bg-orange-500/20 mx-1"></div>
+                            <button id="formation-preview" class="px-5 py-2 bg-orange-500/30 border border-orange-500/50 rounded-lg text-orange-300 text-sm font-bold hover:bg-orange-500/40 hover:border-orange-500 hover:text-white hover:shadow-[0_0_20px_rgba(255,127,80,0.4)] transition-all">✓ この設定を適用</button>
+                            <button id="formation-close" class="w-9 h-9 p-0 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-xl hover:bg-orange-500/20 transition-all">×</button>
                         </div>
                     </div>
 
                     <!-- Content -->
                     <div class="flex-1 overflow-y-auto p-6">
-                        <!-- Layers List Header -->
-                        <div class="mb-4 flex items-center justify-between">
-                            <div class="flex items-center gap-4">
-                                <h3 class="text-orange-400 text-lg font-bold">レイヤー</h3>
-                                <!-- Formation Info (compact) -->
-                                <div class="flex items-center gap-2 text-xs text-orange-300/60">
-                                    <input type="text" id="formation-name" value="新しいフォーメーション" placeholder="名前" class="px-2 py-1 bg-white/[0.04] border border-orange-500/10 rounded text-white text-xs w-48">
-                                    <input type="text" id="formation-description" placeholder="説明（任意）" class="px-2 py-1 bg-white/[0.04] border border-orange-500/10 rounded text-white text-xs w-48">
-                                </div>
+                        <!-- Formation Info and Controls -->
+                        <div class="mb-4 space-y-3">
+                            <!-- Formation Name and Description -->
+                            <div class="flex items-center gap-3">
+                                <input type="text" id="formation-name" value="新しいフォーメーション" placeholder="フォーメーション名" class="px-3 py-2 bg-white/[0.06] border border-orange-500/20 rounded-lg text-white text-sm w-64 font-semibold">
+                                <input type="text" id="formation-description" placeholder="説明（任意）" class="flex-1 px-3 py-2 bg-white/[0.04] border border-orange-500/10 rounded-lg text-white text-sm">
                             </div>
-                            <div class="flex items-center gap-4">
-                                <span id="formation-total-satellites" class="text-orange-300/80 text-sm">合計: 0 個</span>
-                                <button id="formation-add-layer" class="px-4 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg text-orange-400 text-sm font-semibold hover:bg-orange-500/30 transition-all">+ レイヤー追加</button>
+                            <!-- Layer Controls -->
+                            <div class="flex items-center justify-between">
+                                <div class="text-orange-300/70 text-sm">衛星配置のレイヤーを追加・編集できます</div>
+                                <div class="flex items-center gap-4">
+                                    <span id="formation-total-satellites" class="text-orange-300/80 text-sm font-semibold">合計: 0 個</span>
+                                    <button id="formation-add-layer" class="px-4 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg text-orange-400 text-sm font-semibold hover:bg-orange-500/30 transition-all">+ レイヤー追加</button>
+                                </div>
                             </div>
                         </div>
 
@@ -529,16 +492,16 @@
 
             <!-- レイヤー編集モーダル -->
             <div id="layer-editor-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[10002] hidden items-center justify-center">
-                <div class="bg-gradient-to-br from-slate-900/98 to-slate-800/95 rounded-2xl border border-orange-500/30 shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+                <div class="bg-gradient-to-br from-slate-900/98 to-slate-800/95 rounded-2xl border border-orange-500/30 shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden">
                     <!-- Header -->
-                    <div class="flex items-center justify-between px-6 py-4 border-b border-orange-500/20 bg-orange-500/[0.08]">
-                        <h2 class="text-orange-400 text-xl font-bold drop-shadow-[0_0_20px_rgba(255,127,80,0.5)]">✏️ レイヤー編集</h2>
-                        <button id="layer-editor-close" class="px-3 py-1 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-xl hover:bg-orange-500/20 transition-all">×</button>
+                    <div class="flex items-center justify-between px-5 py-3 border-b border-orange-500/20 bg-orange-500/[0.08]">
+                        <h2 class="text-orange-400 text-lg font-bold drop-shadow-[0_0_20px_rgba(255,127,80,0.5)]">✏️ レイヤー編集</h2>
+                        <button id="layer-editor-close" class="w-8 h-8 p-0 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-lg hover:bg-orange-500/20 transition-all">×</button>
                     </div>
 
                     <!-- Content -->
-                    <div class="flex-1 overflow-y-auto p-6">
-                        <div class="space-y-4">
+                    <div class="flex-1 overflow-y-auto p-5">
+                        <div class="space-y-3">
                             <!-- Layer Name -->
                             <div>
                                 <label class="block text-orange-400 text-sm font-semibold mb-2">レイヤー名:</label>
@@ -694,7 +657,7 @@
                     </div>
 
                     <!-- Footer -->
-                    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-orange-500/20 bg-white/[0.02]">
+                    <div class="flex items-center justify-end gap-3 px-5 py-3 border-t border-orange-500/20 bg-white/[0.02]">
                         <button id="layer-editor-cancel" class="px-4 py-2 bg-white/5 border border-orange-500/30 rounded-lg text-orange-400 text-sm hover:bg-white/10 transition-all">キャンセル</button>
                         <button id="layer-editor-save" class="px-4 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg text-orange-400 text-sm font-semibold hover:bg-orange-500/30 transition-all">保存</button>
                     </div>

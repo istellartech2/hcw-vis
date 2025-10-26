@@ -87,15 +87,15 @@ export interface FormationConfig {
  */
 export const DEFAULT_LAYER: Omit<FormationLayer, 'id' | 'name'> = {
     enabled: true,
-    pattern: 'hexagonal_disk',
+    pattern: 'axis',
     placementMode: 'spacing',
     radius: 10.0,
-    spacing: 2.0,
-    satelliteCount: 19,
+    spacing: 1.0,
+    satelliteCount: 3,
     shape: 'sphere',
     size: 0.3,
     rotation: { r: 0, s: 0 },
-    colorMode: 'uniform',
+    colorMode: 'random',
     color: '#4ecdc4'
 };
 
@@ -114,21 +114,21 @@ export interface ValidationResult {
 export const DEFAULT_FORMATION_CONFIG: FormationConfig = {
     version: '1.0',
     name: 'デフォルトフォーメーション',
-    description: '円盤軌道（六角格子配置）',
+    description: '',
     createdAt: new Date().toISOString(),
     layers: [
         {
             id: crypto.randomUUID(),
-            name: '円盤軌道レイヤー',
+            name: 'デフォルトレイヤー',
             enabled: true,
-            pattern: 'hexagonal_disk',
+            pattern: 'axis',
             placementMode: 'spacing',
             spacing: 2.0,
-            satelliteCount: 19,
+            satelliteCount: 5,
             shape: 'sphere',
-            size: 0.3,
+            size: 0.5,
             rotation: { r: 0, s: 0 },
-            colorMode: 'uniform',
+            colorMode: 'random',
             color: '#4ecdc4'
         }
     ]

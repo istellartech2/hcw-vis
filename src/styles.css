@@ -415,7 +415,7 @@ h1 {
 /* 基準衛星情報パネル */
 #reference-satellite-panel {
     position: absolute;
-    top: 130px;
+    top: 20px;
     right: 20px;
     z-index: 12;
     display: flex;
@@ -545,7 +545,7 @@ h1 {
     }
 
     #reference-satellite-panel {
-        top: calc(env(safe-area-inset-top, 0px) + 90px);
+        top: calc(env(safe-area-inset-top, 0px) + 15px);
         right: 10px;
     }
 
