@@ -5,6 +5,7 @@ import { CelestialBodies } from './CelestialBodies.js';
 import { UIControls } from '../interaction/UIControls.js';
 import { ModelLoader } from './ModelLoader.js';
 import { InstancedSatelliteRenderer } from './InstancedSatelliteRenderer.js';
+import { FormationGenerator } from '../formation/FormationGenerator.js';
 
 export class RenderingSystem {
     private scene: THREE.Scene;
@@ -152,6 +153,11 @@ export class RenderingSystem {
     }
 
     public createSatelliteMeshes(satellites: Satellite[]): void {
+        // Clean up existing instanced meshes first
+        if (this.instancedRenderer) {
+            this.instancedRenderer.disposeAll();
+        }
+
         // Clean up existing meshes
         this.satelliteMeshes.forEach(meshOrGroup => {
             this.scene.remove(meshOrGroup);
@@ -187,18 +193,21 @@ export class RenderingSystem {
 
         this.satelliteMeshes = [];
 
-        // Get satellite size and shape from UI controls
+        // Check if any satellite has metadata (formation mode)
+        const hasMetadata = satellites.some(sat => FormationGenerator.getSatelliteMetadata(sat) !== undefined);
+
+        // Get satellite size and shape from UI controls (for non-formation mode)
         const satelliteSize = parseFloat(this.uiControls.elements.satelliteSize.value);
         const satelliteShape = this.uiControls.elements.satelliteShape.value;
 
-        // Determine rendering mode: InstancedMesh for sphere/cube, fallback for 3dfile
-        this.useInstancedRendering = (satelliteShape === 'sphere' || satelliteShape === 'cube') && satellites.length > 1;
+        // Determine rendering mode: InstancedMesh only for non-formation mode with sphere/cube
+        this.useInstancedRendering = !hasMetadata && (satelliteShape === 'sphere' || satelliteShape === 'cube') && satellites.length > 1;
 
         if (this.useInstancedRendering) {
             // Use InstancedMesh for sphere/cube shapes
             this.createSatelliteMeshesInstanced(satellites, satelliteSize, satelliteShape);
         } else {
-            // Fallback to traditional individual meshes for 3D files or single satellite
+            // Fallback to traditional individual meshes for formation mode, 3D files, or single satellite
             this.createSatelliteMeshesTraditional(satellites, satelliteSize, satelliteShape);
         }
     }
@@ -256,10 +265,16 @@ export class RenderingSystem {
         // Create center satellite
         let centerMesh: THREE.Mesh | THREE.Group;
 
-        if (satelliteShape === '3dfile' && this.loadedModel) {
+        // Check if center satellite has metadata
+        const centerMetadata = FormationGenerator.getSatelliteMetadata(satellites[0]);
+        const centerShape = centerMetadata?.shape || satelliteShape;
+        const centerSize = centerMetadata?.size || satelliteSize;
+        const centerBoxRatios = centerMetadata?.boxRatios || { x: 1, y: 1, z: 1 };
+
+        if (centerShape === '3dfile' && this.loadedModel) {
             // Clone the loaded model for the center satellite
             centerMesh = this.loadedModel.clone();
-            
+
             // Apply white material to make it distinguishable
             centerMesh.traverse((child) => {
                 if ((child as THREE.Mesh).isMesh) {
@@ -271,22 +286,32 @@ export class RenderingSystem {
                     });
                 }
             });
-            
+
             // Scale the model based on satellite size
-            centerMesh.scale.setScalar(satelliteSize);
+            centerMesh.scale.setScalar(centerSize);
         } else {
             // Create standard geometry
-            const centerGeometry = satelliteShape === 'cube' 
-                ? new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2)
-                : new THREE.SphereGeometry(satelliteSize, 32, 32);
-            const centerMaterial = new THREE.MeshPhongMaterial({ 
+            let centerGeometry: THREE.BufferGeometry;
+            if (centerShape === 'cube') {
+                centerGeometry = new THREE.BoxGeometry(centerSize * 2, centerSize * 2, centerSize * 2);
+            } else if (centerShape === 'box') {
+                // Box geometry with ratios
+                centerGeometry = new THREE.BoxGeometry(
+                    centerSize * 2 * centerBoxRatios.x,
+                    centerSize * 2 * centerBoxRatios.y,
+                    centerSize * 2 * centerBoxRatios.z
+                );
+            } else {
+                centerGeometry = new THREE.SphereGeometry(centerSize, 32, 32);
+            }
+            const centerMaterial = new THREE.MeshPhongMaterial({
                 color: 0xffffff,
                 emissive: 0xffffff,
                 emissiveIntensity: 0.3
             });
             centerMesh = new THREE.Mesh(centerGeometry, centerMaterial);
         }
-        
+
         this.scene.add(centerMesh);
         this.satelliteMeshes.push(centerMesh);
         
@@ -297,19 +322,29 @@ export class RenderingSystem {
         
         for (let i = 1; i < satellites.length; i++) {
             let satMesh: THREE.Mesh | THREE.Group;
-            
-            if (satelliteShape === '3dfile' && this.loadedModel) {
+
+            // Check if satellite has metadata (from FormationGenerator)
+            const metadata = FormationGenerator.getSatelliteMetadata(satellites[i]);
+            const satShape = metadata?.shape || satelliteShape;
+            const satSize = metadata?.size || satelliteSize;
+            const boxRatios = metadata?.boxRatios || { x: 1, y: 1, z: 1 };
+
+            // Get color from metadata or UI
+            let materialColor: number;
+            if (metadata?.color) {
+                // Use color from metadata
+                const colorHex = metadata.color.replace('#', '');
+                materialColor = parseInt(colorHex, 16);
+            } else if (useUniformColor) {
+                materialColor = parseInt(uniformColor.replace('#', ''), 16);
+            } else {
+                materialColor = colors[(i - 1) % colors.length];
+            }
+
+            if (satShape === '3dfile' && this.loadedModel) {
                 // Clone the loaded model for each satellite
                 satMesh = this.loadedModel.clone();
-                
-                // Determine the color for this satellite
-                let materialColor: number;
-                if (useUniformColor) {
-                    materialColor = parseInt(uniformColor.replace('#', ''), 16);
-                } else {
-                    materialColor = colors[(i - 1) % colors.length];
-                }
-                
+
                 // Apply colored material to the model
                 satMesh.traverse((child) => {
                     if ((child as THREE.Mesh).isMesh) {
@@ -321,30 +356,33 @@ export class RenderingSystem {
                         });
                     }
                 });
-                
+
                 // Scale the model based on satellite size
-                satMesh.scale.setScalar(satelliteSize);
+                satMesh.scale.setScalar(satSize);
             } else {
                 // Create standard geometry
-                const satGeometry = satelliteShape === 'cube' 
-                    ? new THREE.BoxGeometry(satelliteSize * 2, satelliteSize * 2, satelliteSize * 2)
-                    : new THREE.SphereGeometry(satelliteSize, 32, 32);
-                
-                let materialColor: number;
-                if (useUniformColor) {
-                    materialColor = parseInt(uniformColor.replace('#', ''), 16);
+                let satGeometry: THREE.BufferGeometry;
+                if (satShape === 'cube') {
+                    satGeometry = new THREE.BoxGeometry(satSize * 2, satSize * 2, satSize * 2);
+                } else if (satShape === 'box') {
+                    // Box geometry with custom ratios
+                    satGeometry = new THREE.BoxGeometry(
+                        satSize * 2 * boxRatios.x,
+                        satSize * 2 * boxRatios.y,
+                        satSize * 2 * boxRatios.z
+                    );
                 } else {
-                    materialColor = colors[(i - 1) % colors.length];
+                    satGeometry = new THREE.SphereGeometry(satSize, 32, 32);
                 }
-                
-                const satMaterial = new THREE.MeshPhongMaterial({ 
+
+                const satMaterial = new THREE.MeshPhongMaterial({
                     color: materialColor,
                     emissive: materialColor,
                     emissiveIntensity: 0.2
                 });
                 satMesh = new THREE.Mesh(satGeometry, satMaterial);
             }
-            
+
             this.scene.add(satMesh);
             this.satelliteMeshes.push(satMesh);
         }
@@ -416,18 +454,16 @@ export class RenderingSystem {
      */
     private updateSatellitePositionsTraditional(satellites: Satellite[]): void {
         const satelliteShape = this.uiControls.elements.satelliteShape.value;
-        const isCube = satelliteShape === 'cube';
-        const is3DFile = satelliteShape === '3dfile';
 
-        let rotationR = 0;
-        let rotationS = 0;
+        let defaultRotationR = 0;
+        let defaultRotationS = 0;
 
-        if (isCube) {
-            rotationR = parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180;
-            rotationS = parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180;
-        } else if (is3DFile) {
-            rotationR = parseFloat(this.uiControls.elements.file3dRotationR.value) * Math.PI / 180;
-            rotationS = parseFloat(this.uiControls.elements.file3dRotationS.value) * Math.PI / 180;
+        if (satelliteShape === 'cube' || satelliteShape === 'box') {
+            defaultRotationR = parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180;
+            defaultRotationS = parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180;
+        } else if (satelliteShape === '3dfile') {
+            defaultRotationR = parseFloat(this.uiControls.elements.file3dRotationR.value) * Math.PI / 180;
+            defaultRotationS = parseFloat(this.uiControls.elements.file3dRotationS.value) * Math.PI / 180;
         }
 
         satellites.forEach((sat, index) => {
@@ -438,12 +474,19 @@ export class RenderingSystem {
             // Three.js: X = S (Along-track), Y = R (Radial), Z = W (Cross-track)
             // this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
             this.satelliteMeshes[index].position.set(pos.z * scale, pos.x * scale, pos.y * scale);
-            
-            // Apply rotation for cubes and 3D files
-            if (isCube || is3DFile) {
+
+            // Get satellite shape from metadata or UI
+            const metadata = FormationGenerator.getSatelliteMetadata(sat);
+            const satShape = metadata?.shape || satelliteShape;
+            const isCube = satShape === 'cube';
+            const isBox = satShape === 'box';
+            const is3DFile = satShape === '3dfile';
+
+            // Apply rotation for cubes, boxes and 3D files
+            if (isCube || isBox || is3DFile) {
                 // Reset rotation first
                 this.satelliteMeshes[index].rotation.set(0, 0, 0);
-                
+
                 // Check if satellite has CSV quaternion data
                 const satelliteQuaternion = (sat as any).quaternion;
                 if (satelliteQuaternion) {
@@ -451,7 +494,7 @@ export class RenderingSystem {
                     // CSV quaternion: body frame to RSW frame rotation
                     // RSW: X=R(radial), Y=S(along-track), Z=W(cross-track)
                     // Three.js: X=W(cross-track), Y=R(radial), Z=S(along-track)
-                    
+
                     // Transform quaternion from RSW to Three.js coordinate system
                     // Mapping: RSW(x,y,z) -> Three.js(z,x,y)
                     const transformedQuat = new THREE.Quaternion(
@@ -460,17 +503,25 @@ export class RenderingSystem {
                         satelliteQuaternion.y,  // RSW Y -> Three.js Z
                         satelliteQuaternion.w   // W component stays the same
                     );
-                    
+
                     this.satelliteMeshes[index].quaternion.copy(transformedQuat);
                 } else {
-                    // Use UI controls for manual rotation (normal simulation mode)
+                    // Get rotation from metadata or UI default
+                    let rotR = defaultRotationR;
+                    let rotS = defaultRotationS;
+
+                    if (metadata?.rotation) {
+                        rotR = metadata.rotation.r * Math.PI / 180;
+                        rotS = metadata.rotation.s * Math.PI / 180;
+                    }
+
                     // Apply rotations in Hill coordinate frame
                     // Hill to Three.js mapping: X=W, Y=R, Z=S
                     // R axis rotation (Radial axis) -> Y axis in Three.js
-                    this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 1, 0), rotationR);
-                    
+                    this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 1, 0), rotR);
+
                     // S axis rotation (Along-track axis) -> Z axis in Three.js
-                    this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 0, 1), rotationS);
+                    this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 0, 1), rotS);
                 }
             }
             

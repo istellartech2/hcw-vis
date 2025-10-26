@@ -63,10 +63,10 @@ export class OrbitInitializer {
         
         switch (pattern) {
             case 'axis':
-                return this.generateAxisPositions(count, radius);
-                
+                return this.generateAxisPositions(count, radius, spacing);
+
             case 'grid':
-                return this.generateGridPositions(count, radius);
+                return this.generateGridPositions(count, radius, spacing);
                 
             case 'random_position':
                 return this.generateRandomPositions(count, radius);
@@ -84,10 +84,10 @@ export class OrbitInitializer {
                 return this.generateCircularOrbit(count, radius, positiveZ ?? true);
                 
             case 'vbar_approach':
-                return this.generateVBarApproach(count, radius);
-                
+                return this.generateVBarApproach(count, radius, spacing);
+
             case 'rbar_approach':
-                return this.generateRBarApproach(count, radius);
+                return this.generateRBarApproach(count, radius, spacing);
                 
             case 'hexagonal_disk':
                 return this.generateHexagonalDisk(count, radius, spacing);
@@ -99,16 +99,26 @@ export class OrbitInitializer {
         }
     }
     
-    private generateAxisPositions(count: number, radius: number): InitialCondition[] {
+    private generateAxisPositions(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const axisPositions: number[] = [];
         const eachAxisSatNum = count * 3;
-        
+
         // 各軸に配置する位置を計算（ゼロ点を除外）
-        for (let i = 1; i <= eachAxisSatNum; i++) {
-            const position = (radius * i) / count;
-            axisPositions.push(-position); // 負の方向
-            axisPositions.push(position);  // 正の方向
+        if (spacing !== undefined) {
+            // Spacing mode: place satellites at fixed intervals
+            for (let i = 1; i <= eachAxisSatNum; i++) {
+                const position = spacing * i;
+                axisPositions.push(-position); // 負の方向
+                axisPositions.push(position);  // 正の方向
+            }
+        } else {
+            // Radius mode: distribute satellites within radius
+            for (let i = 1; i <= eachAxisSatNum; i++) {
+                const position = (radius * i) / count;
+                axisPositions.push(-position); // 負の方向
+                axisPositions.push(position);  // 正の方向
+            }
         }
         
         // X軸に配置
@@ -150,14 +160,23 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateGridPositions(count: number, radius: number): InitialCondition[] {
+    private generateGridPositions(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const gridValues: number[] = [];
-        
+
         // 各軸の格子点を計算
-        for (let i = -count; i <= count; i++) {
-            const value = (i * radius) / count;
-            gridValues.push(value);
+        if (spacing !== undefined) {
+            // Spacing mode: use fixed grid spacing
+            for (let i = -count; i <= count; i++) {
+                const value = i * spacing;
+                gridValues.push(value);
+            }
+        } else {
+            // Radius mode: distribute grid within radius
+            for (let i = -count; i <= count; i++) {
+                const value = (i * radius) / count;
+                gridValues.push(value);
+            }
         }
         
         // 3D格子の全組み合わせを生成（原点を除外）
@@ -340,29 +359,37 @@ export class OrbitInitializer {
         return positions;
     }
     
-    private generateVBarApproach(count: number, radius: number): InitialCondition[] {
+    private generateVBarApproach(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        
+
         // V-bar軌道: 速度ベクトル方向（Y軸、Along-track）からの接近
         // 宇宙ステーションの後方から接近する安全な軌道
         for (let i = 0; i < count; i++) {
-            const approachDistance = radius * (1 + i * 0.5); // 段階的に配置
-            
+            let approachDistance: number;
+
+            if (spacing !== undefined) {
+                // 衛星間距離モード: spacing間隔で配置
+                approachDistance = spacing * (i + 1);
+            } else {
+                // 範囲指定モード: radiusまでの範囲内に均等に配置
+                approachDistance = radius * (i + 1) / count;
+            }
+
             // 初期位置: 後方から接近（Y軸負の方向）
             const x0 = 0; // 径方向は中央
             const y0 = -approachDistance; // 後方から接近
             const z0 = 0; // 軌道面内
-            
+
             // ヒルの方程式の解析解を考慮した初期速度
             // V-bar軌道では、適切な接近速度が必要
             const approachTime = Math.PI / this.n; // 半周期での接近を想定
-            
+
             // ターゲットに向かう初期速度を計算
             // ヒルの方程式の線形解を使用
             const vx0 = 0; // 径方向初期速度は0
             const vy0 = this.n * approachDistance * 0.5; // 適切な接近速度
             const vz0 = 0; // 軌道面内
-            
+
             positions.push({
                 x0: x0,
                 y0: y0,
@@ -372,29 +399,37 @@ export class OrbitInitializer {
                 vz0: vz0
             });
         }
-        
+
         return positions;
     }
     
-    private generateRBarApproach(count: number, radius: number): InitialCondition[] {
+    private generateRBarApproach(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        
+
         // R-bar軌道: 径方向（X軸、Radial）からの接近
         // 宇宙ステーションの下方（地球側）から接近する軌道
         for (let i = 0; i < count; i++) {
-            const approachDistance = radius * (1 + i * 0.5); // 段階的に配置
-            
+            let approachDistance: number;
+
+            if (spacing !== undefined) {
+                // 衛星間距離モード: spacing間隔で配置
+                approachDistance = spacing * (i + 1);
+            } else {
+                // 範囲指定モード: radiusまでの範囲内に均等に配置
+                approachDistance = radius * (i + 1) / count;
+            }
+
             // 初期位置: 下方から接近（X軸負の方向）
             const x0 = -approachDistance; // 下方から接近
             const y0 = 0; // 軌道進行方向は中央
             const z0 = 0; // 軌道面内
-            
+
             // R-bar軌道の初期速度
             // 径方向の運動特性を考慮した速度設定
             const vx0 = this.n * approachDistance * 0.3; // 径方向接近速度
             const vy0 = -2 * this.n * x0; // ヒルの方程式による結合項
             const vz0 = 0; // 軌道面内
-            
+
             positions.push({
                 x0: x0,
                 y0: y0,
@@ -404,7 +439,7 @@ export class OrbitInitializer {
                 vz0: vz0
             });
         }
-        
+
         return positions;
     }
     

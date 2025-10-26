@@ -11,6 +11,7 @@ import type { EventHandlerCallbacks } from './interaction/EventHandler.js';
 import { RenderingSystem } from './visualization/RenderingSystem.js';
 import { LoadingIndicator } from './ui/LoadingIndicator.js';
 import { CSVPlaybackController } from './interaction/CSVPlaybackController.js';
+import { FormationUIController } from './formation/FormationUIController.js';
 
 class HillEquationSimulation implements EventHandlerCallbacks {
     private container: HTMLElement;
@@ -38,6 +39,7 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private renderingSystem: RenderingSystem;
     private loadingIndicator: LoadingIndicator;
     private csvPlaybackController: CSVPlaybackController;
+    private formationUIController: FormationUIController;
     
     // Orbital elements
     private currentOrbitElements!: OrbitalElements;
@@ -70,22 +72,26 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.csvPlaybackController.setUpdateCallback(() => this.updateSatellitesFromPlayback());
         this.cameraController.resetView(); // Set initial camera position
         this.eventHandler = new EventHandler(this.uiControls, this.renderingSystem.getCelestialBodies(), this, this.container);
+
+        // Formation UI Controller
+        this.formationUIController = new FormationUIController(this.n);
+        this.formationUIController.setOnPreview((satellites) => this.applyFormation(satellites));
         
         this.setupSatelliteSelectionListener();
         this.setupUIEventListeners();
         this.setupReferenceSatellitePanel();
         this.initializeOrbitElements();
         this.updateOrbitParameters();
-        this.uiControls.setupPlacementPatternLimits();
-        this.uiControls.updatePeriodicParamsDisplay(); // Initialize slider displays
-        this.uiControls.updateSatelliteSizeLabel(); // Initialize size label
-        this.initSimulation();
-        
+
+        // デフォルトフォーメーションで衛星を配置
+        const defaultSatellites = this.formationUIController.generateSatellites();
+        this.applyFormation(defaultSatellites);
+
         // Create Earth (orbit radius in meters)
         const selectedTexture = this.uiControls.elements.earthTexture.value;
         this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius, selectedTexture);
         this.renderingSystem.getCelestialBodies().setEarthVisibility(true);
-        
+
         this.animate();
     }
     
@@ -101,39 +107,10 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         this.uiControls.elements.satelliteSize.addEventListener('input', () => {
             this.updateSatelliteSize();
         });
-        
+
         // J2 perturbation checkbox
         this.uiControls.elements.j2Perturbation?.addEventListener('change', () => {
             this.updateOrbitParameters();
-        });
-        
-        // Periodic parameters sliders
-        this.uiControls.elements.paramB.addEventListener('input', () => {
-            this.uiControls.updatePeriodicParamsDisplay();
-            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
-                this.resetSimulation();
-            }
-        });
-        
-        this.uiControls.elements.paramD.addEventListener('input', () => {
-            this.uiControls.updatePeriodicParamsDisplay();
-            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
-                this.resetSimulation();
-            }
-        });
-        
-        this.uiControls.elements.paramE.addEventListener('input', () => {
-            this.uiControls.updatePeriodicParamsDisplay();
-            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
-                this.resetSimulation();
-            }
-        });
-        
-        this.uiControls.elements.paramF.addEventListener('input', () => {
-            this.uiControls.updatePeriodicParamsDisplay();
-            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
-                this.resetSimulation();
-            }
         });
     }
     
@@ -161,22 +138,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 }
             };
             
-            // 衛星配置パネルのトグル
-            (window as any).toggleSatelliteConfig = () => {
-                const content = document.getElementById('satellite-config-content');
-                const toggleIcon = document.getElementById('satellite-config-toggle');
-                
-                if (content && toggleIcon) {
-                    if (content.style.display === 'none') {
-                        content.style.display = 'flex';
-                        toggleIcon.textContent = '▼';
-                    } else {
-                        content.style.display = 'none';
-                        toggleIcon.textContent = '▶';
-                    }
-                }
-            };
-
             // CSV制御パネルのトグル
             (window as any).toggleCSVControls = () => {
                 const content = document.getElementById('csv-controls-content');
@@ -235,7 +196,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         const inclinationRad = this.currentOrbitElements.inclination * Math.PI / 180;
         this.hillSolver.setOrbitParameters(this.orbitRadius, inclinationRad);
         this.hillSolver.setJ2Perturbation(j2Enabled);
-        
+        this.syncFormationGenerator();
+
         if (this.renderingSystem) {
             const selectedTexture = this.uiControls.elements.earthTexture.value;
             this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius, selectedTexture);
@@ -243,23 +205,16 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     }
     
     
-    private generatePlacementPositions(
-        pattern: string,
-        count: number,
-        radius: number,
-        zSpread: number,
-        zAmplitudeMultiplier?: number,
-        positiveZ?: boolean,
-        periodicParams?: { A: number, B: number, D: number, E: number, F: number }
-    ): Array<{x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number}> {
-        // Check if spacing mode is selected for disk patterns
-        let spacing: number | undefined;
-        if ((pattern === 'hexagonal_disk' || pattern === 'concentric_disk') &&
-            this.uiControls.elements.diskPlacementMode.value === 'spacing') {
-            spacing = parseFloat(this.uiControls.elements.satelliteSpacing.value);
+    private syncFormationGenerator(): void {
+        if (!this.formationUIController) {
+            return;
         }
 
-        return this.orbitInitializer.generatePositions(pattern, count, radius, zSpread, zAmplitudeMultiplier, positiveZ, periodicParams, spacing);
+        this.formationUIController.updateMeanMotion(this.n);
+
+        const j2StableEnabled = this.uiControls.elements.j2StableArrangement?.checked || false;
+        const ssCoefficient = this.hillSolver.getSSCoefficientC();
+        this.formationUIController.setJ2StableArrangement(j2StableEnabled, ssCoefficient);
     }
     
     public updateAllSatelliteColors(): void {
@@ -278,82 +233,6 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         }
         
         this.renderingSystem.updateAllSatelliteColors();
-    }
-    
-    private initSimulation(): void {
-        // Clean up existing satellites
-        this.satellites.forEach(sat => {
-            sat.dispose();
-        });
-
-        // J2安定配置の設定
-        const j2StableEnabled = this.uiControls.elements.j2StableArrangement?.checked || false;
-        const ssCoefficient = this.hillSolver.getSSCoefficientC();
-        this.orbitInitializer.setJ2StableArrangement(j2StableEnabled, ssCoefficient);
-
-        const count = parseInt(this.uiControls.elements.satelliteCount.value);
-        const radius = parseFloat(this.uiControls.elements.orbitRadius.value);
-        const pattern = this.uiControls.elements.placementPattern.value;
-        
-        // Show loading indicator for large simulations
-        if (count > 50) {
-            this.loadingIndicator.showProcessing(`${count}個の衛星配置を生成`);
-        }
-        
-        this.satellites = [];
-        
-        // Create center satellite
-        this.satellites.push(new Satellite(0, 0, 0, 0, 0, 0, '#ffffff'));
-        
-        const useUniformColor = this.uiControls.elements.uniformSatelliteColor.checked;
-        const uniformColor = this.uiControls.elements.satelliteColor.value;
-        const hexColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff'];
-        
-        const zAmplitudeMultiplier = parseFloat(this.uiControls.elements.zAmplitude.value) || 0;
-        const positiveZ = this.uiControls.elements.circularZDirection.checked;
-        
-        // Get periodic parameters for periodic_orbit pattern
-        let periodicParams: { A: number, B: number, D: number, E: number, F: number } | undefined;
-        if (pattern === 'periodic_orbit') {
-            const A = radius; // Use range(m) as A parameter
-            const ratioB = parseFloat(this.uiControls.elements.paramB.value);
-            const ratioD = parseFloat(this.uiControls.elements.paramD.value);
-            const ratioE = parseFloat(this.uiControls.elements.paramE.value);
-            const ratioF = parseFloat(this.uiControls.elements.paramF.value);
-            
-            periodicParams = {
-                A: A,
-                B: A * ratioB,
-                D: A * ratioD,
-                E: A * ratioE,
-                F: A * ratioF
-            };
-        }
-        
-        const positions = this.generatePlacementPositions(pattern, count, radius, 0, zAmplitudeMultiplier, positiveZ, periodicParams);
-        
-        positions.forEach((pos, i) => {
-            let satelliteColor: string;
-            
-            if (useUniformColor) {
-                satelliteColor = uniformColor;
-            } else {
-                satelliteColor = hexColors[i % hexColors.length];
-            }
-            
-            this.satellites.push(new Satellite(pos.x0, pos.y0, pos.z0, pos.vx0, pos.vy0, pos.vz0, satelliteColor));
-        });
-        
-        // Create meshes in rendering system
-        this.renderingSystem.createSatelliteMeshes(this.satellites);
-        
-        // Hide loading indicator if shown
-        if (count > 50) {
-            this.loadingIndicator.hide();
-        }
-        
-        this.time = 0;
-        this.simulationStartTime = new Date();
     }
     
     private animate = (): void => {
@@ -625,14 +504,28 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         }
     }
     
-    public resetSimulation(): void {
+    public resetPositions(): void {
+        // 衛星を初期位置に戻す（フォーメーション設定は維持）
         this.satellites.forEach(sat => {
             if (sat.trailLine) this.scene.remove(sat.trailLine);
             sat.reset();
         });
         this.renderingSystem.setSelectedSatelliteIndex(-1);
         this.updateSelectedSatelliteInfo();
-        this.initSimulation();
+        this.time = 0;
+
+        // 現在のフォーメーションで再生成
+        const currentSatellites = this.formationUIController.generateSatellites();
+        this.applyFormation(currentSatellites);
+    }
+
+    public resetFormation(): void {
+        // フォーメーション設定をデフォルトに戻す
+        this.formationUIController.getManager().reset();
+
+        // デフォルトフォーメーションで衛星を再配置
+        const defaultSatellites = this.formationUIController.generateSatellites();
+        this.applyFormation(defaultSatellites);
     }
     
     public togglePause(): void {
@@ -865,7 +758,29 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         // Always recreate for now to ensure proper mesh setup
         this.renderingSystem.createSatelliteMeshes(this.satellites);
     }
-    
+
+    /**
+     * フォーメーションを適用
+     */
+    private applyFormation(satellites: Satellite[]): void {
+        // Clear trails from old satellites before replacing them
+        if (this.satellites && this.satellites.length > 0) {
+            this.renderingSystem.clearTrails(this.satellites);
+        }
+
+        // Replace satellites with formation satellites
+        this.satellites = satellites;
+        this.time = 0;
+        this.renderingSystem.createSatelliteMeshes(this.satellites);
+    }
+
+    /**
+     * フォーメーション設計モーダルを開く
+     */
+    openFormationDesigner(): void {
+        this.formationUIController.open();
+    }
+
 }
 
 let simulation: HillEquationSimulation;
@@ -875,8 +790,10 @@ document.addEventListener('DOMContentLoaded', () => {
     (window as any).simulation = simulation;
     
     // グローバル関数として登録
-    (window as any).resetSimulation = () => simulation.resetSimulation();
+    (window as any).resetPositions = () => simulation.resetPositions();
+    (window as any).resetFormation = () => simulation.resetFormation();
     (window as any).togglePause = () => simulation.togglePause();
     (window as any).addPerturbation = () => simulation.addPerturbation();
     (window as any).resetView = () => simulation.resetView();
+    (window as any).openFormationDesigner = () => simulation.openFormationDesigner();
 });

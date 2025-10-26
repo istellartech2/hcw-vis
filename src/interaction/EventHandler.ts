@@ -2,7 +2,7 @@ import { UIControls } from './UIControls.js';
 import { CelestialBodies } from '../visualization/CelestialBodies.js';
 
 export interface EventHandlerCallbacks {
-    resetSimulation: () => void;
+    resetPositions: () => void;
     togglePause: () => void;
     addPerturbation: () => void;
     resetView: () => void;
@@ -43,32 +43,7 @@ export class EventHandler {
         this.uiControls.elements.trailLength.addEventListener('input', () => {
             this.uiControls.elements.trailLengthValue.textContent = this.uiControls.elements.trailLength.value;
         });
-        
-        // Simulation parameter controls
-        this.uiControls.elements.satelliteCount.addEventListener('change', () => {
-            this.callbacks.resetSimulation();
-        });
-        
-        this.uiControls.elements.placementPattern.addEventListener('change', () => {
-            this.uiControls.setupPlacementPatternLimits();
-            this.callbacks.resetSimulation();
-        });
 
-        // Disk placement mode control
-        this.uiControls.elements.diskPlacementMode.addEventListener('change', () => {
-            this.uiControls.updateDiskPlacementMode();
-            this.callbacks.resetSimulation();
-        });
-
-        // Satellite spacing control
-        this.uiControls.elements.satelliteSpacing.addEventListener('change', () => {
-            this.callbacks.resetSimulation();
-        });
-        
-        this.uiControls.elements.circularZDirection.addEventListener('change', () => {
-            this.callbacks.resetSimulation();
-        });
-        
         // Orbital elements controls
         const orbitElementInputs = [
             this.uiControls.elements.inclination,
@@ -86,42 +61,14 @@ export class EventHandler {
 
         this.uiControls.elements.orbitUpdateButton.addEventListener('click', () => {
             this.callbacks.updateOrbitElementsFromUI();
-            this.callbacks.resetSimulation();
+            this.callbacks.resetPositions();
         });
 
         // J2安定配置チェックボックス
         this.uiControls.elements.j2StableArrangement.addEventListener('change', () => {
-            this.callbacks.resetSimulation();
+            this.callbacks.resetPositions();
         });
-        
-        this.uiControls.elements.orbitRadius.addEventListener('change', () => {
-            // 楕円軌道の場合は離心率も更新
-            if (this.uiControls.elements.placementPattern.value === 'periodic_orbit') {
-                this.uiControls.updateEccentricity();
-            }
-            this.callbacks.resetSimulation();
-        });
-        
-        this.uiControls.elements.zAmplitude.addEventListener('input', () => {
-            this.uiControls.updateZAmplitudeDisplay();
-            this.callbacks.resetSimulation();
-        });
-        
-        // 楕円解パラメータのイベントリスナー
-        const periodicParams = [
-            this.uiControls.elements.paramB,
-            this.uiControls.elements.paramD,
-            this.uiControls.elements.paramE,
-            this.uiControls.elements.paramF
-        ];
-        
-        periodicParams.forEach(param => {
-            param.addEventListener('input', () => {
-                this.uiControls.updatePeriodicParamsDisplay();
-                this.callbacks.resetSimulation();
-            });
-        });
-        
+
         // Display controls
         this.uiControls.elements.showTrails.addEventListener('change', () => {
             if (!this.uiControls.elements.showTrails.checked) {
@@ -170,7 +117,7 @@ export class EventHandler {
             // Update size label based on shape
             this.uiControls.updateSatelliteSizeLabel();
 
-            this.callbacks.resetSimulation(); // Recreate satellites with new shape
+            this.callbacks.resetPositions(); // Recreate satellites with new shape
         });
         
         // Cube rotation controls
@@ -205,7 +152,7 @@ export class EventHandler {
         
         // Window resize
         window.addEventListener('resize', () => {
-            this.callbacks.resetSimulation(); // Will trigger camera update
+            this.callbacks.resetPositions(); // Will trigger camera update
         });
         
         // Keyboard shortcuts
@@ -229,7 +176,7 @@ export class EventHandler {
                     this.callbacks.togglePause();
                     break;
                 case 'r':
-                    this.callbacks.resetSimulation();
+                    this.callbacks.resetPositions();
                     break;
                 case 'p':
                     this.callbacks.addPerturbation();
@@ -309,7 +256,7 @@ export class EventHandler {
 
     private setupGlobalFunctions(): void {
         // Global functions for HTML onclick handlers
-        (window as any).resetSimulation = () => this.callbacks.resetSimulation();
+        (window as any).resetPositions = () => this.callbacks.resetPositions();
         (window as any).togglePause = () => this.callbacks.togglePause();
         (window as any).addPerturbation = () => this.callbacks.addPerturbation();
         (window as any).resetView = () => this.callbacks.resetView();
