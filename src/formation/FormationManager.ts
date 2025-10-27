@@ -262,8 +262,8 @@ export class FormationManager {
         }
 
         // 衛星数チェック
-        if (layer.satelliteCount < 1 || layer.satelliteCount > 200) {
-            errors.push(`${prefix}衛星数は1〜200の範囲で指定してください`);
+        if (layer.satelliteCount < 1 || layer.satelliteCount > 100000) {
+            errors.push(`${prefix}衛星数は1〜100000の範囲で指定してください`);
         }
 
         // 配置モードに応じたパラメータチェック
