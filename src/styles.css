@@ -318,41 +318,37 @@ select option:checked,
 
 /* Light mode support for main UI */
 @media (prefers-color-scheme: light) {
-    /* Time scale control - use light theme */
+    /* Time scale control - keep dark theme for consistency (background is dark) */
     #time-scale-control select,
     #csvPlaybackSpeedMain {
-        color-scheme: light;
-        background: rgba(255, 255, 255, 0.95);
-        color: #1f2937;
-        border-color: rgba(249, 115, 22, 0.3);
+        color-scheme: dark;
+        background: transparent;
+        color: #f97316;
+        border-color: transparent;
     }
 
     #time-scale-control select option,
     #csvPlaybackSpeedMain option {
-        background: #ffffff;
-        color: #1f2937;
+        background: rgba(30, 41, 59, 0.98);
+        color: #ffffff;
     }
 
     #time-scale-control select option:checked,
     #csvPlaybackSpeedMain option:checked {
-        background: rgba(249, 115, 22, 0.2);
-        color: #000000;
+        background: rgba(255, 127, 80, 0.4);
+        color: #ffffff;
         font-weight: 600;
     }
 
     #time-scale-control select:hover,
     #csvPlaybackSpeedMain:hover {
-        background: rgba(255, 255, 255, 1);
-        border-color: rgba(249, 115, 22, 0.6);
+        background: rgba(255, 127, 80, 0.1);
     }
 
     #time-scale-control select:focus,
     #csvPlaybackSpeedMain:focus {
-        background: rgba(255, 255, 255, 1);
-        border-color: #f97316;
-        box-shadow:
-            0 0 0 3px rgba(249, 115, 22, 0.2),
-            0 4px 12px rgba(249, 115, 22, 0.25);
+        background: rgba(255, 127, 80, 0.15);
+        outline: none;
     }
 
     /* Sidebar - keep dark theme even in light mode (sidebar has dark background) */
