@@ -90,11 +90,6 @@ export class RenderingSystem {
         const directionalLight4 = new THREE.DirectionalLight(0xffffff, 0.4);
         directionalLight4.position.set(-100, 0, 100);
         this.scene.add(directionalLight4);
-
-        // 中心のポイントライト（アクセント）
-        const pointLight = new THREE.PointLight(0xffffff, 0.3);
-        pointLight.position.set(0, 0, 0);
-        this.scene.add(pointLight);
     }
 
     private createAxes(): THREE.Group {
