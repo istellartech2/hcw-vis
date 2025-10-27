@@ -12,6 +12,7 @@ export type PatternType =
     | 'periodic_orbit'
     | 'circular_orbit'
     | 'hexagonal_disk'
+    | 'square_lattice_disk'
     | 'concentric_disk'
     | 'vbar_approach'
     | 'rbar_approach';

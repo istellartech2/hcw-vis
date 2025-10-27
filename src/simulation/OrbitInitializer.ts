@@ -7,13 +7,16 @@ export interface InitialCondition {
     vz0: number;
 }
 
-interface HexLatticePoint {
-    q: number;
-    r: number;
+interface DiskLatticePoint {
     x: number;
     y: number;
     theta: number;
     radiusEuclid: number;
+}
+
+interface HexLatticePoint extends DiskLatticePoint {
+    q: number;
+    r: number;
 }
 
 export type PlacementPattern = 
@@ -27,6 +30,7 @@ export type PlacementPattern =
     | 'vbar_approach'
     | 'rbar_approach'
     | 'hexagonal_disk'
+    | 'square_lattice_disk'
     | 'concentric_disk';
 
 export class OrbitInitializer {
@@ -91,6 +95,8 @@ export class OrbitInitializer {
                 
             case 'hexagonal_disk':
                 return this.generateHexagonalDisk(count, radius, spacing);
+            case 'square_lattice_disk':
+                return this.generateSquareLatticeDisk(count, radius, spacing);
             case 'concentric_disk':
                 return this.generateConcentricDisk(count, radius, spacing);
                 
@@ -444,18 +450,27 @@ export class OrbitInitializer {
     }
     
     private generateHexagonalDisk(count: number, radius: number, spacing?: number): InitialCondition[] {
+        const hexPoints = this.generateHexLatticePoints(count);
+        return this.createDiskInitialConditions(hexPoints, radius, spacing);
+    }
+
+    private generateSquareLatticeDisk(count: number, radius: number, spacing?: number): InitialCondition[] {
+        const squarePoints = this.generateSquareLatticePoints(count);
+        return this.createDiskInitialConditions(squarePoints, radius, spacing);
+    }
+
+    private createDiskInitialConditions(points: DiskLatticePoint[], radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
 
-        if (count <= 0) {
+        if (points.length === 0) {
             return positions;
         }
 
-        const hexPoints = this.generateHexLatticePoints(count);
         const sqrt5 = Math.sqrt(5);
         const sqrt3 = Math.sqrt(3);
 
         const hasSpacing = spacing !== undefined && Number.isFinite(spacing) && (spacing as number) > 0;
-        const maxEuclidRadius = hexPoints.reduce((max, point) => Math.max(max, point.radiusEuclid), 0);
+        const maxEuclidRadius = points.reduce((max, point) => Math.max(max, point.radiusEuclid), 0);
 
         let radialScale: number;
         if (hasSpacing) {
@@ -469,7 +484,7 @@ export class OrbitInitializer {
             radialScale = 0;
         }
 
-        for (const point of hexPoints) {
+        for (const point of points) {
             const rPhysical = point.radiusEuclid * radialScale;
             const theta = point.theta;
 
@@ -495,7 +510,7 @@ export class OrbitInitializer {
                 vz0
             });
         }
-        
+
         return positions;
     }
 
@@ -520,6 +535,53 @@ export class OrbitInitializer {
         });
 
         return candidates.slice(0, count);
+    }
+
+    private generateSquareLatticePoints(count: number): DiskLatticePoint[] {
+        if (count <= 0) {
+            return [];
+        }
+
+        const result: DiskLatticePoint[] = [];
+        const visited = new Set<string>();
+        const minHeap = new MinHeap<DiskLatticePoint>((a, b) => {
+            if (a.radiusEuclid !== b.radiusEuclid) {
+                return a.radiusEuclid - b.radiusEuclid;
+            }
+            return a.theta - b.theta;
+        });
+
+        const enqueue = (x: number, y: number) => {
+            const key = `${x},${y}`;
+            if (visited.has(key)) {
+                return;
+            }
+            visited.add(key);
+            minHeap.push(this.createSquareLatticePoint(x, y));
+        };
+
+        enqueue(0, 0);
+
+        const neighborOffsets: Array<[number, number]> = [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1]
+        ];
+
+        while (result.length < count && !minHeap.isEmpty()) {
+            const point = minHeap.pop();
+            if (!point) {
+                break;
+            }
+            result.push(point);
+
+            for (const [dx, dy] of neighborOffsets) {
+                enqueue(point.x + dx, point.y + dy);
+            }
+        }
+
+        return result.slice(0, count);
     }
 
     private enumerateHexRing(ring: number): HexLatticePoint[] {
@@ -570,6 +632,12 @@ export class OrbitInitializer {
         const discriminant = Math.max(0, 12 * safeCount - 3);
         const rings = Math.ceil((-3 + Math.sqrt(discriminant)) / 6);
         return Math.max(0, rings);
+    }
+
+    private createSquareLatticePoint(x: number, y: number): DiskLatticePoint {
+        const radiusEuclid = Math.hypot(x, y);
+        const theta = radiusEuclid === 0 ? 0 : Math.atan2(y, x);
+        return { x, y, theta, radiusEuclid };
     }
 
     private generateConcentricDisk(count: number, radius: number, spacing?: number): InitialCondition[] {
@@ -668,5 +736,72 @@ export class OrbitInitializer {
         }
 
         return positions;
+    }
+}
+
+class MinHeap<T> {
+    private heap: T[] = [];
+    private compare: (a: T, b: T) => number;
+
+    constructor(compare: (a: T, b: T) => number) {
+        this.compare = compare;
+    }
+
+    push(value: T): void {
+        this.heap.push(value);
+        this.bubbleUp(this.heap.length - 1);
+    }
+
+    pop(): T | undefined {
+        if (this.heap.length === 0) {
+            return undefined;
+        }
+        const top = this.heap[0];
+        const end = this.heap.pop();
+        if (this.heap.length > 0 && end !== undefined) {
+            this.heap[0] = end;
+            this.bubbleDown(0);
+        }
+        return top;
+    }
+
+    isEmpty(): boolean {
+        return this.heap.length === 0;
+    }
+
+    private bubbleUp(index: number): void {
+        while (index > 0) {
+            const parentIndex = Math.floor((index - 1) / 2);
+            if (this.compare(this.heap[index], this.heap[parentIndex]) >= 0) {
+                break;
+            }
+            this.swap(index, parentIndex);
+            index = parentIndex;
+        }
+    }
+
+    private bubbleDown(index: number): void {
+        const length = this.heap.length;
+        while (true) {
+            let smallest = index;
+            const left = 2 * index + 1;
+            const right = 2 * index + 2;
+
+            if (left < length && this.compare(this.heap[left], this.heap[smallest]) < 0) {
+                smallest = left;
+            }
+            if (right < length && this.compare(this.heap[right], this.heap[smallest]) < 0) {
+                smallest = right;
+            }
+            if (smallest === index) {
+                break;
+            }
+            this.swap(index, smallest);
+            index = smallest;
+        }
+    }
+
+    private swap(i: number, j: number): void {
+        [this.heap[i], this.heap[j]] = [this.heap[j], this.heap[i]];
     }
 }

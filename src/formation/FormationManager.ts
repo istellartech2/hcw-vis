@@ -254,7 +254,7 @@ export class FormationManager {
         // パターンの妥当性チェック
         const validPatterns = [
             'axis', 'grid', 'random_position', 'random_position_velocity', 'random_periodic',
-            'periodic_orbit', 'circular_orbit', 'hexagonal_disk', 'concentric_disk',
+            'periodic_orbit', 'circular_orbit', 'hexagonal_disk', 'square_lattice_disk', 'concentric_disk',
             'vbar_approach', 'rbar_approach'
         ];
         if (!validPatterns.includes(layer.pattern)) {

@@ -166,6 +166,7 @@ export class FormationUIController {
             'periodic_orbit': '楕円軌道',
             'circular_orbit': '円軌道',
             'hexagonal_disk': '円盤軌道（六角格子）',
+            'square_lattice_disk': '円盤軌道（正方格子）',
             'concentric_disk': '円盤軌道（同心リング）',
             'vbar_approach': 'V-bar軌道',
             'rbar_approach': 'R-bar軌道'
