@@ -80,10 +80,7 @@ h1 {
 /* 軸情報 - HTMLでTailwindクラス使用 */
 
 /* Time controls */
-#time-scale-control select option {
-    background: rgba(0, 0, 0, 0.95);
-    color: #f97316;
-}
+/* Select and option styles are defined globally below */
 
 #time-display.paused {
     background: rgba(239, 68, 68, 0.3);
@@ -259,9 +256,172 @@ h1 {
     background: rgba(255, 255, 255, 0.12);
     border-color: #ff7f50;
     outline: none;
-    box-shadow: 
+    box-shadow:
         0 0 0 3px rgba(255, 127, 80, 0.2),
         0 4px 12px rgba(255, 127, 80, 0.25);
+}
+
+/* Global select and option styling for dark/light mode compatibility */
+select,
+.sidebar select,
+#time-scale-control select,
+#csvPlaybackSpeedMain,
+#earthTexture {
+    /* Ensure proper styling - dark theme by default */
+    color-scheme: dark;
+}
+
+select option,
+.sidebar select option,
+#time-scale-control select option,
+#csvPlaybackSpeedMain option,
+#earthTexture option {
+    /* Dark background with white text for consistency */
+    background: rgba(30, 41, 59, 0.98);
+    color: #ffffff;
+    padding: 4px 8px;
+}
+
+select option:checked,
+.sidebar select option:checked {
+    background: rgba(255, 127, 80, 0.4);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Layer editor modal - always use dark theme for consistency */
+#layer-editor-modal select,
+#layer-edit-pattern,
+#layer-edit-placement-mode,
+#layer-edit-shape,
+#layer-edit-color-mode {
+    /* Match other inputs in the modal: bg-white/[0.06] text-white */
+    color-scheme: dark;
+}
+
+#layer-editor-modal select option,
+#layer-edit-pattern option,
+#layer-edit-placement-mode option,
+#layer-edit-shape option,
+#layer-edit-color-mode option {
+    /* Match modal's dark background */
+    background: rgba(30, 41, 59, 0.98);
+    color: #ffffff;
+    padding: 4px 8px;
+}
+
+#layer-editor-modal select option:checked {
+    background: rgba(255, 127, 80, 0.4);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Light mode support for main UI */
+@media (prefers-color-scheme: light) {
+    /* Time scale control - use light theme */
+    #time-scale-control select,
+    #csvPlaybackSpeedMain {
+        color-scheme: light;
+        background: rgba(255, 255, 255, 0.95);
+        color: #1f2937;
+        border-color: rgba(249, 115, 22, 0.3);
+    }
+
+    #time-scale-control select option,
+    #csvPlaybackSpeedMain option {
+        background: #ffffff;
+        color: #1f2937;
+    }
+
+    #time-scale-control select option:checked,
+    #csvPlaybackSpeedMain option:checked {
+        background: rgba(249, 115, 22, 0.2);
+        color: #000000;
+        font-weight: 600;
+    }
+
+    #time-scale-control select:hover,
+    #csvPlaybackSpeedMain:hover {
+        background: rgba(255, 255, 255, 1);
+        border-color: rgba(249, 115, 22, 0.6);
+    }
+
+    #time-scale-control select:focus,
+    #csvPlaybackSpeedMain:focus {
+        background: rgba(255, 255, 255, 1);
+        border-color: #f97316;
+        box-shadow:
+            0 0 0 3px rgba(249, 115, 22, 0.2),
+            0 4px 12px rgba(249, 115, 22, 0.25);
+    }
+
+    /* Sidebar - keep dark theme even in light mode (sidebar has dark background) */
+    .sidebar select,
+    #earthTexture {
+        color-scheme: dark;
+        background: rgba(255, 255, 255, 0.06);
+        color: #ffffff;
+        border-color: rgba(255, 140, 70, 0.2);
+    }
+
+    .sidebar select option,
+    #earthTexture option {
+        background: rgba(30, 41, 59, 0.98);
+        color: #ffffff;
+    }
+
+    .sidebar select option:checked {
+        background: rgba(255, 127, 80, 0.4);
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    .sidebar select:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 140, 70, 0.4);
+    }
+
+    .sidebar select:focus {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: #ff7f50;
+        box-shadow:
+            0 0 0 3px rgba(255, 127, 80, 0.2),
+            0 4px 12px rgba(255, 127, 80, 0.25);
+    }
+
+    /* Layer editor modal - keep dark theme even in light mode */
+    #layer-editor-modal select,
+    #layer-edit-pattern,
+    #layer-edit-placement-mode,
+    #layer-edit-shape,
+    #layer-edit-color-mode {
+        color-scheme: dark;
+        background: rgba(255, 255, 255, 0.06);
+        color: #ffffff;
+        border-color: rgba(255, 127, 80, 0.2);
+    }
+
+    #layer-editor-modal select option,
+    #layer-edit-pattern option,
+    #layer-edit-placement-mode option,
+    #layer-edit-shape option,
+    #layer-edit-color-mode option {
+        background: rgba(30, 41, 59, 0.98);
+        color: #ffffff;
+    }
+
+    #layer-editor-modal select:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 127, 80, 0.4);
+    }
+
+    #layer-editor-modal select:focus {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: #ff7f50;
+        box-shadow:
+            0 0 0 3px rgba(255, 127, 80, 0.2),
+            0 4px 12px rgba(255, 127, 80, 0.25);
+    }
 }
 
 .sidebar input[type="color"] {
