@@ -140,9 +140,18 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         // Satellite size number input
         this.uiControls.elements.satelliteSize.addEventListener('input', () => {
             this.updateSatelliteSize();
-            // Update collision radius to match satellite size (diameter -> radius)
-            const size = parseFloat(this.uiControls.elements.satelliteSize.value);
-            this.collisionDetector.setCollisionRadius(size / 2);
+
+            // Only update collision radius if NOT using formation-specific sizes
+            // Formation metadata takes priority over global satellite size setting
+            const hasFormationMetadata = this.satellites.some(sat =>
+                FormationGenerator.getSatelliteMetadata(sat)?.size !== undefined
+            );
+
+            if (!hasFormationMetadata) {
+                // Update collision radius to match satellite size (diameter -> radius)
+                const size = parseFloat(this.uiControls.elements.satelliteSize.value);
+                this.collisionDetector.setCollisionRadius(size / 2);
+            }
         });
 
         // J2 perturbation checkbox
@@ -813,13 +822,17 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         });
 
         // Calculate maximum satellite size from formation and update collision radius
-        let maxSize = 0.5; // Default formation size (diameter in meters)
+        let maxSize = 0.0; // Will be computed from metadata
         this.satellites.forEach(sat => {
             const metadata = FormationGenerator.getSatelliteMetadata(sat);
             if (metadata?.size) {
                 maxSize = Math.max(maxSize, metadata.size);
             }
         });
+        // Fallback to 0.5m only if no metadata found
+        if (maxSize === 0) {
+            maxSize = 0.5;
+        }
         // Update collision radius to match actual satellite sizes (diameter -> radius)
         this.collisionDetector.setCollisionRadius(maxSize / 2);
 

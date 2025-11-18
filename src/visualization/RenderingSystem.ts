@@ -554,6 +554,9 @@ export class RenderingSystem {
                             material.emissiveIntensity = intensity;
                             if (emissiveColor) {
                                 material.emissive.copy(emissiveColor);
+                            } else {
+                                // Reset to original satellite color when not colliding
+                                material.emissive.set(sat.color);
                             }
                         }
                     }
@@ -565,6 +568,9 @@ export class RenderingSystem {
                     material.emissiveIntensity = intensity;
                     if (emissiveColor) {
                         material.emissive.copy(emissiveColor);
+                    } else {
+                        // Reset to original satellite color when not colliding
+                        material.emissive.set(sat.color);
                     }
                 }
             }
