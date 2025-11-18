@@ -10,7 +10,6 @@ export interface UIControlElements {
     earthTexture: HTMLSelectElement;
     trailLength: HTMLInputElement;
     trailLengthValue: HTMLSpanElement;
-    thrustAmount: HTMLInputElement;
     perturbationAmount: HTMLInputElement;
     uniformSatelliteColor: HTMLInputElement;
     satelliteColor: HTMLInputElement;
@@ -79,7 +78,6 @@ export class UIControls {
             earthTexture: document.getElementById('earthTexture') as HTMLSelectElement,
             trailLength: document.getElementById('trailLength') as HTMLInputElement,
             trailLengthValue: document.getElementById('trailLengthValue') as HTMLSpanElement,
-            thrustAmount: document.getElementById('thrustAmount') as HTMLInputElement,
             perturbationAmount: document.getElementById('perturbationAmount') as HTMLInputElement,
             uniformSatelliteColor: document.getElementById('uniformSatelliteColor') as HTMLInputElement,
             satelliteColor: document.getElementById('satelliteColor') as HTMLInputElement,

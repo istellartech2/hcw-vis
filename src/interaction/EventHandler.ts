@@ -12,6 +12,8 @@ export interface EventHandlerCallbacks {
     clearTrails: () => void;
     toggleFullscreen?: () => void;
     loadFile3D: (file: File) => void;
+    showThrustDialog: () => void;
+    showPositionDialog: () => void;
 }
 
 export class EventHandler {
@@ -178,15 +180,16 @@ export class EventHandler {
                 case 'r':
                     this.callbacks.resetPositions();
                     break;
+                case 't':
+                    // 推力付加ダイアログを表示（衛星選択時のみ）
+                    this.callbacks.showThrustDialog();
+                    break;
                 case 'p':
-                    this.callbacks.addPerturbation();
+                    // 位置変更ダイアログを表示（衛星選択時のみ）
+                    this.callbacks.showPositionDialog();
                     break;
                 case 'v':
                     this.callbacks.resetView();
-                    break;
-                case 't':
-                    this.uiControls.elements.showTrails.checked = !this.uiControls.elements.showTrails.checked;
-                    this.uiControls.elements.showTrails.dispatchEvent(new Event('change'));
                     break;
                 case 'g':
                     this.uiControls.elements.showGrid.checked = !this.uiControls.elements.showGrid.checked;
@@ -216,7 +219,7 @@ export class EventHandler {
                 // Thrust control keyboard shortcuts
                 case 'arrowup':
                     {
-                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        const thrustAmount = 0.001; // m/s (fixed value)
                         if (e.shiftKey) {
                             this.callbacks.applyThrustToSelected('w', thrustAmount);
                         } else {
@@ -227,7 +230,7 @@ export class EventHandler {
                     break;
                 case 'arrowdown':
                     {
-                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        const thrustAmount = 0.001; // m/s (fixed value)
                         if (e.shiftKey) {
                             this.callbacks.applyThrustToSelected('w', -thrustAmount);
                         } else {
@@ -238,14 +241,14 @@ export class EventHandler {
                     break;
                 case 'arrowleft':
                     {
-                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        const thrustAmount = 0.001; // m/s (fixed value)
                         this.callbacks.applyThrustToSelected('r', -thrustAmount);
                         e.preventDefault();
                     }
                     break;
                 case 'arrowright':
                     {
-                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
+                        const thrustAmount = 0.001; // m/s (fixed value)
                         this.callbacks.applyThrustToSelected('r', thrustAmount);
                         e.preventDefault();
                     }
@@ -282,12 +285,10 @@ export class EventHandler {
 
     private showHelp(): void {
         alert(`キーボードショートカット:
-        
+
 スペース: 一時停止/再開
 R: リセット
-P: 摂動を加える
 V: 視点変更
-T: 軌跡表示切り替え
 G: グリッド表示切り替え
 E: 地球表示切り替え
 Escape: 選択解除
@@ -295,7 +296,9 @@ Escape: 選択解除
 -/_: 時間スケール減少
 H: このヘルプを表示
 
-推力制御（衛星選択時）:
+衛星選択時:
+T: 推力付加ダイアログを表示
+P: 位置変更ダイアログを表示
 矢印キー上/下: S軸方向推力
 矢印キー左/右: R軸方向推力
 Shift+矢印キー上/下: W軸方向推力

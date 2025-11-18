@@ -12,6 +12,8 @@ import { RenderingSystem } from './visualization/RenderingSystem.js';
 import { LoadingIndicator } from './ui/LoadingIndicator.js';
 import { CSVPlaybackController } from './interaction/CSVPlaybackController.js';
 import { FormationUIController } from './formation/FormationUIController.js';
+import { ThrustDialog } from './ui/ThrustDialog.js';
+import { PositionDialog } from './ui/PositionDialog.js';
 
 class HillEquationSimulation implements EventHandlerCallbacks {
     private container: HTMLElement;
@@ -40,6 +42,8 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private loadingIndicator: LoadingIndicator;
     private csvPlaybackController: CSVPlaybackController;
     private formationUIController: FormationUIController;
+    private thrustDialog: ThrustDialog;
+    private positionDialog: PositionDialog;
     
     // Orbital elements
     private currentOrbitElements!: OrbitalElements;
@@ -76,7 +80,22 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         // Formation UI Controller
         this.formationUIController = new FormationUIController(this.n);
         this.formationUIController.setOnPreview((satellites) => this.applyFormation(satellites));
-        
+
+        // Dialog controllers
+        this.thrustDialog = new ThrustDialog();
+        this.thrustDialog.setApplyCallback((values) => {
+            if (values.r !== 0) this.applyThrustToSelected('r', values.r);
+            if (values.s !== 0) this.applyThrustToSelected('s', values.s);
+            if (values.w !== 0) this.applyThrustToSelected('w', values.w);
+        });
+
+        this.positionDialog = new PositionDialog();
+        this.positionDialog.setApplyCallback((values) => {
+            if (values.r !== 0) this.applyPositionChangeToSelected('r', values.r);
+            if (values.s !== 0) this.applyPositionChangeToSelected('s', values.s);
+            if (values.w !== 0) this.applyPositionChangeToSelected('w', values.w);
+        });
+
         this.setupSatelliteSelectionListener();
         this.setupUIEventListeners();
         this.setupReferenceSatellitePanel();
@@ -432,72 +451,21 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             const sat = this.satellites[selectedIndex];
             const pos = sat.getPosition();
             const vel = sat.getVelocity();
-            
+
             const r = Math.sqrt(pos.x * pos.x + pos.y * pos.y + pos.z * pos.z);
             const v = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z);
-            
-            // Check if we need to create the structure (first time or satellite changed)
-            let infoTextDiv = selectedInfoDiv.querySelector('#info-text');
-            let thrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls');
-            
-            if (!infoTextDiv || !thrustControlsDiv) {
-                // Create the structure once
-                selectedInfoDiv.innerHTML = `
-                    <div id="info-text"></div>
-                    <div style="margin-top: 10px;">
-                        <strong>推力制御:</strong><br>
-                        <div id="thrust-controls"></div>
-                    </div>
-                `;
-                
-                infoTextDiv = selectedInfoDiv.querySelector('#info-text')!;
-                thrustControlsDiv = selectedInfoDiv.querySelector('#thrust-controls')!;
-                
-                // Create buttons once
-                const axes = [
-                    { axis: 'r', label: 'R' },
-                    { axis: 's', label: 'S' },
-                    { axis: 'w', label: 'W' }
-                ];
-                
-                axes.forEach(({ axis, label }) => {
-                    const plusBtn = document.createElement('button');
-                    plusBtn.textContent = `+${label}`;
-                    plusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
-                    plusBtn.addEventListener('click', () => {
-                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
-                        console.log(`Plus button clicked for axis: ${axis}, thrust: ${thrustAmount}`);
-                        this.applyThrustToSelected(axis, thrustAmount);
-                    });
-                    
-                    const minusBtn = document.createElement('button');
-                    minusBtn.textContent = `-${label}`;
-                    minusBtn.style.cssText = 'margin: 2px; padding: 2px 6px; font-size: 10px;';
-                    minusBtn.addEventListener('click', () => {
-                        const thrustAmount = parseFloat(this.uiControls.elements.thrustAmount.value);
-                        console.log(`Minus button clicked for axis: ${axis}, thrust: ${thrustAmount}`);
-                        this.applyThrustToSelected(axis, -thrustAmount);
-                    });
-                    
-                    thrustControlsDiv!.appendChild(plusBtn);
-                    thrustControlsDiv!.appendChild(minusBtn);
-                    
-                    if (axis !== 'w') {
-                        thrustControlsDiv!.appendChild(document.createElement('br'));
-                    }
-                });
-                
-                console.log('Thrust control buttons created');
-            }
-            
-            // Always update just the text content
-            infoTextDiv!.innerHTML = `
+
+            // Update the display content
+            selectedInfoDiv.innerHTML = `
                 <strong>選択衛星: ${selectedIndex === 0 ? '主衛星' : `衛星${selectedIndex}`}</strong><br>
-                位置: R=${pos.x.toFixed(0)}, S=${pos.y.toFixed(0)}, W=${pos.z.toFixed(0)} m<br>
-                速度: ${v.toFixed(2)} m/s<br>
-                距離: ${r.toFixed(0)} m
+                位置: R=${pos.x.toFixed(1)}, S=${pos.y.toFixed(1)}, W=${pos.z.toFixed(1)} m<br>
+                速度: ${v.toFixed(3)} m/s (vR=${vel.x.toFixed(3)}, vS=${vel.y.toFixed(3)}, vW=${vel.z.toFixed(3)})<br>
+                距離: ${r.toFixed(1)} m<br>
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(74, 158, 255, 0.2); font-size: 10px; opacity: 0.7;">
+                    <strong>Tキー</strong>: 推力付加 | <strong>Pキー</strong>: 位置変更
+                </div>
             `;
-            
+
             selectedInfoDiv.style.display = 'block';
         } else {
             selectedInfoDiv.style.display = 'none';
@@ -561,25 +529,25 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     
     public applyThrustToSelected(axis: string, dv: number): void {
         const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
-        
+
         // Validate inputs
         if (selectedIndex < 0 || selectedIndex >= this.satellites.length) {
             console.warn(`Invalid satellite index: ${selectedIndex}. Valid range: 0-${this.satellites.length - 1}`);
             return;
         }
-        
+
         if (!['r', 's', 'w'].includes(axis.toLowerCase())) {
             console.warn(`Invalid axis: ${axis}. Valid axes: 'r', 's', 'w'`);
             return;
         }
-        
+
         if (isNaN(dv) || !isFinite(dv)) {
             console.warn(`Invalid velocity change: ${dv}. Must be a finite number.`);
             return;
         }
-        
+
         const sat = this.satellites[selectedIndex];
-        
+
         // 速度変化を適用（m/s単位）
         switch (axis.toLowerCase()) {
             case 'r':
@@ -592,9 +560,47 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                 sat.vz += dv;
                 break;
         }
-        
+
         // Log thrust application for debugging
         console.log(`Applied thrust: ${dv.toFixed(6)} m/s in ${axis.toUpperCase()} direction to satellite ${selectedIndex}`);
+    }
+
+    public applyPositionChangeToSelected(axis: string, delta: number): void {
+        const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
+
+        // Validate inputs
+        if (selectedIndex < 0 || selectedIndex >= this.satellites.length) {
+            console.warn(`Invalid satellite index: ${selectedIndex}. Valid range: 0-${this.satellites.length - 1}`);
+            return;
+        }
+
+        if (!['r', 's', 'w'].includes(axis.toLowerCase())) {
+            console.warn(`Invalid axis: ${axis}. Valid axes: 'r', 's', 'w'`);
+            return;
+        }
+
+        if (isNaN(delta) || !isFinite(delta)) {
+            console.warn(`Invalid position change: ${delta}. Must be a finite number.`);
+            return;
+        }
+
+        const sat = this.satellites[selectedIndex];
+
+        // 位置を直接変更（m単位）- 瞬間移動
+        switch (axis.toLowerCase()) {
+            case 'r':
+                sat.x += delta;
+                break;
+            case 's':
+                sat.y += delta;
+                break;
+            case 'w':
+                sat.z += delta;
+                break;
+        }
+
+        // Log position change for debugging
+        console.log(`Applied position change: ${delta.toFixed(1)} m in ${axis.toUpperCase()} direction to satellite ${selectedIndex}`);
     }
     
     public updateOrbitElementsFromUI(): void {
@@ -779,6 +785,42 @@ class HillEquationSimulation implements EventHandlerCallbacks {
      */
     openFormationDesigner(): void {
         this.formationUIController.open();
+    }
+
+    /**
+     * 推力付加ダイアログを表示
+     */
+    showThrustDialog(): void {
+        const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
+        if (selectedIndex < 0) {
+            return; // 衛星が選択されていない場合は何もしない
+        }
+
+        // 位置変更ダイアログが表示されている場合は閉じる
+        if (this.positionDialog.isVisible()) {
+            this.positionDialog.hide();
+        }
+
+        // デフォルト値を固定値として使用
+        const defaultThrust = 0.001; // m/s
+        this.thrustDialog.show(defaultThrust);
+    }
+
+    /**
+     * 位置変更ダイアログを表示
+     */
+    showPositionDialog(): void {
+        const selectedIndex = this.renderingSystem.getSelectedSatelliteIndex();
+        if (selectedIndex < 0) {
+            return; // 衛星が選択されていない場合は何もしない
+        }
+
+        // 推力付加ダイアログが表示されている場合は閉じる
+        if (this.thrustDialog.isVisible()) {
+            this.thrustDialog.hide();
+        }
+
+        this.positionDialog.show();
     }
 
 }
