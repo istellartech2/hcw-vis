@@ -397,6 +397,30 @@ export class FormationUIController {
             document.getElementById('layer-edit-periodic-group')!.style.display = 'none';
             document.getElementById('layer-edit-positivez-group')!.style.display = 'none';
         }
+
+        // Update size label based on shape
+        this.updateSizeLabelInLayerEditor();
+    }
+
+    /**
+     * レイヤー編集のサイズラベルを形状に応じて更新
+     */
+    private updateSizeLabelInLayerEditor(): void {
+        const shape = (document.getElementById('layer-edit-shape') as HTMLSelectElement).value;
+        const label = document.getElementById('layer-edit-size-label') as HTMLElement;
+
+        if (!label) return;
+
+        let labelText = 'サイズ';
+        if (shape === 'sphere') {
+            labelText = '直径';
+        } else if (shape === 'cube') {
+            labelText = '一辺';
+        } else if (shape === 'box') {
+            labelText = '基準寸法';
+        }
+
+        label.innerHTML = `${labelText} <span class="text-xs opacity-70">(m)</span>:`;
     }
 
     /**
@@ -505,6 +529,13 @@ export class FormationUIController {
 
         // Update layer
         this.manager.updateLayer(this.currentEditingLayerId, updates);
+
+        // Regenerate satellites to sync collision radius and visual representation
+        const config = this.manager.getConfig();
+        const satellites = this.generator.generateSatellites(config);
+        if (this.onPreviewCallback) {
+            this.onPreviewCallback(satellites);
+        }
 
         // Close modal
         this.closeLayerEditor();

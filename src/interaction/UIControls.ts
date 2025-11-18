@@ -59,6 +59,10 @@ export interface UIControlElements {
     csvTotalTimeMain: HTMLSpanElement;
     csvLoopEnabledMain: HTMLInputElement;
     csvPlaybackPanel: HTMLDivElement;
+    // Collision detection controls
+    enableCollisionDetection: HTMLInputElement;
+    satelliteMass: HTMLInputElement;
+    collisionWarning: HTMLSpanElement;
 }
 
 export class UIControls {
@@ -126,7 +130,11 @@ export class UIControls {
             csvCurrentTimeMain: document.getElementById('csvCurrentTimeMain') as HTMLSpanElement,
             csvTotalTimeMain: document.getElementById('csvTotalTimeMain') as HTMLSpanElement,
             csvLoopEnabledMain: document.getElementById('csvLoopEnabledMain') as HTMLInputElement,
-            csvPlaybackPanel: document.getElementById('csv-playback-panel') as HTMLDivElement
+            csvPlaybackPanel: document.getElementById('csv-playback-panel') as HTMLDivElement,
+            // Collision detection controls
+            enableCollisionDetection: document.getElementById('enableCollisionDetection') as HTMLInputElement,
+            satelliteMass: document.getElementById('satelliteMass') as HTMLInputElement,
+            collisionWarning: document.getElementById('collisionWarning') as HTMLSpanElement
         };
         this.setReferenceOrbitPending(false);
     }

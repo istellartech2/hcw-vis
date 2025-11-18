@@ -12,8 +12,11 @@ import { RenderingSystem } from './visualization/RenderingSystem.js';
 import { LoadingIndicator } from './ui/LoadingIndicator.js';
 import { CSVPlaybackController } from './interaction/CSVPlaybackController.js';
 import { FormationUIController } from './formation/FormationUIController.js';
+import { FormationGenerator } from './formation/FormationGenerator.js';
 import { ThrustDialog } from './ui/ThrustDialog.js';
 import { PositionDialog } from './ui/PositionDialog.js';
+import { CollisionDetector } from './collision/CollisionDetector.js';
+import { CollisionResponse } from './collision/CollisionResponse.js';
 
 class HillEquationSimulation implements EventHandlerCallbacks {
     private container: HTMLElement;
@@ -44,7 +47,11 @@ class HillEquationSimulation implements EventHandlerCallbacks {
     private formationUIController: FormationUIController;
     private thrustDialog: ThrustDialog;
     private positionDialog: PositionDialog;
-    
+
+    // Collision system
+    private collisionDetector: CollisionDetector;
+    private collisionResponse: CollisionResponse;
+
     // Orbital elements
     private currentOrbitElements!: OrbitalElements;
     
@@ -96,6 +103,14 @@ class HillEquationSimulation implements EventHandlerCallbacks {
             if (values.w !== 0) this.applyPositionChangeToSelected('w', values.w);
         });
 
+        // Collision system initialization
+        // Note: satelliteSize is diameter, but CollisionDetector expects radius
+        // Use default formation satellite size (0.5m diameter = 0.25m radius)
+        const defaultFormationSize = 0.5; // Default formation satellite diameter in meters
+        this.collisionDetector = new CollisionDetector(defaultFormationSize / 2);
+        this.collisionResponse = new CollisionResponse();
+        this.collisionDetector.setEnabled(false); // Default: disabled
+
         this.setupSatelliteSelectionListener();
         this.setupUIEventListeners();
         this.setupReferenceSatellitePanel();
@@ -125,6 +140,9 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         // Satellite size number input
         this.uiControls.elements.satelliteSize.addEventListener('input', () => {
             this.updateSatelliteSize();
+            // Update collision radius to match satellite size (diameter -> radius)
+            const size = parseFloat(this.uiControls.elements.satelliteSize.value);
+            this.collisionDetector.setCollisionRadius(size / 2);
         });
 
         // J2 perturbation checkbox
@@ -298,9 +316,17 @@ class HillEquationSimulation implements EventHandlerCallbacks {
                                 this.hillSolver.rungeKutta4Step(sat, stepDt);
                             }
                         });
+
+                        // Collision detection and response (inside integration loop)
+                        if (this.collisionDetector.isEnabled()) {
+                            const collisions = this.collisionDetector.detect(this.satellites);
+                            if (collisions.length > 0) {
+                                this.collisionResponse.applyResponse(this.satellites, collisions);
+                            }
+                        }
                     }
                 }
-                
+
                 // Update rendering
                 this.renderingSystem.updateSatellitePositions(this.satellites);
                 
@@ -776,6 +802,27 @@ class HillEquationSimulation implements EventHandlerCallbacks {
 
         // Replace satellites with formation satellites
         this.satellites = satellites;
+
+        // Apply current mass setting to all satellites and clear collision flags
+        const currentMass = parseFloat(this.uiControls.elements.satelliteMass.value);
+        this.satellites.forEach(sat => {
+            sat.mass = currentMass;
+            // Clear collision flags from initial formation
+            (sat as any).collided = false;
+            delete (sat as any).collisionTime;
+        });
+
+        // Calculate maximum satellite size from formation and update collision radius
+        let maxSize = 0.5; // Default formation size (diameter in meters)
+        this.satellites.forEach(sat => {
+            const metadata = FormationGenerator.getSatelliteMetadata(sat);
+            if (metadata?.size) {
+                maxSize = Math.max(maxSize, metadata.size);
+            }
+        });
+        // Update collision radius to match actual satellite sizes (diameter -> radius)
+        this.collisionDetector.setCollisionRadius(maxSize / 2);
+
         this.time = 0;
         this.renderingSystem.createSatelliteMeshes(this.satellites);
     }
@@ -821,6 +868,22 @@ class HillEquationSimulation implements EventHandlerCallbacks {
         }
 
         this.positionDialog.show();
+    }
+
+    /**
+     * 衝突検出の有効/無効を設定
+     */
+    setCollisionDetectionEnabled(enabled: boolean): void {
+        this.collisionDetector.setEnabled(enabled);
+    }
+
+    /**
+     * 全衛星の質量を設定
+     */
+    setSatelliteMass(mass: number): void {
+        this.satellites.forEach(sat => {
+            sat.mass = mass;
+        });
     }
 
 }

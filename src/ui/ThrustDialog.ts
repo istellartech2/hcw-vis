@@ -100,6 +100,11 @@ export class ThrustDialog {
     }
 
     private setupEventListeners(): void {
+        // ダイアログ内のクリックイベントが container に伝播しないようにする
+        this.dialog.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
         // Close button
         document.getElementById('thrust-dialog-close')!.addEventListener('click', () => {
             this.hide();

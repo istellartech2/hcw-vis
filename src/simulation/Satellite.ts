@@ -29,7 +29,10 @@ export class Satellite {
     vx: number;
     vy: number;
     vz: number;
-    
+
+    // 質量 (kg)
+    mass: number;
+
     color: string;
     trail: THREE.Vector3[];
     trailLine: THREE.Line | null;
@@ -40,7 +43,7 @@ export class Satellite {
     // 基準衛星の軌道要素（ECI座標計算用）
     static referenceOrbit: OrbitalElements;
     
-    constructor(x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number, color: string) {
+    constructor(x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number, color: string, mass: number = 1.0) {
         this.x0 = x0;
         this.y0 = y0;
         this.z0 = z0;
@@ -55,7 +58,8 @@ export class Satellite {
         this.vx = vx0;
         this.vy = vy0;
         this.vz = vz0;
-        
+
+        this.mass = mass;
         this.color = color;
         this.trail = [];
         this.trailLine = null;
@@ -84,7 +88,11 @@ export class Satellite {
         this.vz = this.vz0;
         this.trail = [];
         this.frameCounter = 0;
-        
+
+        // Clear collision flags
+        (this as any).collided = false;
+        delete (this as any).collisionTime;
+
         // THREE.jsオブジェクトの適切な解放
         if (this.trailGeometry) {
             this.trailGeometry.dispose();

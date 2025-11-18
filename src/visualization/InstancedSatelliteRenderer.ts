@@ -218,12 +218,36 @@ export class InstancedSatelliteRenderer {
             this.tempMatrix.compose(this.tempPosition, this.tempQuaternion, this.tempScale);
             this.instancedMesh.setMatrixAt(i, this.tempMatrix);
 
-            // 色の設定（毎フレーム元の色に戻してから、選択時のみハイライト）
+            // 色の設定（毎フレーム元の色に戻してから、選択時/衝突時のハイライト）
             // originalColors[0]は基準衛星用なので、一般衛星はoriginalColors[i+1]から取得
             const colorIndex = (i + 1) % this.originalColors.length;
             const originalColor = this.originalColors[colorIndex];
 
-            if (selectedIndex === i + 1) {
+            // Check if satellite has collided
+            const collided = (sat as any).collided;
+            const collisionTime = (sat as any).collisionTime;
+
+            if (collided && collisionTime) {
+                const elapsed = Date.now() - collisionTime;
+                if (elapsed < 500) { // Show collision feedback for 500ms
+                    // Collision: Red color
+                    this.tempColor.setRGB(1, 0, 0); // Red
+                    this.tempColor.multiplyScalar(2.0);
+                    this.instancedMesh.setColorAt(i, this.tempColor);
+                } else {
+                    // Reset collision flag after feedback duration
+                    (sat as any).collided = false;
+                    // Use original color
+                    if (selectedIndex === i + 1) {
+                        this.tempColor.setHex(originalColor);
+                        this.tempColor.multiplyScalar(2.0);
+                        this.instancedMesh.setColorAt(i, this.tempColor);
+                    } else {
+                        this.tempColor.setHex(originalColor);
+                        this.instancedMesh.setColorAt(i, this.tempColor);
+                    }
+                }
+            } else if (selectedIndex === i + 1) {
                 // 選択時: 元の色を2倍明るくする（より目立つように）
                 this.tempColor.setHex(originalColor);
                 this.tempColor.multiplyScalar(2.0);

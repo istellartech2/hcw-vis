@@ -14,6 +14,8 @@ export interface EventHandlerCallbacks {
     loadFile3D: (file: File) => void;
     showThrustDialog: () => void;
     showPositionDialog: () => void;
+    setCollisionDetectionEnabled: (enabled: boolean) => void;
+    setSatelliteMass: (mass: number) => void;
 }
 
 export class EventHandler {
@@ -116,6 +118,14 @@ export class EventHandler {
                 this.uiControls.elements.file3dControls.style.display = 'none';
             }
 
+            // Enable/disable collision detection based on shape (only for sphere)
+            const isSphere = shapeValue === 'sphere';
+            this.uiControls.elements.enableCollisionDetection.disabled = !isSphere;
+            if (!isSphere && this.uiControls.elements.enableCollisionDetection.checked) {
+                this.uiControls.elements.enableCollisionDetection.checked = false;
+                this.callbacks.setCollisionDetectionEnabled(false);
+            }
+
             // Update size label based on shape
             this.uiControls.updateSatelliteSizeLabel();
 
@@ -151,12 +161,28 @@ export class EventHandler {
                 this.callbacks.loadFile3D(target.files[0]);
             }
         });
-        
+
+        // Collision detection controls
+        this.uiControls.elements.enableCollisionDetection.addEventListener('change', () => {
+            const enabled = this.uiControls.elements.enableCollisionDetection.checked;
+            this.callbacks.setCollisionDetectionEnabled(enabled);
+        });
+
+        this.uiControls.elements.satelliteMass.addEventListener('input', () => {
+            const mass = parseFloat(this.uiControls.elements.satelliteMass.value);
+            this.callbacks.setSatelliteMass(mass);
+        });
+
         // Window resize
         window.addEventListener('resize', () => {
             this.callbacks.resetPositions(); // Will trigger camera update
         });
-        
+
+        // Initialize collision detection availability based on initial shape
+        const initialShape = this.uiControls.elements.satelliteShape.value;
+        const isSphereInitial = initialShape === 'sphere';
+        this.uiControls.elements.enableCollisionDetection.disabled = !isSphereInitial;
+
         // Keyboard shortcuts
         this.setupKeyboardControls();
     }

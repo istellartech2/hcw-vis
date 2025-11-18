@@ -297,7 +297,8 @@ export class RenderingSystem {
                     centerSize * 2 * centerBoxRatios.z
                 );
             } else {
-                centerGeometry = new THREE.SphereGeometry(centerSize, 32, 32);
+                // centerSize is diameter, SphereGeometry expects radius
+                centerGeometry = new THREE.SphereGeometry(centerSize / 2, 32, 32);
             }
             const centerMaterial = new THREE.MeshPhongMaterial({
                 color: 0xffffff,
@@ -370,7 +371,8 @@ export class RenderingSystem {
                         satSize * 2 * boxRatios.z
                     );
                 } else {
-                    satGeometry = new THREE.SphereGeometry(satSize, 32, 32);
+                    // satSize is diameter, SphereGeometry expects radius
+                    satGeometry = new THREE.SphereGeometry(satSize / 2, 32, 32);
                 }
 
                 const satMaterial = new THREE.MeshPhongMaterial({
@@ -523,24 +525,47 @@ export class RenderingSystem {
                 }
             }
             
-            // Highlight selected satellite
+            // Highlight selected satellite and collision feedback
             const mesh = this.satelliteMeshes[index];
-            const intensity = index === this.selectedSatelliteIndex ? 0.8 : 0.2;
-            
+            let intensity = index === this.selectedSatelliteIndex ? 0.8 : 0.2;
+            let emissiveColor: THREE.Color | null = null;
+
+            // Check if satellite has collided
+            const collided = (sat as any).collided;
+            const collisionTime = (sat as any).collisionTime;
+            if (collided && collisionTime) {
+                const elapsed = Date.now() - collisionTime;
+                if (elapsed < 500) { // Show collision feedback for 500ms
+                    intensity = 0.8;
+                    emissiveColor = new THREE.Color(0xff0000); // Red
+                } else {
+                    // Reset collision flag after feedback duration
+                    (sat as any).collided = false;
+                }
+            }
+
             if (is3DFile && this.loadedModel) {
                 // For 3D models, traverse and update all materials
                 mesh.traverse((child) => {
                     if ((child as THREE.Mesh).isMesh) {
                         const meshChild = child as THREE.Mesh;
                         if (meshChild.material && (meshChild.material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined) {
-                            (meshChild.material as THREE.MeshPhongMaterial).emissiveIntensity = intensity;
+                            const material = meshChild.material as THREE.MeshPhongMaterial;
+                            material.emissiveIntensity = intensity;
+                            if (emissiveColor) {
+                                material.emissive.copy(emissiveColor);
+                            }
                         }
                     }
                 });
             } else {
                 // For standard geometries
                 if ((mesh as THREE.Mesh).material && ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined) {
-                    ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissiveIntensity = intensity;
+                    const material = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
+                    material.emissiveIntensity = intensity;
+                    if (emissiveColor) {
+                        material.emissive.copy(emissiveColor);
+                    }
                 }
             }
             
