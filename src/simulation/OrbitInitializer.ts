@@ -19,13 +19,14 @@ interface HexLatticePoint extends DiskLatticePoint {
     r: number;
 }
 
-export type PlacementPattern = 
-    | 'axis' 
-    | 'grid' 
-    | 'random_position' 
-    | 'random_position_velocity' 
-    | 'random_periodic' 
-    | 'periodic_orbit' 
+export type PlacementPattern =
+    | 'origin'
+    | 'axis'
+    | 'grid'
+    | 'random_position'
+    | 'random_position_velocity'
+    | 'random_periodic'
+    | 'periodic_orbit'
     | 'circular_orbit'
     | 'vbar_approach'
     | 'rbar_approach'
@@ -61,13 +62,17 @@ export class OrbitInitializer {
         zAmplitudeMultiplier?: number,
         positiveZ?: boolean,
         periodicParams?: { A: number, B: number, D: number, E: number, F: number },
-        spacing?: number      // m - satellite spacing (alternative to radius for disk patterns)
+        spacing?: number,     // m - satellite spacing (alternative to radius for disk patterns)
+        rswOffset?: { r: number, s: number, w: number }  // RSWオフセット（軸上パターン用）
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        
+
         switch (pattern) {
+            case 'origin':
+                return this.generateOriginPosition(rswOffset);
+
             case 'axis':
-                return this.generateAxisPositions(count, radius, spacing);
+                return this.generateAxisPositions(count, radius, spacing, rswOffset);
 
             case 'grid':
                 return this.generateGridPositions(count, radius, spacing);
@@ -105,10 +110,20 @@ export class OrbitInitializer {
         }
     }
     
-    private generateAxisPositions(count: number, radius: number, spacing?: number): InitialCondition[] {
+    private generateAxisPositions(
+        count: number,
+        radius: number,
+        spacing?: number,
+        rswOffset?: { r: number, s: number, w: number }
+    ): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const axisPositions: number[] = [];
         const eachAxisSatNum = count * 3;
+
+        // RSWオフセットの取得（デフォルトは0）
+        const offsetR = rswOffset?.r || 0;
+        const offsetS = rswOffset?.s || 0;
+        const offsetW = rswOffset?.w || 0;
 
         // 各軸に配置する位置を計算（ゼロ点を除外）
         if (spacing !== undefined) {
@@ -126,46 +141,66 @@ export class OrbitInitializer {
                 axisPositions.push(position);  // 正の方向
             }
         }
-        
-        // X軸に配置
+
+        // X軸（R軸）に配置 - オフセットを適用
         for (let i = 0; i < count * 2; i++) {
             positions.push({
-                x0: axisPositions[i],
-                y0: 0,
-                z0: 0,
+                x0: axisPositions[i] + offsetR,
+                y0: offsetS,
+                z0: offsetW,
                 vx0: 0,
                 vy0: 0,
                 vz0: 0
             });
         }
-        
-        // Y軸に配置
+
+        // Y軸（S軸）に配置 - オフセットを適用
         for (let i = 0; i < count * 2; i++) {
             positions.push({
-                x0: 0,
-                y0: axisPositions[i],
-                z0: 0,
+                x0: offsetR,
+                y0: axisPositions[i] + offsetS,
+                z0: offsetW,
                 vx0: 0,
                 vy0: 0,
                 vz0: 0
             });
         }
-        
-        // Z軸に配置
+
+        // Z軸（W軸）に配置 - オフセットを適用
         for (let i = 0; i < count * 2; i++) {
             positions.push({
-                x0: 0,
-                y0: 0,
-                z0: axisPositions[i],
+                x0: offsetR,
+                y0: offsetS,
+                z0: axisPositions[i] + offsetW,
                 vx0: 0,
                 vy0: 0,
                 vz0: 0
             });
         }
-        
+
         return positions;
     }
-    
+
+    /**
+     * 原点配置: 原点に1つの衛星を配置（RSWオフセットで位置調整可能）
+     */
+    private generateOriginPosition(
+        rswOffset?: { r: number, s: number, w: number }
+    ): InitialCondition[] {
+        const offsetR = rswOffset?.r || 0;
+        const offsetS = rswOffset?.s || 0;
+        const offsetW = rswOffset?.w || 0;
+
+        return [{
+            x0: offsetR,
+            y0: offsetS,
+            z0: offsetW,
+            vx0: 0,
+            vy0: 0,
+            vz0: 0
+        }];
+    }
+
     private generateGridPositions(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const gridValues: number[] = [];

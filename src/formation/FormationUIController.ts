@@ -158,6 +158,7 @@ export class FormationUIController {
         }[layer.shape] || '球体';
 
         const patternText = {
+            'origin': '原点配置',
             'axis': '軸上-速度0',
             'grid': '格子-速度0',
             'random_position': 'ランダム-速度0',
@@ -309,6 +310,27 @@ export class FormationUIController {
         // Positive Z
         (document.getElementById('layer-edit-positivez') as HTMLInputElement).checked = layer.positiveZ ?? true;
 
+        // RSW offset (for axis and origin patterns)
+        if (layer.rswOffset) {
+            // Axis pattern (collapsible)
+            (document.getElementById('layer-edit-rsw-r') as HTMLInputElement).value = String(layer.rswOffset.r);
+            (document.getElementById('layer-edit-rsw-s') as HTMLInputElement).value = String(layer.rswOffset.s);
+            (document.getElementById('layer-edit-rsw-w') as HTMLInputElement).value = String(layer.rswOffset.w);
+            // Origin pattern (non-collapsible)
+            (document.getElementById('layer-edit-rsw-origin-r') as HTMLInputElement).value = String(layer.rswOffset.r);
+            (document.getElementById('layer-edit-rsw-origin-s') as HTMLInputElement).value = String(layer.rswOffset.s);
+            (document.getElementById('layer-edit-rsw-origin-w') as HTMLInputElement).value = String(layer.rswOffset.w);
+        } else {
+            // Axis pattern (collapsible)
+            (document.getElementById('layer-edit-rsw-r') as HTMLInputElement).value = '0';
+            (document.getElementById('layer-edit-rsw-s') as HTMLInputElement).value = '0';
+            (document.getElementById('layer-edit-rsw-w') as HTMLInputElement).value = '0';
+            // Origin pattern (non-collapsible)
+            (document.getElementById('layer-edit-rsw-origin-r') as HTMLInputElement).value = '0';
+            (document.getElementById('layer-edit-rsw-origin-s') as HTMLInputElement).value = '0';
+            (document.getElementById('layer-edit-rsw-origin-w') as HTMLInputElement).value = '0';
+        }
+
         // Update conditional fields visibility
         this.updateLayerEditorFieldsVisibility();
 
@@ -346,15 +368,24 @@ export class FormationUIController {
         const isRandomPattern = pattern === 'random_position' || pattern === 'random_position_velocity' || pattern === 'random_periodic';
         const isOrbitPattern = pattern === 'periodic_orbit' || pattern === 'circular_orbit';
         const usesOnlyRadius = isRandomPattern || isOrbitPattern;
+        const isOriginPattern = pattern === 'origin';
 
-        if (usesOnlyRadius) {
+        if (isOriginPattern) {
+            // Origin pattern: hide all placement-related fields and satellite count
+            document.getElementById('layer-edit-placement-mode-group')!.style.display = 'none';
+            document.getElementById('layer-edit-radius-group')!.style.display = 'none';
+            document.getElementById('layer-edit-spacing-group')!.style.display = 'none';
+            document.getElementById('layer-edit-count-group')!.style.display = 'none';
+        } else if (usesOnlyRadius) {
             // For patterns that only use radius: hide placement mode and spacing, but show radius
             document.getElementById('layer-edit-placement-mode-group')!.style.display = 'none';
             document.getElementById('layer-edit-radius-group')!.style.display = 'block';
             document.getElementById('layer-edit-spacing-group')!.style.display = 'none';
+            document.getElementById('layer-edit-count-group')!.style.display = 'block';
         } else {
             // Show placement mode for other patterns
             document.getElementById('layer-edit-placement-mode-group')!.style.display = 'block';
+            document.getElementById('layer-edit-count-group')!.style.display = 'block';
 
             // Placement mode
             if (placementMode === 'radius') {
@@ -384,18 +415,40 @@ export class FormationUIController {
             document.getElementById('layer-edit-zamplitude-group')!.style.display = 'block';
             document.getElementById('layer-edit-periodic-group')!.style.display = 'block';
             document.getElementById('layer-edit-positivez-group')!.style.display = 'none';
+            document.getElementById('layer-edit-rsw-offset-group')!.style.display = 'none';
+            document.getElementById('layer-edit-rsw-offset-origin-group')!.style.display = 'none';
         }
         // Positive Z for circular_orbit
         else if (pattern === 'circular_orbit') {
             document.getElementById('layer-edit-zamplitude-group')!.style.display = 'none';
             document.getElementById('layer-edit-periodic-group')!.style.display = 'none';
             document.getElementById('layer-edit-positivez-group')!.style.display = 'block';
+            document.getElementById('layer-edit-rsw-offset-group')!.style.display = 'none';
+            document.getElementById('layer-edit-rsw-offset-origin-group')!.style.display = 'none';
+        }
+        // RSW offset for origin pattern (non-collapsible)
+        else if (pattern === 'origin') {
+            document.getElementById('layer-edit-zamplitude-group')!.style.display = 'none';
+            document.getElementById('layer-edit-periodic-group')!.style.display = 'none';
+            document.getElementById('layer-edit-positivez-group')!.style.display = 'none';
+            document.getElementById('layer-edit-rsw-offset-group')!.style.display = 'none';
+            document.getElementById('layer-edit-rsw-offset-origin-group')!.style.display = 'block';
+        }
+        // RSW offset for axis pattern (collapsible)
+        else if (pattern === 'axis') {
+            document.getElementById('layer-edit-zamplitude-group')!.style.display = 'none';
+            document.getElementById('layer-edit-periodic-group')!.style.display = 'none';
+            document.getElementById('layer-edit-positivez-group')!.style.display = 'none';
+            document.getElementById('layer-edit-rsw-offset-group')!.style.display = 'block';
+            document.getElementById('layer-edit-rsw-offset-origin-group')!.style.display = 'none';
         }
         // No pattern-specific fields for other patterns
         else {
             document.getElementById('layer-edit-zamplitude-group')!.style.display = 'none';
             document.getElementById('layer-edit-periodic-group')!.style.display = 'none';
             document.getElementById('layer-edit-positivez-group')!.style.display = 'none';
+            document.getElementById('layer-edit-rsw-offset-group')!.style.display = 'none';
+            document.getElementById('layer-edit-rsw-offset-origin-group')!.style.display = 'none';
         }
 
         // Update size label based on shape
@@ -521,10 +574,30 @@ export class FormationUIController {
             updates.positiveZ = (document.getElementById('layer-edit-positivez') as HTMLInputElement).checked;
             updates.zAmplitude = undefined;
             updates.periodicParams = undefined;
+            updates.rswOffset = undefined;
         } else {
             updates.zAmplitude = undefined;
             updates.periodicParams = undefined;
             updates.positiveZ = undefined;
+        }
+
+        // RSW offset (for axis and origin patterns)
+        if (pattern === 'axis') {
+            updates.rswOffset = {
+                r: parseFloat((document.getElementById('layer-edit-rsw-r') as HTMLInputElement).value) || 0,
+                s: parseFloat((document.getElementById('layer-edit-rsw-s') as HTMLInputElement).value) || 0,
+                w: parseFloat((document.getElementById('layer-edit-rsw-w') as HTMLInputElement).value) || 0
+            };
+        } else if (pattern === 'origin') {
+            updates.rswOffset = {
+                r: parseFloat((document.getElementById('layer-edit-rsw-origin-r') as HTMLInputElement).value) || 0,
+                s: parseFloat((document.getElementById('layer-edit-rsw-origin-s') as HTMLInputElement).value) || 0,
+                w: parseFloat((document.getElementById('layer-edit-rsw-origin-w') as HTMLInputElement).value) || 0
+            };
+            // Force satellite count to 1 for origin pattern
+            updates.satelliteCount = 1;
+        } else {
+            updates.rswOffset = undefined;
         }
 
         // Update layer

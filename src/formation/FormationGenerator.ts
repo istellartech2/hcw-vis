@@ -95,7 +95,8 @@ export class FormationGenerator {
             zAmplitude,
             positiveZ,
             periodicParams,
-            spacing
+            spacing,
+            layer.rswOffset  // RSWオフセット（軸上パターン用）
         );
 
         // 各初期条件から衛星を生成

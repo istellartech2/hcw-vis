@@ -4,6 +4,7 @@
 
 export type ShapeType = 'sphere' | 'cube' | 'box' | '3dfile';
 export type PatternType =
+    | 'origin'
     | 'axis'
     | 'grid'
     | 'random_position'
@@ -47,6 +48,15 @@ export interface PeriodicParams {
 }
 
 /**
+ * RSWオフセット（軸上パターン用の初期位置オフセット）
+ */
+export interface RSWOffset {
+    r: number;  // R軸（径方向）オフセット (m)
+    s: number;  // S軸（進行方向）オフセット (m)
+    w: number;  // W軸（軌道面外方向）オフセット (m)
+}
+
+/**
  * フォーメーションレイヤーの設定
  */
 export interface FormationLayer {
@@ -70,6 +80,7 @@ export interface FormationLayer {
     zAmplitude?: number;        // Z方向の振幅倍率（periodic_orbitなど）
     periodicParams?: PeriodicParams;  // 楕円軌道パラメータ
     positiveZ?: boolean;        // 円軌道で+Z方向に回転するか
+    rswOffset?: RSWOffset;      // 軸上パターン用のRSWオフセット
 }
 
 /**
@@ -97,7 +108,8 @@ export const DEFAULT_LAYER: Omit<FormationLayer, 'id' | 'name'> = {
     size: 0.3,
     rotation: { r: 0, s: 0 },
     colorMode: 'random',
-    color: '#4ecdc4'
+    color: '#4ecdc4',
+    rswOffset: { r: 0, s: 0, w: 0 }
 };
 
 /**
