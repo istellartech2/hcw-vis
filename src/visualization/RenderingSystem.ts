@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Satellite } from '../simulation/Satellite.js';
 import { TrailRenderer } from './TrailRenderer.js';
 import { CelestialBodies } from './CelestialBodies.js';
-import { UIControls } from '../interaction/UIControls.js';
+import type { DisplaySettings } from '@/store/settings';
 import { ModelLoader } from './ModelLoader.js';
 import { InstancedSatelliteRenderer } from './InstancedSatelliteRenderer.js';
 import { FormationGenerator } from '../formation/FormationGenerator.js';
@@ -17,7 +17,8 @@ export class RenderingSystem {
     private axesGroup: THREE.Group;
     private trailRenderer: TrailRenderer;
     private celestialBodies: CelestialBodies;
-    private uiControls: UIControls;
+    private getDisplay: () => DisplaySettings;
+    private onSelectionChange: (index: number) => void = () => {};
     private animationFrameCounter: number = 0;
     private modelLoader: ModelLoader;
     private loadedModel: THREE.Group | THREE.Mesh | null = null;
@@ -36,13 +37,14 @@ export class RenderingSystem {
         camera: THREE.PerspectiveCamera,
         renderer: THREE.WebGLRenderer,
         container: HTMLElement,
-        uiControls: UIControls
+        getDisplay: () => DisplaySettings,
+        signal?: AbortSignal
     ) {
         this.scene = scene;
         this.camera = camera;
         this.renderer = renderer;
         this.container = container;
-        this.uiControls = uiControls;
+        this.getDisplay = getDisplay;
 
         this.trailRenderer = new TrailRenderer(this.scene);
         this.celestialBodies = new CelestialBodies(this.scene);
@@ -56,7 +58,7 @@ export class RenderingSystem {
         this.setupLighting();
         this.axesGroup = this.createAxes();
         this.gridHelper = this.createGrid();
-        this.setupSatelliteSelection();
+        this.setupSatelliteSelection(signal);
     }
 
     private setupRenderer(): void {
@@ -123,7 +125,7 @@ export class RenderingSystem {
         axesGroup.add(zAxis);
         
         this.scene.add(axesGroup);
-        axesGroup.visible = this.uiControls.elements.showAxes.checked;
+        axesGroup.visible = this.getDisplay().showAxes;
         return axesGroup;
     }
 
@@ -137,17 +139,24 @@ export class RenderingSystem {
         return gridHelper;
     }
 
-    private setupSatelliteSelection(): void {
+    private setupSatelliteSelection(signal?: AbortSignal): void {
         this.container.addEventListener('click', (e) => {
             const rect = this.container.getBoundingClientRect();
             this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
             this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             
             this.checkSatelliteSelection();
-        });
+        }, { signal });
     }
 
-    public createSatelliteMeshes(satellites: Satellite[]): void {
+    public setOnSelectionChange(callback: (index: number) => void): void {
+        this.onSelectionChange = callback;
+    }
+
+    /**
+     * @param options.showReference 基準衛星(index 0)も表示する（CSV再生では全衛星が実データ）
+     */
+    public createSatelliteMeshes(satellites: Satellite[], options: { showReference?: boolean } = {}): void {
         // Clean up existing instanced meshes first
         if (this.instancedRenderer) {
             this.instancedRenderer.disposeAll();
@@ -192,18 +201,19 @@ export class RenderingSystem {
         const hasMetadata = satellites.some(sat => FormationGenerator.getSatelliteMetadata(sat) !== undefined);
 
         // Get satellite size and shape from UI controls (for non-formation mode)
-        const satelliteSize = parseFloat(this.uiControls.elements.satelliteSize.value);
-        const satelliteShape = this.uiControls.elements.satelliteShape.value;
+        const satelliteSize = this.getDisplay().satelliteSize;
+        const satelliteShape = this.getDisplay().satelliteShape;
 
         // Determine rendering mode: InstancedMesh only for non-formation mode with sphere/cube
-        this.useInstancedRendering = !hasMetadata && (satelliteShape === 'sphere' || satelliteShape === 'cube') && satellites.length > 1;
+        // CSV再生ではクォータニオン姿勢を反映するため個別メッシュを使う
+        this.useInstancedRendering = !options.showReference && !hasMetadata && (satelliteShape === 'sphere' || satelliteShape === 'cube') && satellites.length > 1;
 
         if (this.useInstancedRendering) {
             // Use InstancedMesh for sphere/cube shapes
             this.createSatelliteMeshesInstanced(satellites, satelliteSize, satelliteShape);
         } else {
             // Fallback to traditional individual meshes for formation mode, 3D files, or single satellite
-            this.createSatelliteMeshesTraditional(satellites, satelliteSize, satelliteShape);
+            this.createSatelliteMeshesTraditional(satellites, satelliteSize, satelliteShape, options.showReference ?? false);
         }
     }
 
@@ -215,8 +225,8 @@ export class RenderingSystem {
         satelliteSize: number,
         satelliteShape: string
     ): void {
-        const useUniformColor = this.uiControls.elements.uniformSatelliteColor.checked;
-        const uniformColor = this.uiControls.elements.satelliteColor.value;
+        const useUniformColor = this.getDisplay().uniformSatelliteColor;
+        const uniformColor = this.getDisplay().satelliteColor;
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
 
         // 色配列を生成（基準衛星の色も含める）
@@ -255,7 +265,8 @@ export class RenderingSystem {
     private createSatelliteMeshesTraditional(
         satellites: Satellite[],
         satelliteSize: number,
-        satelliteShape: string
+        satelliteShape: string,
+        showReference: boolean
     ): void {
         // Create center satellite
         let centerMesh: THREE.Mesh | THREE.Group;
@@ -309,14 +320,14 @@ export class RenderingSystem {
         }
 
         // Hide center satellite mesh (reference satellite)
-        centerMesh.visible = false;
+        centerMesh.visible = showReference;
 
         this.scene.add(centerMesh);
         this.satelliteMeshes.push(centerMesh);
         
         // Create other satellites
-        const useUniformColor = this.uiControls.elements.uniformSatelliteColor.checked;
-        const uniformColor = this.uiControls.elements.satelliteColor.value;
+        const useUniformColor = this.getDisplay().uniformSatelliteColor;
+        const uniformColor = this.getDisplay().satelliteColor;
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
         
         for (let i = 1; i < satellites.length; i++) {
@@ -403,15 +414,15 @@ export class RenderingSystem {
      * InstancedMeshを使用した衛星位置更新
      */
     private updateSatellitePositionsInstanced(satellites: Satellite[]): void {
-        const satelliteShape = this.uiControls.elements.satelliteShape.value;
+        const satelliteShape = this.getDisplay().satelliteShape;
         const isCube = satelliteShape === 'cube';
 
         let rotationR = 0;
         let rotationS = 0;
 
         if (isCube) {
-            rotationR = parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180;
-            rotationS = parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180;
+            rotationR = this.getDisplay().cubeRotationR * Math.PI / 180;
+            rotationS = this.getDisplay().cubeRotationS * Math.PI / 180;
         }
 
         if (this.instancedRenderer) {
@@ -424,8 +435,8 @@ export class RenderingSystem {
         }
 
         // Update trails (same as traditional mode)
-        if (this.uiControls.elements.showTrails.checked) {
-            const trailMax = parseInt(this.uiControls.elements.trailLength.value);
+        if (this.getDisplay().showTrails) {
+            const trailMax = this.getDisplay().trailLength;
             const scale = 1;
 
             for (let index = 1; index < satellites.length; index++) {
@@ -433,8 +444,8 @@ export class RenderingSystem {
                 const pos = sat.getPosition();
 
                 // Get color for this satellite
-                const useUniformColor = this.uiControls.elements.uniformSatelliteColor.checked;
-                const uniformColor = this.uiControls.elements.satelliteColor.value;
+                const useUniformColor = this.getDisplay().uniformSatelliteColor;
+                const uniformColor = this.getDisplay().satelliteColor;
                 const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
 
                 let color: THREE.Color;
@@ -453,17 +464,17 @@ export class RenderingSystem {
      * 従来方式の衛星位置更新
      */
     private updateSatellitePositionsTraditional(satellites: Satellite[]): void {
-        const satelliteShape = this.uiControls.elements.satelliteShape.value;
+        const satelliteShape: string = this.getDisplay().satelliteShape;
 
         let defaultRotationR = 0;
         let defaultRotationS = 0;
 
         if (satelliteShape === 'cube' || satelliteShape === 'box') {
-            defaultRotationR = parseFloat(this.uiControls.elements.cubeRotationR.value) * Math.PI / 180;
-            defaultRotationS = parseFloat(this.uiControls.elements.cubeRotationS.value) * Math.PI / 180;
+            defaultRotationR = this.getDisplay().cubeRotationR * Math.PI / 180;
+            defaultRotationS = this.getDisplay().cubeRotationS * Math.PI / 180;
         } else if (satelliteShape === '3dfile') {
-            defaultRotationR = parseFloat(this.uiControls.elements.file3dRotationR.value) * Math.PI / 180;
-            defaultRotationS = parseFloat(this.uiControls.elements.file3dRotationS.value) * Math.PI / 180;
+            defaultRotationR = this.getDisplay().file3dRotationR * Math.PI / 180;
+            defaultRotationS = this.getDisplay().file3dRotationS * Math.PI / 180;
         }
 
         satellites.forEach((sat, index) => {
@@ -576,8 +587,8 @@ export class RenderingSystem {
             }
             
             // Update trails
-            if (this.uiControls.elements.showTrails.checked && index > 0) {
-                const trailMax = parseInt(this.uiControls.elements.trailLength.value);
+            if (this.getDisplay().showTrails && index > 0) {
+                const trailMax = this.getDisplay().trailLength;
                 let color: THREE.Color = new THREE.Color(0xffffff); // Initialize with default
                 
                 if (is3DFile && this.loadedModel) {
@@ -602,8 +613,8 @@ export class RenderingSystem {
     }
 
     public updateAllSatelliteColors(): void {
-        const isUniform = this.uiControls.elements.uniformSatelliteColor.checked;
-        const uniformColor = this.uiControls.elements.satelliteColor.value;
+        const isUniform = this.getDisplay().uniformSatelliteColor;
+        const uniformColor = this.getDisplay().satelliteColor;
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
 
         if (this.useInstancedRendering && this.instancedRenderer) {
@@ -632,7 +643,7 @@ export class RenderingSystem {
         }
 
         // Traditional mode
-        const is3DFile = this.uiControls.elements.satelliteShape.value === '3dfile';
+        const is3DFile = this.getDisplay().satelliteShape === '3dfile';
 
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
             const mesh = this.satelliteMeshes[i];
@@ -755,16 +766,12 @@ export class RenderingSystem {
     }
 
     private updateSelectedSatelliteInfo(): void {
-        // Emit event for main application to handle
-        const event = new CustomEvent('satelliteSelected', { 
-            detail: { index: this.selectedSatelliteIndex } 
-        });
-        this.container.dispatchEvent(event);
+        this.onSelectionChange(this.selectedSatelliteIndex);
     }
 
     public render(): void {
-        this.gridHelper.visible = this.uiControls.elements.showGrid.checked;
-        this.axesGroup.visible = this.uiControls.elements.showAxes.checked;
+        this.gridHelper.visible = this.getDisplay().showGrid;
+        this.axesGroup.visible = this.getDisplay().showAxes;
         this.renderer.render(this.scene, this.camera);
     }
 
@@ -796,27 +803,10 @@ export class RenderingSystem {
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     }
 
+    /**
+     * 3Dモデルを読み込む。失敗時は例外を投げるので、呼び出し側で形状のフォールバックを行う。
+     */
     public async loadFile3D(file: File): Promise<void> {
-        try {
-            this.loadedModel = await this.modelLoader.loadModel(file);
-            
-            // Trigger recreation of satellites with the new model
-            const resetButton = document.getElementById('resetButton') as HTMLButtonElement;
-            if (resetButton) {
-                resetButton.click();
-            }
-        } catch (error) {
-            console.error('Failed to load 3D model:', error);
-            alert('Failed to load 3D model. Please ensure the file is a valid .glb, .gltf, or .stl file.');
-            
-            // Reset to sphere shape on error
-            this.uiControls.elements.satelliteShape.value = 'sphere';
-            this.uiControls.elements.file3dControls.style.display = 'none';
-            
-            const resetButton = document.getElementById('resetButton') as HTMLButtonElement;
-            if (resetButton) {
-                resetButton.click();
-            }
-        }
+        this.loadedModel = await this.modelLoader.loadModel(file);
     }
 }

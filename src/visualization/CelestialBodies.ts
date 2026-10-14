@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Satellite } from '../simulation/Satellite.js';
 import { gstime } from 'satellite.js';
 import { FrameTransforms } from '../simulation/FrameTransforms.js';
-import { LoadingIndicator } from '../ui/LoadingIndicator.js';
+import { LoadingIndicator } from '@/engine/LoadingIndicator';
 
 export class CelestialBodies {
     private scene: THREE.Scene;
@@ -90,26 +90,8 @@ export class CelestialBodies {
             );
         };
         
-        // 開発環境判定
-        const isDev = import.meta.env?.DEV || 
-                     window.location.hostname === 'localhost' ||
-                     window.location.hostname === '127.0.0.1' ||
-                     window.location.port !== '';
-        
-        // 複数のパスパターンを定義（優先順位順）
-        const texturePaths: string[] = [];
-        if (isDev) {
-            console.log('Development environment detected');
-            texturePaths.push(`/public/asset/${textureFile}`);
-            texturePaths.push(`./public/asset/${textureFile}`);
-        } else {
-            console.log('Production environment detected');
-            // GitHub Pagesでは public/ ディレクトリの内容が root にコピーされる
-            const basePath = window.location.pathname.includes('/hill-equation/') ? '/hill-equation' : '';
-            texturePaths.push(`${basePath}/asset/${textureFile}`);
-            texturePaths.push(`./asset/${textureFile}`);
-            texturePaths.push(`asset/${textureFile}`);
-        }
+        // public/ 配下はビルド後もサイトルート（BASE_URL）直下に配置される
+        const texturePaths = [`${import.meta.env.BASE_URL}asset/${textureFile}`];
         
         const earthTexture = new THREE.Texture();
         tryLoadTexture(texturePaths);
