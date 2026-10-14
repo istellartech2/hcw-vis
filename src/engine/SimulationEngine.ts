@@ -530,8 +530,10 @@ export class SimulationEngine {
         this.renderingSystem.updateAllSatelliteColors();
     }
 
+    /** メッシュを作り直して現在位置に置く（一時停止中はメインループが位置を更新しないため、ここで置く） */
     private rebuildSatelliteMeshes(): void {
         this.renderingSystem.createSatelliteMeshes(this.satellites, { showReference: this.csvPlayback.isActive() });
+        this.renderingSystem.updateSatellitePositions(this.satellites);
     }
 
     // ------------------------------------------------------------------
