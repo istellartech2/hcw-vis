@@ -1,134 +1,375 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/geist';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 
-@custom-variant dark (&:is(.dark *));
+/* shadcn の dark: バリアントを <html data-theme> に連動させる */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Design tokens（constellation-vis と共通）
+ * ------------------------------------------------------------------
+ * 意味ベースの色を :root に置き、<html data-theme> で切り替える。
+ * コンポーネントは生の gray / hex ではなく bg-surface, text-fg-muted,
+ * border-line, bg-brand などのエイリアスを使う。
+ */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --app-bg: #07090d;
+  --surface: oklch(0.19 0.008 260 / 0.94); /* 浮遊パネル */
+  --surface-solid: oklch(0.19 0.008 260);
+  --raised: oklch(0.235 0.009 260); /* カード・ボタン */
+  --raised-hover: oklch(0.275 0.01 260);
+  --seg-active: oklch(0.3 0.01 260); /* 選択中のセグメント・タブ */
+  --sunken: oklch(0.155 0.008 260); /* 入力欄・くぼみ */
+  --line: oklch(1 0 0 / 0.08);
+  --line-strong: oklch(1 0 0 / 0.15);
+  --fg: oklch(0.95 0.005 260);
+  --fg-muted: oklch(0.74 0.012 260);
+  --fg-subtle: oklch(0.56 0.012 260);
+  --brand: #f07214;
+  --brand-hover: #ff8a33;
+  --brand-fg: #ffffff;
+  --brand-soft: oklch(0.7 0.18 50 / 0.16);
+  --brand-text: #ff9a4d;
+  --danger: oklch(0.66 0.2 25);
+  --danger-soft: oklch(0.66 0.2 25 / 0.15);
+  --success: oklch(0.74 0.15 155);
+  --success-soft: oklch(0.74 0.15 155 / 0.15);
+  --warning: oklch(0.8 0.15 85);
+  --warning-soft: oklch(0.8 0.15 85 / 0.15);
+  --info: oklch(0.64 0.14 245);
+  --info-soft: oklch(0.72 0.12 235 / 0.15);
+  --shadow-panel: 0 12px 40px rgb(0 0 0 / 0.45), 0 0 0 1px var(--line);
+  --overlay: rgb(0 0 0 / 0.6);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --app-bg: #eef0f3;
+  --surface: oklch(0.99 0.002 260 / 0.97);
+  --surface-solid: oklch(0.995 0 0);
+  --raised: oklch(0.965 0.003 260);
+  --raised-hover: oklch(0.93 0.005 260);
+  --seg-active: oklch(1 0 0);
+  --sunken: oklch(0.975 0.003 260);
+  --line: oklch(0.2 0.02 260 / 0.09);
+  --line-strong: oklch(0.2 0.02 260 / 0.17);
+  --fg: oklch(0.22 0.02 260);
+  --fg-muted: oklch(0.45 0.02 260);
+  --fg-subtle: oklch(0.62 0.015 260);
+  --brand: #e5620a;
+  --brand-hover: #c95407;
+  --brand-fg: #ffffff;
+  --brand-soft: oklch(0.7 0.18 50 / 0.12);
+  --brand-text: #c4520a;
+  --danger: oklch(0.55 0.21 25);
+  --danger-soft: oklch(0.55 0.21 25 / 0.1);
+  --success: oklch(0.55 0.14 155);
+  --success-soft: oklch(0.55 0.14 155 / 0.1);
+  --warning: oklch(0.6 0.14 75);
+  --warning-soft: oklch(0.75 0.15 85 / 0.18);
+  --info: oklch(0.52 0.14 245);
+  --info-soft: oklch(0.52 0.14 245 / 0.1);
+  --shadow-panel: 0 10px 32px rgb(15 23 42 / 0.16), 0 0 0 1px var(--line);
+  --overlay: rgb(15 23 42 / 0.35);
+}
+
+:root {
+  --radius: 0.625rem;
+  /* shadcn/ui の変数を意味ベースのトークンに対応づける */
+  --background: var(--surface-solid);
+  --foreground: var(--fg);
+  --card: var(--raised);
+  --card-foreground: var(--fg);
+  --popover: var(--surface-solid);
+  --popover-foreground: var(--fg);
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-fg);
+  --secondary: var(--raised);
+  --secondary-foreground: var(--fg);
+  --muted: var(--raised);
+  --muted-foreground: var(--fg-muted);
+  --accent: var(--raised-hover);
+  --accent-foreground: var(--fg);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--brand);
+
+  --app-font-sans:
+    'Inter Variable', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', system-ui,
+    sans-serif;
+  --app-font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* 左パネルが開いているときに下部 HUD を右へずらす量（App が設定する） */
+  --panel-offset: 0px;
+
+  font-family: var(--app-font-sans);
+  line-height: 1.5;
+  color: var(--fg);
+  background-color: var(--app-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
+  --font-sans: var(--app-font-sans);
+  --font-heading: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
   --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  --color-surface: var(--surface);
+  --color-surface-solid: var(--surface-solid);
+  --color-raised: var(--raised);
+  --color-raised-hover: var(--raised-hover);
+  --color-seg-active: var(--seg-active);
+  --color-sunken: var(--sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-text: var(--brand-text);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-line outline-ring/50;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--app-bg);
+    color: var(--fg);
+    min-width: 20rem;
   }
   button:not(:disabled),
   [role='button']:not(:disabled) {
     cursor: pointer;
   }
-  html {
-    @apply font-sans;
+  input[type='range'] {
+    accent-color: var(--brand);
+  }
+}
+
+/* ------------------------------------------------------------------
+ * 3D ビュー上の浮遊 UI（メニューボタン・サイドパネル・HUD）
+ * ------------------------------------------------------------------ */
+
+@utility glass {
+  background: var(--surface);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--shadow-panel);
+}
+
+/* 等幅の数値表示 */
+@utility num {
+  font-family: var(--app-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.side-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: 360px;
+  max-width: 85vw;
+  background: var(--surface);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  color: var(--fg);
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  box-shadow: 8px 0 32px rgb(0 0 0 / 0.25);
+  font-size: 0.875rem;
+}
+
+.side-panel.closed {
+  transform: translateX(-100%);
+  box-shadow: none;
+}
+
+.side-panel-header {
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 10px 10px 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.side-panel-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 4px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* パネル内のセクション区切り */
+.panel-section {
+  padding-block: 12px;
+  border-top: 1px solid var(--line);
+}
+.panel-section:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+.panel-section:last-child {
+  padding-bottom: 2px;
+}
+
+/* ドラッグハンドルはボトムシート（スマホ）のときだけ表示 */
+.sheet-handle {
+  display: none;
+}
+
+/* 下部中央の再生バーと左下の衛星情報カードは、パネルの開閉に合わせて横に動く */
+.hud-bottom-center {
+  position: fixed;
+  left: calc(50% + var(--panel-offset) / 2);
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 20;
+  transition: left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 再生バー（高さ約 46px）の上に置き、狭い画面でも重ならないようにする */
+.hud-bottom-left {
+  position: fixed;
+  left: calc(12px + var(--panel-offset));
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  max-height: calc(100dvh - 140px);
+  overflow-y: auto;
+  z-index: 15;
+  transition: left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (max-width: 768px) {
+  .side-panel {
+    --sheet-half: 56dvh;
+    --sheet-full: calc(100dvh - 12px - env(safe-area-inset-top, 0px));
+    top: auto;
+    bottom: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: clamp(240px, calc(var(--sheet-half) - var(--sheet-drag, 0px)), var(--sheet-full));
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 40px rgb(0 0 0 / 0.35);
+    transition:
+      transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+      height 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .side-panel.sheet-full {
+    height: clamp(240px, calc(var(--sheet-full) - var(--sheet-drag, 0px)), var(--sheet-full));
+  }
+  .side-panel.sheet-dragging {
+    transition: none;
+  }
+  .side-panel.closed {
+    transform: translateY(100%);
+  }
+  .sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding-top: 6px;
+    touch-action: none;
+    flex-shrink: 0;
+  }
+  .sheet-grabber {
+    width: 44px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: grab;
+    position: relative;
+  }
+  .sheet-grabber::before {
+    content: '';
+    position: absolute;
+    inset-inline: 6px;
+    top: 6px;
+    height: 5px;
+    border-radius: 999px;
+    background: var(--line-strong);
+  }
+  .side-panel-header {
+    padding-top: 2px;
+    touch-action: none;
+  }
+
+  /* シートが開いている間は下部 HUD を隠す */
+  :root[data-sheet-open] .hud-bottom-center,
+  :root[data-sheet-open] .hud-bottom-left {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .hud-bottom-center {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
+  .hud-bottom-left {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 42dvh;
   }
 }

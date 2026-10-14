@@ -64,8 +64,16 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
 
 4. **UI** `src/features/` (React + shadcn/ui + Tailwind CSS v4)
    - `viewport/` キャンバスとエンジンの生成・破棄
-   - `toolbar/`, `settings/`, `hud/`, `formation/`, `playback/`, `help/`
-   - `src/components/ui/` は shadcn/ui の生成コード。テーマは `src/index.css` の CSS 変数
+   - `panel/`（左サイドパネル。スマホではボトムシート）, `scenario/`, `display/`, `playback/`（パネルの 3 タブ）, `hud/`（再生バー・選択衛星カードなど 3D ビュー上の浮遊 UI）, `help/`
+   - `src/components/` 直下はパネル用の共通部品（`panel-section.tsx`, `controls.tsx`）
+   - `src/components/ui/` は shadcn/ui の生成コード（button/slider/sonner はトークンに合わせて調整済み）
+
+### デザイン
+兄弟リポジトリ [constellation-vis](https://github.com/istellartech2/constellation-vis) とデザインシステムを共有している。
+- 色は `src/index.css` の意味ベースのトークン（`bg-surface`, `bg-raised`, `bg-sunken`, `text-fg-muted`, `border-line`, `bg-brand` …）を使い、生の gray/hex は使わない。shadcn の変数もこのトークンに対応づけている
+- UI テーマは `<html data-theme="dark|light">`（`src/lib/uiTheme.ts`）。3D シーンの背景とは独立
+- フォントは Inter / JetBrains Mono（数値は `num` ユーティリティで等幅表示）
+- レイアウト: 左上メニュー → 左パネル（タブ）、下中央に再生バー（`glass` ユーティリティ）
 
 ### Technology Stack
 - Vite+ 1.2 (Vite 8 / Vitest 5 / Oxlint / Oxfmt) / React 19 / TypeScript

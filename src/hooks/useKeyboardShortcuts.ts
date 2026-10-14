@@ -37,7 +37,7 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
             if (isEditableTarget(e.target)) return;
             const store = appStore.getState();
             // モーダル表示中はショートカットを無効化
-            if (store.ui.formationOpen || store.ui.helpOpen) return;
+            if (store.ui.helpOpen) return;
             const hasSelection = store.selected !== null;
 
             switch (e.key.toLowerCase()) {
@@ -70,7 +70,7 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
                     store.setUI({ helpOpen: true });
                     break;
                 case 'f':
-                    store.setUI({ formationOpen: true });
+                    store.setUI({ panelOpen: true, panelTab: 'scenario' });
                     break;
                 case 'escape':
                     if (store.ui.activeDialog) store.setUI({ activeDialog: null });

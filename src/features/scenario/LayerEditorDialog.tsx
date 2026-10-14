@@ -32,7 +32,7 @@ import {
     layerToForm,
     type LayerFormValues,
 } from '@/formation/layerForm';
-import { UnitLabel } from '@/features/settings/SettingRow';
+import { UnitLabel } from '@/components/controls';
 
 /** レイヤー編集で選べる形状（3Dファイルはモデル読み込みUIが無いため除外） */
 const EDITABLE_SHAPES: ShapeType[] = ['sphere', 'cube', 'box'];

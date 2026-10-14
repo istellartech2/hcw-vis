@@ -13,18 +13,15 @@ export function LoadingOverlay() {
     if (!loading) return null;
 
     return (
-        <div className="pointer-events-none absolute inset-x-0 top-16 flex justify-center">
-            <div
-                role="status"
-                className="flex w-72 items-start gap-3 rounded-xl border bg-background/85 p-3 shadow-lg backdrop-blur-md"
-            >
+        <div className="pointer-events-none fixed inset-x-0 top-[calc(12px+env(safe-area-inset-top,0px))] z-50 flex justify-center">
+            <div role="status" className="glass flex w-72 items-start gap-3 rounded-xl p-3 text-fg">
                 <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-muted-foreground" />
                 <div className="min-w-0 flex-1 space-y-1">
                     <p className="text-sm font-medium">{loading.title}</p>
                     <p className="truncate text-xs text-muted-foreground">{loading.message}</p>
                     {loading.progress !== undefined && (
                         <div className="space-y-1 pt-1">
-                            <div className="h-1 overflow-hidden rounded-full bg-muted">
+                            <div className="h-1 overflow-hidden rounded-full bg-sunken">
                                 <div
                                     className="h-full bg-primary transition-[width]"
                                     style={{ width: `${Math.round(loading.progress * 100)}%` }}

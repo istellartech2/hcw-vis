@@ -68,6 +68,9 @@ export interface LoadingState {
 
 export type ActiveDialog = 'thrust' | 'position' | null;
 
+/** 左パネルのタブ */
+export type PanelTab = 'scenario' | 'display' | 'playback';
+
 export interface AppState {
     display: DisplaySettings;
     simulation: SimulationSettings;
@@ -81,11 +84,13 @@ export interface AppState {
     playback: PlaybackStatus;
     /** 編集中のフォーメーション設定（唯一の正）。エンジンは再配置時にこれを読む */
     formation: FormationConfig;
+    /** 現在シミュレーションに反映されているフォーメーション設定（エンジンが書く） */
+    appliedFormation: FormationConfig | null;
     loading: LoadingState | null;
 
     ui: {
-        settingsOpen: boolean;
-        formationOpen: boolean;
+        panelOpen: boolean;
+        panelTab: PanelTab;
         helpOpen: boolean;
         activeDialog: ActiveDialog;
     };
@@ -128,11 +133,12 @@ export const appStore = createStore<AppStore>()((set) => ({
     selected: null,
     playback: { ...INITIAL_PLAYBACK },
     formation: createDefaultFormation(),
+    appliedFormation: null,
     loading: null,
 
     ui: {
-        settingsOpen: false,
-        formationOpen: false,
+        panelOpen: false,
+        panelTab: 'scenario',
         helpOpen: false,
         activeDialog: null,
     },

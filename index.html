@@ -1,14 +1,20 @@
 <!doctype html>
-<html lang="ja" class="dark">
+<html lang="ja" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <meta name="color-scheme" content="dark" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <script>
+      // 保存済みの UI テーマを初回描画前に適用してちらつきを防ぐ
+      try {
+        var t = new URLSearchParams(location.search).get('theme') || localStorage.getItem('hcw-ui-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
     <title>HCW Relative Motion Simulator</title>
   </head>
   <body>

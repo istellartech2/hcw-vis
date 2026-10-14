@@ -1,23 +1,21 @@
-import { HudPanel } from '@/components/hud-panel';
-
 const AXES = [
     { name: 'R', color: '#FF6B6B', label: 'Radial', description: '地心→衛星' },
-    { name: 'S', color: '#2ECC71', label: 'Along-track', description: '軌道進行方向' },
+    { name: 'S', color: '#2ECC71', label: 'Along-track', description: '進行方向' },
     { name: 'W', color: '#00BFFF', label: 'Cross-track', description: '軌道面垂直' },
 ];
 
 /** RSW 座標軸の凡例（色は RenderingSystem の座標軸と一致させる） */
 export function AxesLegend() {
     return (
-        <HudPanel className="space-y-1 px-3 py-2 text-xs">
+        <div className="glass fixed right-3 bottom-[calc(14px+env(safe-area-inset-bottom,0px))] z-10 hidden space-y-0.5 rounded-[10px] px-2.5 py-2 text-[11px] lg:block">
             {AXES.map((axis) => (
                 <div key={axis.name} className="flex items-center gap-2">
-                    <span className="h-0.5 w-4 rounded" style={{ backgroundColor: axis.color }} />
-                    <span className="font-mono font-semibold">{axis.name}</span>
-                    <span>{axis.label}</span>
-                    <span className="text-muted-foreground">{axis.description}</span>
+                    <span className="h-0.5 w-3.5 rounded" style={{ backgroundColor: axis.color }} />
+                    <span className="num w-2 font-semibold text-fg">{axis.name}</span>
+                    <span className="text-fg-muted">{axis.label}</span>
+                    <span className="text-fg-subtle">{axis.description}</span>
                 </div>
             ))}
-        </HudPanel>
+        </div>
     );
 }

@@ -87,6 +87,7 @@ export class SimulationEngine {
         this.collisionDetector.setEnabled(state.simulation.collisionEnabled);
         this.setOrbit(state.orbit);
         this.applyFormation(this.formationGenerator.generateSatellites(state.formation));
+        state.patch({ appliedFormation: state.formation });
 
         const celestial = this.renderingSystem.getCelestialBodies();
         celestial.createEarth(this.orbitRadius, state.display.earthTexture);
@@ -303,7 +304,7 @@ export class SimulationEngine {
         this.clearSelection();
         this.time = 0;
         const store = appStore.getState();
-        store.patch({ simTime: 0 });
+        store.patch({ simTime: 0, appliedFormation: store.formation });
         this.applyFormation(this.formationGenerator.generateSatellites(store.formation));
     }
 

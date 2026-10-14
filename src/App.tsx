@@ -5,20 +5,20 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Viewport } from '@/features/viewport/Viewport';
-import { TopToolbar } from '@/features/toolbar/TopToolbar';
-import { SettingsSheet } from '@/features/settings/SettingsSheet';
-import { ReferenceSatellitePanel } from '@/features/hud/ReferenceSatellitePanel';
-import { SelectedSatellitePanel } from '@/features/hud/SelectedSatellitePanel';
+import { SidePanel } from '@/features/panel/SidePanel';
+import { PlaybackBar } from '@/features/hud/PlaybackBar';
+import { SelectedSatelliteCard } from '@/features/hud/SelectedSatelliteCard';
+import { ViewControls } from '@/features/hud/ViewControls';
 import { AxesLegend } from '@/features/hud/AxesLegend';
-import { TimeControls } from '@/features/hud/TimeControls';
 import { LoadingOverlay } from '@/features/hud/LoadingOverlay';
-import { FormationDesigner } from '@/features/formation/FormationDesigner';
 import { ShortcutsDialog } from '@/features/help/ShortcutsDialog';
 
 /**
- * 画面構成:
- *   Viewport（3D 描画）の上に、各 feature の HUD を絶対配置で重ねる。
- *   デザイン変更は features/ 以下のコンポーネントだけで完結する。
+ * 画面構成（constellation-vis と共通のレイアウト）:
+ *   - 全面に 3D ビュー
+ *   - 左上のメニューボタン → 左サイドパネル（シナリオ / 表示 / 再生）。スマホではボトムシート
+ *   - 下中央に再生バー、左下に選択中の衛星、右上に視点操作、右下に座標軸の凡例
+ * デザイン変更は features/ 以下のコンポーネントだけで完結する。
  */
 export function App() {
     const [engine, setEngine] = useState<SimulationEngine | null>(null);
@@ -26,36 +26,22 @@ export function App() {
 
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="relative h-dvh w-screen overflow-hidden bg-black text-foreground">
+            <div className="relative h-dvh w-screen overflow-hidden bg-[var(--app-bg)] text-fg">
                 <Viewport onEngineChange={setEngine} />
 
                 {engine && (
                     <EngineContext.Provider value={engine}>
-                        <div className="pointer-events-none absolute inset-0 p-3 sm:p-4">
-                            <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                                <TopToolbar />
-                            </div>
-                            <div className="absolute top-16 right-3 sm:top-4 sm:right-4">
-                                <ReferenceSatellitePanel />
-                            </div>
-                            <div className="absolute bottom-20 left-3 sm:bottom-4 sm:left-4">
-                                <SelectedSatellitePanel />
-                            </div>
-                            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 sm:bottom-4">
-                                <TimeControls />
-                            </div>
-                            <div className="absolute right-4 bottom-4 hidden lg:block">
-                                <AxesLegend />
-                            </div>
-                        </div>
-                        <SettingsSheet />
-                        <FormationDesigner />
+                        <SidePanel />
+                        <ViewControls />
+                        <PlaybackBar />
+                        <SelectedSatelliteCard />
+                        <AxesLegend />
                         <ShortcutsDialog />
                     </EngineContext.Provider>
                 )}
 
                 <LoadingOverlay />
-                <Toaster position="top-center" theme="dark" />
+                <Toaster position="top-center" />
             </div>
         </TooltipProvider>
     );
