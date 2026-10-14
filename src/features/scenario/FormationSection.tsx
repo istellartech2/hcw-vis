@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { Download, FileJson, FolderOpen, Plus, RotateCcw, Satellite } from 'lucide-react';
+import { Download, FileJson, FolderOpen, Lightbulb, Plus, RotateCcw, Satellite } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -234,6 +234,13 @@ export function FormationSection() {
                     <Download />
                 </IconAction>
             </div>
+
+            {config.description && (
+                <p className="flex gap-2 rounded-md border border-line bg-sunken px-2.5 py-2 text-xs leading-relaxed text-fg-muted">
+                    <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-warning" />
+                    <span>{config.description}</span>
+                </p>
+            )}
 
             <div className="space-y-1.5">
                 {config.layers.map((layer, index) => (

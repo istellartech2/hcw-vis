@@ -169,11 +169,14 @@ export class SimulationEngine {
         this.cameraController.updateCameraPosition();
 
         const store = appStore.getState();
-        if (!store.paused) {
+        // CSV 再生は自前の再生／一時停止（playback.isPlaying）を持つので、シミュレーションの paused とは独立に進める
+        const playingCsv = this.csvPlayback.isActive();
+        if (playingCsv || !store.paused) {
             this.frameCounter++;
             const publishTime = this.frameCounter % 5 === 0;
 
-            if (this.csvPlayback.update(FRAME_DELTA_SECONDS * 1000, publishTime)) {
+            if (playingCsv) {
+                this.csvPlayback.update(FRAME_DELTA_SECONDS * 1000, publishTime);
                 this.updateSatellitesFromPlayback();
                 this.renderingSystem.updateSatellitePositions(this.satellites);
                 if (publishTime) store.patch({ simTime: this.csvPlayback.getCurrentTime() });

@@ -21,13 +21,13 @@ const appearance = (shape: string, boxRatios = { x: 1, y: 1, z: 1 }): SatelliteA
 });
 
 describe('createSatelliteObject', () => {
-    it('builds a cube with side 2 * size', () => {
-        expect(boundingSize(createSatelliteObject(appearance('cube'), 0xff0000, 0.2, null))).toEqual([1, 1, 1]);
+    it('builds a cube with side = size, as wide as a sphere of the same size', () => {
+        expect(boundingSize(createSatelliteObject(appearance('cube'), 0xff0000, 0.2, null))).toEqual([0.5, 0.5, 0.5]);
     });
 
     it('builds a box scaled by its ratios', () => {
         const box = createSatelliteObject(appearance('box', { x: 1, y: 2, z: 3 }), 0xff0000, 0.2, null);
-        expect(boundingSize(box)).toEqual([1, 2, 3]);
+        expect(boundingSize(box)).toEqual([0.5, 1, 1.5]);
     });
 
     it('builds a sphere with diameter = size', () => {
@@ -48,6 +48,15 @@ describe('createSatelliteObject', () => {
         const material = (object.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
         expect(material.color.getHex()).toBe(0x00ff00);
         expect(material.emissiveIntensity).toBe(0.2);
+    });
+
+    it('keeps the normalization of a loaded model so its longest side equals size', () => {
+        // ModelLoader は最長辺が 1 になるよう root の scale を設定して返す
+        const model = new THREE.Group().add(new THREE.Mesh(new THREE.BoxGeometry(4, 2, 1)));
+        model.scale.setScalar(1 / 4);
+        const [x, y] = boundingSize(createSatelliteObject(appearance('3dfile'), 0x00ff00, 0.2, model));
+        expect(x).toBeCloseTo(0.5, 6);
+        expect(y).toBeCloseTo(0.25, 6);
     });
 });
 

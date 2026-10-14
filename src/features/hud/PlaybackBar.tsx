@@ -20,7 +20,13 @@ function PlayButton({ playing, onToggle }: { playing: boolean; onToggle: () => v
                     type="button"
                     aria-label={label}
                     onClick={onToggle}
-                    className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-brand-fg transition-colors hover:bg-brand-hover focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    className={cn(
+                        'inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none',
+                        // 停止中は塗りを外して見た目でも区別する（アイコンの違いだけだと気づきにくい）
+                        playing
+                            ? 'bg-brand text-brand-fg hover:bg-brand-hover'
+                            : 'bg-raised text-brand ring-1 ring-brand ring-inset hover:bg-sunken',
+                    )}
                 >
                     {playing ? (
                         <Pause className="size-4 fill-current" />
@@ -48,7 +54,7 @@ function SpeedStepper({
     const index = Math.max(0, SPEEDS.indexOf(value));
     const step = (delta: number) => onChange(SPEEDS[Math.min(SPEEDS.length - 1, Math.max(0, index + delta))]);
     return (
-        <div className="flex items-center">
+        <div className="flex shrink-0 items-center">
             <Button
                 variant="ghost"
                 size="icon"
@@ -118,7 +124,11 @@ function SimulationBar() {
             </Tooltip>
             <div className="num min-w-[7.5rem] text-xs leading-tight" aria-label="シミュレーション経過時間">
                 <div className={cn('font-medium text-fg', paused && 'text-fg-muted')}>{formatSimTime(simTime)}</div>
-                <div className="text-fg-subtle">{orbits === null ? '—' : `${orbits.toFixed(2)} 周回`}</div>
+                {paused ? (
+                    <div className="font-medium text-warning">一時停止中</div>
+                ) : (
+                    <div className="text-fg-subtle">{orbits === null ? '—' : `${orbits.toFixed(2)} 周回`}</div>
+                )}
             </div>
         </>
     );
@@ -142,7 +152,7 @@ function CsvBar() {
                 <Square className="size-3.5 fill-current" />
             </Button>
             <Slider
-                className="mx-1 min-w-16 flex-1 md:w-[min(16rem,30vw)] md:flex-none"
+                className="mx-1 min-w-16 flex-1 md:w-64 md:flex-[0_1_auto]"
                 min={0}
                 max={1}
                 step={0.001}
