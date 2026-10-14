@@ -138,10 +138,14 @@ export function getLayerFieldVisibility(values: LayerFormValues): LayerFieldVisi
 
 export function getSizeLabel(shape: ShapeType): string {
     switch (shape) {
-        case 'sphere': return '直径';
-        case 'cube': return '一辺';
-        case 'box': return '基準寸法';
-        default: return 'サイズ';
+        case 'sphere':
+            return '直径';
+        case 'cube':
+            return '一辺';
+        case 'box':
+            return '基準寸法';
+        default:
+            return 'サイズ';
     }
 }
 
@@ -183,13 +187,13 @@ export function formToLayerUpdates(values: LayerFormValues): Partial<FormationLa
         updates.radius = undefined;
     }
 
-    updates.boxRatios = shape === 'box'
-        ? { x: num(values.boxX, 1) || 1, y: num(values.boxY, 1) || 1, z: num(values.boxZ, 1) || 1 }
-        : undefined;
+    updates.boxRatios =
+        shape === 'box'
+            ? { x: num(values.boxX, 1) || 1, y: num(values.boxY, 1) || 1, z: num(values.boxZ, 1) || 1 }
+            : undefined;
 
-    updates.rotation = shape === 'cube' || shape === 'box'
-        ? { r: num(values.rotationR, 0), s: num(values.rotationS, 0) }
-        : undefined;
+    updates.rotation =
+        shape === 'cube' || shape === 'box' ? { r: num(values.rotationR, 0), s: num(values.rotationS, 0) } : undefined;
 
     if (pattern === 'periodic_orbit') {
         const A = num(values.radius, 10) || 10;

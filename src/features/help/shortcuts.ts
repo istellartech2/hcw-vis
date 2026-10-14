@@ -11,7 +11,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
             { keys: ['R'], label: '衛星を初期位置に戻す' },
             { keys: ['+'], label: '時間倍率を上げる' },
             { keys: ['-'], label: '時間倍率を下げる' },
-            { keys: ['F'], label: 'フォーメーション設計を開く' },
+            { keys: ['F'], label: 'シナリオ（フォーメーション）を開く' },
         ],
     },
     {

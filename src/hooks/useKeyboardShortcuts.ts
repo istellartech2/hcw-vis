@@ -9,7 +9,11 @@ export const ARROW_KEY_DELTA_V = 0.001;
 function isEditableTarget(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     if (target.isContentEditable) return true;
-    return target.closest('input, textarea, select, button, a, [role="slider"], [role="combobox"], [role="switch"], [role="menuitem"]') !== null;
+    return (
+        target.closest(
+            'input, textarea, select, button, a, [role="slider"], [role="combobox"], [role="switch"], [role="menuitem"]',
+        ) !== null
+    );
 }
 
 function stepTimeScale(direction: 1 | -1): void {
@@ -33,13 +37,15 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
             if (isEditableTarget(e.target)) return;
             const store = appStore.getState();
             // モーダル表示中はショートカットを無効化
-            if (store.ui.formationOpen || store.ui.helpOpen) return;
+            if (store.ui.helpOpen) return;
             const hasSelection = store.selected !== null;
 
             switch (e.key.toLowerCase()) {
                 case ' ':
                     e.preventDefault();
-                    engine.togglePause();
+                    // 再生バーの再生ボタンと同じ動作にする
+                    if (store.playback.active) engine.togglePlaybackPlay();
+                    else engine.togglePause();
                     break;
                 case 'r':
                     engine.resetPositions();
@@ -66,7 +72,7 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
                     store.setUI({ helpOpen: true });
                     break;
                 case 'f':
-                    store.setUI({ formationOpen: true });
+                    store.setUI({ panelOpen: true, panelTab: 'scenario' });
                     break;
                 case 'escape':
                     if (store.ui.activeDialog) store.setUI({ activeDialog: null });

@@ -31,13 +31,16 @@ bun run dev
 # プロダクションビルド
 bun run build
 
-# TypeScriptの型チェック
-bun run type-check
+# フォーマット・lint・型チェック
+bun run check
+
+# テスト
+bun run test
 ```
 
 ### 技術スタック
 
-Vite / React / TypeScript / Tailwind CSS v4 / shadcn/ui / zustand / Three.js / satellite.js
+Vite+ (Vite / Vitest / Oxlint / Oxfmt) / React / TypeScript / Tailwind CSS v4 / shadcn/ui / zustand / Three.js / satellite.js
 
 UI とシミュレーションエンジンの分離方針は [CLAUDE.md](CLAUDE.md) を参照してください。
 

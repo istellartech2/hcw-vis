@@ -32,7 +32,7 @@ export class InstancedSatelliteRenderer {
         const centerMaterial = new THREE.MeshPhongMaterial({
             color: 0xffffff,
             emissive: 0xffffff,
-            emissiveIntensity: 0.0 // 発光を抑える（他の衛星と同じ設定）
+            emissiveIntensity: 0.0, // 発光を抑える（他の衛星と同じ設定）
         });
         this.centerSatelliteMesh = new THREE.Mesh(centerGeometry, centerMaterial);
         this.scene.add(this.centerSatelliteMesh);
@@ -49,7 +49,7 @@ export class InstancedSatelliteRenderer {
         satelliteCount: number,
         satelliteSize: number,
         satelliteShape: 'sphere' | 'cube',
-        colors: number[]
+        colors: number[],
     ): void {
         // 既存のInstancedMeshをクリーンアップ
         this.dispose();
@@ -88,7 +88,7 @@ export class InstancedSatelliteRenderer {
         const material = new THREE.MeshPhongMaterial({
             color: 0xffffff, // instanceColorがベースカラーとして乗算される
             emissive: 0xffffff, // instanceColorが自己発光色としても乗算される
-            emissiveIntensity: 0.0 // 発光を抑えて適度な明るさに（0.2→0.1）
+            emissiveIntensity: 0.0, // 発光を抑えて適度な明るさに（0.2→0.1）
         });
 
         // InstancedMesh生成
@@ -132,11 +132,7 @@ export class InstancedSatelliteRenderer {
         // 新しいジオメトリを作成
         if (satelliteShape === 'cube') {
             // 立方体: satelliteSizeは一辺の長さ（m）
-            this.centerSatelliteMesh.geometry = new THREE.BoxGeometry(
-                satelliteSize,
-                satelliteSize,
-                satelliteSize
-            );
+            this.centerSatelliteMesh.geometry = new THREE.BoxGeometry(satelliteSize, satelliteSize, satelliteSize);
         } else {
             // 球体: satelliteSizeは直径（m）なので、半径は diameter / 2
             this.centerSatelliteMesh.geometry = new THREE.SphereGeometry(satelliteSize / 2, 32, 32);
@@ -154,7 +150,7 @@ export class InstancedSatelliteRenderer {
         satellites: Satellite[],
         rotationR: number,
         rotationS: number,
-        selectedIndex: number
+        selectedIndex: number,
     ): void {
         if (!this.instancedMesh || satellites.length === 0) return;
 
@@ -162,11 +158,7 @@ export class InstancedSatelliteRenderer {
 
         // 基準衛星（index=0）を更新
         const centerPos = satellites[0].getPosition();
-        this.centerSatelliteMesh.position.set(
-            centerPos.z * scale,
-            centerPos.x * scale,
-            centerPos.y * scale
-        );
+        this.centerSatelliteMesh.position.set(centerPos.z * scale, centerPos.x * scale, centerPos.y * scale);
 
         // 基準衛星の回転を適用
         this.centerSatelliteMesh.rotation.set(0, 0, 0);
@@ -190,15 +182,15 @@ export class InstancedSatelliteRenderer {
 
             // 回転設定
             // CSV quaternionがあればそれを使用、なければUI制御の回転を適用
-            const satelliteQuaternion = (sat as any).quaternion;
+            const satelliteQuaternion = sat.quaternion;
             if (satelliteQuaternion) {
                 // CSV quaternion: RSW座標系 → Three.js座標系への変換
                 // RSW(x,y,z) -> Three.js(z,x,y)
                 this.tempQuaternion.set(
-                    satelliteQuaternion.z,  // RSW Z -> Three.js X
-                    satelliteQuaternion.x,  // RSW X -> Three.js Y
-                    satelliteQuaternion.y,  // RSW Y -> Three.js Z
-                    satelliteQuaternion.w
+                    satelliteQuaternion.z, // RSW Z -> Three.js X
+                    satelliteQuaternion.x, // RSW X -> Three.js Y
+                    satelliteQuaternion.y, // RSW Y -> Three.js Z
+                    satelliteQuaternion.w,
                 );
             } else {
                 // UI制御の回転を適用
@@ -224,19 +216,20 @@ export class InstancedSatelliteRenderer {
             const originalColor = this.originalColors[colorIndex];
 
             // Check if satellite has collided
-            const collided = (sat as any).collided;
-            const collisionTime = (sat as any).collisionTime;
+            const collided = sat.collided;
+            const collisionTime = sat.collisionTime;
 
             if (collided && collisionTime) {
                 const elapsed = Date.now() - collisionTime;
-                if (elapsed < 500) { // Show collision feedback for 500ms
+                if (elapsed < 500) {
+                    // Show collision feedback for 500ms
                     // Collision: Red color
                     this.tempColor.setRGB(1, 0, 0); // Red
                     this.tempColor.multiplyScalar(2.0);
                     this.instancedMesh.setColorAt(i, this.tempColor);
                 } else {
                     // Reset collision flag after feedback duration
-                    (sat as any).collided = false;
+                    sat.collided = false;
                     // Use original color
                     if (selectedIndex === i + 1) {
                         this.tempColor.setHex(originalColor);
@@ -327,7 +320,7 @@ export class InstancedSatelliteRenderer {
             this.scene.remove(this.instancedMesh);
             this.instancedMesh.geometry.dispose();
             if (Array.isArray(this.instancedMesh.material)) {
-                this.instancedMesh.material.forEach(mat => mat.dispose());
+                this.instancedMesh.material.forEach((mat) => mat.dispose());
             } else {
                 this.instancedMesh.material.dispose();
             }
@@ -345,7 +338,7 @@ export class InstancedSatelliteRenderer {
         this.scene.remove(this.centerSatelliteMesh);
         this.centerSatelliteMesh.geometry.dispose();
         if (Array.isArray(this.centerSatelliteMesh.material)) {
-            this.centerSatelliteMesh.material.forEach(mat => mat.dispose());
+            this.centerSatelliteMesh.material.forEach((mat) => mat.dispose());
         } else {
             this.centerSatelliteMesh.material.dispose();
         }

@@ -53,20 +53,18 @@ export class OrbitInitializer {
         this.useJ2StableArrangement = enabled;
         this.ssCoefficient = ssCoefficient;
     }
-    
+
     generatePositions(
         pattern: string,
         count: number,
-        radius: number,       // m
-        zSpread: number,      // m
+        radius: number, // m
+        zSpread: number, // m
         zAmplitudeMultiplier?: number,
         positiveZ?: boolean,
-        periodicParams?: { A: number, B: number, D: number, E: number, F: number },
-        spacing?: number,     // m - satellite spacing (alternative to radius for disk patterns)
-        rswOffset?: { r: number, s: number, w: number }  // RSWオフセット（軸上パターン用）
+        periodicParams?: { A: number; B: number; D: number; E: number; F: number },
+        spacing?: number, // m - satellite spacing (alternative to radius for disk patterns)
+        rswOffset?: { r: number; s: number; w: number }, // RSWオフセット（軸上パターン用）
     ): InitialCondition[] {
-        const positions: InitialCondition[] = [];
-
         switch (pattern) {
             case 'origin':
                 return this.generateOriginPosition(rswOffset);
@@ -76,45 +74,45 @@ export class OrbitInitializer {
 
             case 'grid':
                 return this.generateGridPositions(count, radius, spacing);
-                
+
             case 'random_position':
                 return this.generateRandomPositions(count, radius);
-                
+
             case 'random_position_velocity':
                 return this.generateRandomPositionsVelocities(count, radius);
-                
+
             case 'random_periodic':
                 return this.generateRandomPeriodic(count, radius);
-                
+
             case 'periodic_orbit':
                 return this.generatePeriodicOrbit(count, radius, zAmplitudeMultiplier, periodicParams);
-                
+
             case 'circular_orbit':
                 return this.generateCircularOrbit(count, radius, positiveZ ?? true);
-                
+
             case 'vbar_approach':
                 return this.generateVBarApproach(count, radius, spacing);
 
             case 'rbar_approach':
                 return this.generateRBarApproach(count, radius, spacing);
-                
+
             case 'hexagonal_disk':
                 return this.generateHexagonalDisk(count, radius, spacing);
             case 'square_lattice_disk':
                 return this.generateSquareLatticeDisk(count, radius, spacing);
             case 'concentric_disk':
                 return this.generateConcentricDisk(count, radius, spacing);
-                
+
             default:
                 return this.generateAxisPositions(count, radius);
         }
     }
-    
+
     private generateAxisPositions(
         count: number,
         radius: number,
         spacing?: number,
-        rswOffset?: { r: number, s: number, w: number }
+        rswOffset?: { r: number; s: number; w: number },
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const axisPositions: number[] = [];
@@ -131,14 +129,14 @@ export class OrbitInitializer {
             for (let i = 1; i <= eachAxisSatNum; i++) {
                 const position = spacing * i;
                 axisPositions.push(-position); // 負の方向
-                axisPositions.push(position);  // 正の方向
+                axisPositions.push(position); // 正の方向
             }
         } else {
             // Radius mode: distribute satellites within radius
             for (let i = 1; i <= eachAxisSatNum; i++) {
                 const position = (radius * i) / count;
                 axisPositions.push(-position); // 負の方向
-                axisPositions.push(position);  // 正の方向
+                axisPositions.push(position); // 正の方向
             }
         }
 
@@ -150,7 +148,7 @@ export class OrbitInitializer {
                 z0: offsetW,
                 vx0: 0,
                 vy0: 0,
-                vz0: 0
+                vz0: 0,
             });
         }
 
@@ -162,7 +160,7 @@ export class OrbitInitializer {
                 z0: offsetW,
                 vx0: 0,
                 vy0: 0,
-                vz0: 0
+                vz0: 0,
             });
         }
 
@@ -174,7 +172,7 @@ export class OrbitInitializer {
                 z0: axisPositions[i] + offsetW,
                 vx0: 0,
                 vy0: 0,
-                vz0: 0
+                vz0: 0,
             });
         }
 
@@ -184,21 +182,21 @@ export class OrbitInitializer {
     /**
      * 原点配置: 原点に1つの衛星を配置（RSWオフセットで位置調整可能）
      */
-    private generateOriginPosition(
-        rswOffset?: { r: number, s: number, w: number }
-    ): InitialCondition[] {
+    private generateOriginPosition(rswOffset?: { r: number; s: number; w: number }): InitialCondition[] {
         const offsetR = rswOffset?.r || 0;
         const offsetS = rswOffset?.s || 0;
         const offsetW = rswOffset?.w || 0;
 
-        return [{
-            x0: offsetR,
-            y0: offsetS,
-            z0: offsetW,
-            vx0: 0,
-            vy0: 0,
-            vz0: 0
-        }];
+        return [
+            {
+                x0: offsetR,
+                y0: offsetS,
+                z0: offsetW,
+                vx0: 0,
+                vy0: 0,
+                vz0: 0,
+            },
+        ];
     }
 
     private generateGridPositions(count: number, radius: number, spacing?: number): InitialCondition[] {
@@ -219,7 +217,7 @@ export class OrbitInitializer {
                 gridValues.push(value);
             }
         }
-        
+
         // 3D格子の全組み合わせを生成（原点を除外）
         for (let i = 0; i < gridValues.length; i++) {
             for (let j = 0; j < gridValues.length; j++) {
@@ -227,28 +225,28 @@ export class OrbitInitializer {
                     const x = gridValues[i];
                     const y = gridValues[j];
                     const z = gridValues[k];
-                    
+
                     // 原点は除外
                     if (x === 0 && y === 0 && z === 0) continue;
-                    
+
                     positions.push({
                         x0: x,
                         y0: y,
                         z0: z,
                         vx0: 0,
                         vy0: 0,
-                        vz0: 0
+                        vz0: 0,
                     });
                 }
             }
         }
-        
+
         return positions;
     }
-    
+
     private generateRandomPositions(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        
+
         for (let i = 0; i < count; i++) {
             positions.push({
                 x0: (Math.random() * 2 - 1) * radius,
@@ -256,17 +254,17 @@ export class OrbitInitializer {
                 z0: (Math.random() * 2 - 1) * radius,
                 vx0: 0,
                 vy0: 0,
-                vz0: 0
+                vz0: 0,
             });
         }
-        
+
         return positions;
     }
-    
+
     private generateRandomPositionsVelocities(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const maxVelocity = radius * 3 * this.n;
-        
+
         for (let i = 0; i < count; i++) {
             positions.push({
                 x0: (Math.random() * 2 - 1) * radius,
@@ -274,17 +272,17 @@ export class OrbitInitializer {
                 z0: (Math.random() * 2 - 1) * radius,
                 vx0: (Math.random() * 2 - 1) * maxVelocity,
                 vy0: (Math.random() * 2 - 1) * maxVelocity,
-                vz0: (Math.random() * 2 - 1) * maxVelocity
+                vz0: (Math.random() * 2 - 1) * maxVelocity,
             });
         }
-        
+
         return positions;
     }
-    
+
     private generateRandomPeriodic(count: number, radius: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const maxVelocityPeriodic = radius * 3 * this.n;
-        
+
         for (let i = 0; i < count; i++) {
             const x0 = (Math.random() * 2 - 1) * radius;
             positions.push({
@@ -293,113 +291,113 @@ export class OrbitInitializer {
                 z0: (Math.random() * 2 - 1) * radius,
                 vx0: (Math.random() * 2 - 1) * maxVelocityPeriodic,
                 vy0: -2 * this.n * x0, // ドリフト消失条件
-                vz0: (Math.random() * 2 - 1) * maxVelocityPeriodic
+                vz0: (Math.random() * 2 - 1) * maxVelocityPeriodic,
             });
         }
-        
+
         return positions;
     }
-    
+
     private generatePeriodicOrbit(
-        count: number, 
-        radius: number, 
+        count: number,
+        radius: number,
         zAmplitudeMultiplier: number = 0,
-        periodicParams?: { A: number, B: number, D: number, E: number, F: number }
+        periodicParams?: { A: number; B: number; D: number; E: number; F: number },
     ): InitialCondition[] {
         const positions: InitialCondition[] = [];
-        
+
         // Use periodic parameters if provided, otherwise fall back to old behavior
         if (periodicParams) {
             const { A, B, D, E, F } = periodicParams;
-            
+
             for (let i = 0; i < count; i++) {
                 const phase = (2 * Math.PI * i) / count;
-                
+
                 // Hill equation solutions at time t corresponding to phase:
                 // x(t) = A cos(nt) + B sin(nt)
                 // y(t) = -2A sin(nt) + 2B cos(nt) + D
                 // z(t) = E cos(nt) + F sin(nt)
-                
+
                 // Initial positions at phase angle (t = phase/n):
                 const x0 = A * Math.cos(phase) + B * Math.sin(phase);
                 const y0 = -2 * A * Math.sin(phase) + 2 * B * Math.cos(phase) + D;
                 const z0 = E * Math.cos(phase) + F * Math.sin(phase);
-                
+
                 // Initial velocities (derivatives at phase):
                 // dx/dt = -An sin(nt) + Bn cos(nt)
-                // dy/dt = -2An cos(nt) - 2Bn sin(nt)  
+                // dy/dt = -2An cos(nt) - 2Bn sin(nt)
                 // dz/dt = -En sin(nt) + Fn cos(nt)
                 const vx0 = -A * this.n * Math.sin(phase) + B * this.n * Math.cos(phase);
                 const vy0 = -2 * A * this.n * Math.cos(phase) - 2 * B * this.n * Math.sin(phase);
                 const vz0 = -E * this.n * Math.sin(phase) + F * this.n * Math.cos(phase);
-                
+
                 positions.push({
                     x0: x0,
                     y0: y0,
                     z0: z0,
                     vx0: vx0,
                     vy0: vy0,
-                    vz0: vz0
+                    vz0: vz0,
                 });
             }
         } else {
             // Fall back to old behavior for backward compatibility
             const rho = radius;
             const z_amplitude = zAmplitudeMultiplier * radius;
-            
+
             for (let i = 0; i < count; i++) {
                 const phase = (2 * Math.PI * i) / count;
-                
+
                 const x0 = rho * Math.cos(phase);
                 const y0 = -2 * rho * Math.sin(phase);
                 const z0 = z_amplitude * Math.cos(phase);
                 const vx0 = -rho * this.n * Math.sin(phase);
                 const vy0 = -2 * rho * this.n * Math.cos(phase);
                 const vz0 = -this.n * z_amplitude * Math.sin(phase);
-                
+
                 positions.push({
                     x0: x0,
                     y0: y0,
                     z0: z0,
                     vx0: vx0,
                     vy0: vy0,
-                    vz0: vz0
+                    vz0: vz0,
                 });
             }
         }
-        
+
         return positions;
     }
-    
+
     private generateCircularOrbit(count: number, radius: number, positiveZ: boolean = true): InitialCondition[] {
         const positions: InitialCondition[] = [];
         const radius_circular = radius;
         const z_amplitude = Math.sqrt(3) * radius * (positiveZ ? 1 : -1);
-        
+
         for (let i = 0; i < count; i++) {
             const phase = (2 * Math.PI * i) / count;
-            
+
             const x0 = radius_circular * Math.cos(phase);
             const y0 = -2 * radius_circular * Math.sin(phase);
             const z0 = z_amplitude * Math.cos(phase);
-            
+
             const vx0 = -this.n * radius_circular * Math.sin(phase);
             const vy0 = -2 * this.n * x0;
             const vz0 = -this.n * z_amplitude * Math.sin(phase);
-            
+
             positions.push({
                 x0: x0,
                 y0: y0,
                 z0: z0,
                 vx0: vx0,
                 vy0: vy0,
-                vz0: vz0
+                vz0: vz0,
             });
         }
-        
+
         return positions;
     }
-    
+
     private generateVBarApproach(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
 
@@ -413,17 +411,13 @@ export class OrbitInitializer {
                 approachDistance = spacing * (i + 1);
             } else {
                 // 範囲指定モード: radiusまでの範囲内に均等に配置
-                approachDistance = radius * (i + 1) / count;
+                approachDistance = (radius * (i + 1)) / count;
             }
 
             // 初期位置: 後方から接近（Y軸負の方向）
             const x0 = 0; // 径方向は中央
             const y0 = -approachDistance; // 後方から接近
             const z0 = 0; // 軌道面内
-
-            // ヒルの方程式の解析解を考慮した初期速度
-            // V-bar軌道では、適切な接近速度が必要
-            const approachTime = Math.PI / this.n; // 半周期での接近を想定
 
             // ターゲットに向かう初期速度を計算
             // ヒルの方程式の線形解を使用
@@ -437,13 +431,13 @@ export class OrbitInitializer {
                 z0: z0,
                 vx0: vx0,
                 vy0: vy0,
-                vz0: vz0
+                vz0: vz0,
             });
         }
 
         return positions;
     }
-    
+
     private generateRBarApproach(count: number, radius: number, spacing?: number): InitialCondition[] {
         const positions: InitialCondition[] = [];
 
@@ -457,7 +451,7 @@ export class OrbitInitializer {
                 approachDistance = spacing * (i + 1);
             } else {
                 // 範囲指定モード: radiusまでの範囲内に均等に配置
-                approachDistance = radius * (i + 1) / count;
+                approachDistance = (radius * (i + 1)) / count;
             }
 
             // 初期位置: 下方から接近（X軸負の方向）
@@ -477,13 +471,13 @@ export class OrbitInitializer {
                 z0: z0,
                 vx0: vx0,
                 vy0: vy0,
-                vz0: vz0
+                vz0: vz0,
             });
         }
 
         return positions;
     }
-    
+
     private generateHexagonalDisk(count: number, radius: number, spacing?: number): InitialCondition[] {
         const hexPoints = this.generateHexLatticePoints(count);
         return this.createDiskInitialConditions(hexPoints, radius, spacing);
@@ -494,7 +488,11 @@ export class OrbitInitializer {
         return this.createDiskInitialConditions(squarePoints, radius, spacing);
     }
 
-    private createDiskInitialConditions(points: DiskLatticePoint[], radius: number, spacing?: number): InitialCondition[] {
+    private createDiskInitialConditions(
+        points: DiskLatticePoint[],
+        radius: number,
+        spacing?: number,
+    ): InitialCondition[] {
         const positions: InitialCondition[] = [];
 
         if (points.length === 0) {
@@ -524,17 +522,17 @@ export class OrbitInitializer {
             const theta = point.theta;
 
             const x0 = (rPhysical / sqrt5) * Math.cos(theta);
-            const y0 = (2 * rPhysical / sqrt5) * Math.sin(theta);
-            const z0 = (sqrt3 * rPhysical / sqrt5) * Math.cos(theta);
+            const y0 = ((2 * rPhysical) / sqrt5) * Math.sin(theta);
+            const z0 = ((sqrt3 * rPhysical) / sqrt5) * Math.cos(theta);
 
-            const vx0 = (rPhysical * this.n / sqrt5) * Math.sin(theta);
+            const vx0 = ((rPhysical * this.n) / sqrt5) * Math.sin(theta);
 
             // J2安定配置: vy0 = -2nc·x0 を満たす初期速度
             // 通常: vy0 = -2n·x0
             const c = this.useJ2StableArrangement ? this.ssCoefficient : 1.0;
-            const vy0 = -(2 * rPhysical * this.n * c / sqrt5) * Math.cos(theta);
+            const vy0 = -((2 * rPhysical * this.n * c) / sqrt5) * Math.cos(theta);
 
-            const vz0 = (sqrt3 * rPhysical * this.n / sqrt5) * Math.sin(theta);
+            const vz0 = ((sqrt3 * rPhysical * this.n) / sqrt5) * Math.sin(theta);
 
             positions.push({
                 x0,
@@ -542,7 +540,7 @@ export class OrbitInitializer {
                 z0,
                 vx0,
                 vy0,
-                vz0
+                vz0,
             });
         }
 
@@ -601,7 +599,7 @@ export class OrbitInitializer {
             [1, 0],
             [-1, 0],
             [0, 1],
-            [0, -1]
+            [0, -1],
         ];
 
         while (result.length < count && !minHeap.isEmpty()) {
@@ -635,7 +633,7 @@ export class OrbitInitializer {
             { dq: 0, dr: -1 },
             { dq: 1, dr: -1 },
             { dq: 1, dr: 0 },
-            { dq: 0, dr: 1 }
+            { dq: 0, dr: 1 },
         ];
 
         for (const dir of directions) {
@@ -750,17 +748,17 @@ export class OrbitInitializer {
                 const sinTheta = Math.sin(theta);
 
                 const x0 = (ringRadius / sqrt5) * cosTheta;
-                const y0 = (2 * ringRadius / sqrt5) * sinTheta;
-                const z0 = (sqrt3 * ringRadius / sqrt5) * cosTheta;
+                const y0 = ((2 * ringRadius) / sqrt5) * sinTheta;
+                const z0 = ((sqrt3 * ringRadius) / sqrt5) * cosTheta;
 
-                const vx0 = (ringRadius * this.n / sqrt5) * sinTheta;
+                const vx0 = ((ringRadius * this.n) / sqrt5) * sinTheta;
 
                 // J2安定配置: vy0 = -2nc·x0 を満たす初期速度
                 // 通常: vy0 = -2n·x0
                 const c = this.useJ2StableArrangement ? this.ssCoefficient : 1.0;
-                const vy0 = -(2 * ringRadius * this.n * c / sqrt5) * cosTheta;
+                const vy0 = -((2 * ringRadius * this.n * c) / sqrt5) * cosTheta;
 
-                const vz0 = (sqrt3 * ringRadius * this.n / sqrt5) * sinTheta;
+                const vz0 = ((sqrt3 * ringRadius * this.n) / sqrt5) * sinTheta;
 
                 positions.push({ x0, y0, z0, vx0, vy0, vz0 });
             }

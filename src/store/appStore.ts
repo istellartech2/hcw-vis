@@ -11,7 +11,7 @@
 import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { FormationConfig } from '@/formation/FormationTypes';
-import { DEFAULT_FORMATION_CONFIG } from '@/formation/FormationTypes';
+import { createDefaultFormation } from '@/formation/formationConfig';
 import {
     DEFAULT_DISPLAY_SETTINGS,
     DEFAULT_ORBIT_INPUTS,
@@ -68,6 +68,9 @@ export interface LoadingState {
 
 export type ActiveDialog = 'thrust' | 'position' | null;
 
+/** 左パネルのタブ */
+export type PanelTab = 'scenario' | 'display' | 'playback';
+
 export interface AppState {
     display: DisplaySettings;
     simulation: SimulationSettings;
@@ -79,12 +82,15 @@ export interface AppState {
     referenceInfo: ReferenceSatelliteInfo | null;
     selected: SelectedSatelliteInfo | null;
     playback: PlaybackStatus;
+    /** 編集中のフォーメーション設定（唯一の正）。エンジンは再配置時にこれを読む */
     formation: FormationConfig;
+    /** 現在シミュレーションに反映されているフォーメーション設定（エンジンが書く） */
+    appliedFormation: FormationConfig | null;
     loading: LoadingState | null;
 
     ui: {
-        settingsOpen: boolean;
-        formationOpen: boolean;
+        panelOpen: boolean;
+        panelTab: PanelTab;
         helpOpen: boolean;
         activeDialog: ActiveDialog;
     };
@@ -94,6 +100,8 @@ export interface AppActions {
     setDisplay: (patch: Partial<DisplaySettings>) => void;
     setSimulation: (patch: Partial<SimulationSettings>) => void;
     setUI: (patch: Partial<AppState['ui']>) => void;
+    /** フォーメーション設定を更新する（衛星の再配置は engine.resetPositions() で行う） */
+    updateFormation: (update: (config: FormationConfig) => FormationConfig) => void;
     /** エンジンからの状態反映用 */
     patch: (patch: Partial<AppState>) => void;
     patchPlayback: (patch: Partial<PlaybackStatus>) => void;
@@ -124,12 +132,13 @@ export const appStore = createStore<AppStore>()((set) => ({
     referenceInfo: null,
     selected: null,
     playback: { ...INITIAL_PLAYBACK },
-    formation: structuredClone(DEFAULT_FORMATION_CONFIG),
+    formation: createDefaultFormation(),
+    appliedFormation: null,
     loading: null,
 
     ui: {
-        settingsOpen: false,
-        formationOpen: false,
+        panelOpen: false,
+        panelTab: 'scenario',
         helpOpen: false,
         activeDialog: null,
     },
@@ -137,6 +146,7 @@ export const appStore = createStore<AppStore>()((set) => ({
     setDisplay: (patch) => set((s) => ({ display: { ...s.display, ...patch } })),
     setSimulation: (patch) => set((s) => ({ simulation: { ...s.simulation, ...patch } })),
     setUI: (patch) => set((s) => ({ ui: { ...s.ui, ...patch } })),
+    updateFormation: (update) => set((s) => ({ formation: update(s.formation) })),
     patch: (patch) => set(patch),
     patchPlayback: (patch) => set((s) => ({ playback: { ...s.playback, ...patch } })),
 }));

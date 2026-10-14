@@ -26,7 +26,10 @@ export function Viewport({ onEngineChange }: ViewportProps) {
     }, [onEngineChange]);
 
     return (
-        <div ref={containerRef} className="absolute inset-0 touch-none bg-[radial-gradient(ellipse_at_center,_#0f172a_0%,_#000_100%)]">
+        <div
+            ref={containerRef}
+            className="absolute inset-0 touch-none bg-[radial-gradient(ellipse_at_center,_#0f172a_0%,_#000_100%)]"
+        >
             <canvas ref={canvasRef} className="block size-full" />
         </div>
     );

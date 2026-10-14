@@ -13,6 +13,26 @@ export interface SatelliteData {
     trailLine: THREE.Line | null;
 }
 
+/** フォーメーション生成時に付与される見た目の情報 */
+export interface SatelliteMetadata {
+    layerId: string;
+    layerName: string;
+    shape: string;
+    size: number;
+    color: string;
+    boxRatios?: { x: number; y: number; z: number };
+    rotation?: { r: number; s: number };
+    model3dFile?: string;
+}
+
+/** 機体座標系 → RSW 座標系の回転（CSV 再生の 6DOF データ） */
+export interface AttitudeQuaternion {
+    w: number;
+    x: number;
+    y: number;
+    z: number;
+}
+
 export class Satellite {
     // 初期位置・速度 (m, m/s)
     x0: number;
@@ -21,7 +41,7 @@ export class Satellite {
     vx0: number;
     vy0: number;
     vz0: number;
-    
+
     // 現在の状態（数値積分用）(m, m/s)
     x: number;
     y: number;
@@ -38,19 +58,36 @@ export class Satellite {
     trailLine: THREE.Line | null;
     trailGeometry: THREE.BufferGeometry | null;
     trailMaterial: THREE.LineBasicMaterial | null;
-    frameCounter: number;  // 軌跡更新の間引き用
-    
+    frameCounter: number; // 軌跡更新の間引き用
+
+    /** フォーメーション由来の衛星のみ持つ */
+    metadata: SatelliteMetadata | null = null;
+    /** CSV 再生時の姿勢 */
+    quaternion: AttitudeQuaternion | null = null;
+    /** 衝突の視覚フィードバック用 */
+    collided = false;
+    collisionTime: number | null = null;
+
     // 基準衛星の軌道要素（ECI座標計算用）
     static referenceOrbit: OrbitalElements;
-    
-    constructor(x0: number, y0: number, z0: number, vx0: number, vy0: number, vz0: number, color: string, mass: number = 1.0) {
+
+    constructor(
+        x0: number,
+        y0: number,
+        z0: number,
+        vx0: number,
+        vy0: number,
+        vz0: number,
+        color: string,
+        mass: number = 1.0,
+    ) {
         this.x0 = x0;
         this.y0 = y0;
         this.z0 = z0;
         this.vx0 = vx0;
         this.vy0 = vy0;
         this.vz0 = vz0;
-        
+
         // 現在の状態を初期化
         this.x = x0;
         this.y = y0;
@@ -67,17 +104,17 @@ export class Satellite {
         this.trailMaterial = null;
         this.frameCounter = 0;
     }
-    
+
     getPosition(): { x: number; y: number; z: number } {
         // 数値積分による現在位置を返す (km)
         return { x: this.x, y: this.y, z: this.z };
     }
-    
+
     getVelocity(): { x: number; y: number; z: number } {
         // 現在の速度を返す（km/s）
         return { x: this.vx, y: this.vy, z: this.vz };
     }
-    
+
     reset() {
         // 初期状態にリセット
         this.x = this.x0;
@@ -90,8 +127,8 @@ export class Satellite {
         this.frameCounter = 0;
 
         // Clear collision flags
-        (this as any).collided = false;
-        delete (this as any).collisionTime;
+        this.collided = false;
+        this.collisionTime = null;
 
         // THREE.jsオブジェクトの適切な解放
         if (this.trailGeometry) {
@@ -104,7 +141,7 @@ export class Satellite {
         }
         this.trailLine = null;
     }
-    
+
     dispose() {
         // メモリ解放用
         if (this.trailGeometry) {
@@ -114,14 +151,14 @@ export class Satellite {
             this.trailMaterial.dispose();
         }
     }
-    
+
     /**
      * 基準衛星の軌道要素を設定
      */
     static setReferenceOrbit(elements: OrbitalElements) {
         Satellite.referenceOrbit = elements;
     }
-    
+
     /**
      * 基準衛星のECI座標を取得
      */
@@ -133,10 +170,10 @@ export class Satellite {
             console.warn('Reference orbit not set');
             return null;
         }
-        
+
         return OrbitElementsCalculator.getECIPosition(Satellite.referenceOrbit, date);
     }
-    
+
     /**
      * 現在の衛星のECI座標を取得（Hill座標からの変換）
      */
@@ -148,20 +185,20 @@ export class Satellite {
         if (!referenceECI) {
             return null;
         }
-        
+
         // Hill座標からECI座標への変換（簡易版）
         // 実際の実装では回転行列による変換が必要
         return {
             position: {
                 x: referenceECI.position.x + this.x,
                 y: referenceECI.position.y + this.y,
-                z: referenceECI.position.z + this.z
+                z: referenceECI.position.z + this.z,
             },
             velocity: {
                 x: referenceECI.velocity.x + this.vx,
                 y: referenceECI.velocity.y + this.vy,
-                z: referenceECI.velocity.z + this.vz
-            }
+                z: referenceECI.velocity.z + this.vz,
+            },
         };
     }
 }

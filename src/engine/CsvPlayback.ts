@@ -37,16 +37,24 @@ export class CsvPlayback {
 
     async loadSample(path: string): Promise<void> {
         const fileName = path.split('/').pop() || 'sample file';
-        await this.load(fileName, async () => {
-            const response = await fetch(`${import.meta.env.BASE_URL}${path}`);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch sample file: ${response.statusText}`);
-            }
-            return CSVParser.parseCSVContent(await response.text());
-        }, 'サンプルファイルを読み込み中...');
+        await this.load(
+            fileName,
+            async () => {
+                const response = await fetch(`${import.meta.env.BASE_URL}${path}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch sample file: ${response.statusText}`);
+                }
+                return CSVParser.parseCSVContent(await response.text());
+            },
+            'サンプルファイルを読み込み中...',
+        );
     }
 
-    private async load(fileName: string, read: () => Promise<CSVPlaybackData>, processingMessage: string): Promise<void> {
+    private async load(
+        fileName: string,
+        read: () => Promise<CSVPlaybackData>,
+        processingMessage: string,
+    ): Promise<void> {
         const store = appStore.getState();
         try {
             this.loadingIndicator.showProcessing(processingMessage);
