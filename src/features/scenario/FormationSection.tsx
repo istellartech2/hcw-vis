@@ -44,6 +44,65 @@ function IconAction({ label, onClick, children }: { label: string; onClick: () =
     );
 }
 
+/** ファイル名。クリックするとその場で名前（拡張子なし）を編集できる */
+function FileNameField({
+    fileName,
+    saved,
+    status,
+    onRename,
+}: {
+    fileName: string;
+    saved: boolean;
+    status: string;
+    onRename: (name: string) => void;
+}) {
+    const [draft, setDraft] = useState<string | null>(null);
+    const stem = fileName.replace(/\.json$/i, '');
+
+    if (draft !== null) {
+        const commit = () => {
+            const name = draft.trim();
+            if (name && name !== stem) onRename(name);
+            setDraft(null);
+        };
+        return (
+            <span className="flex min-w-0 flex-1 items-center">
+                <input
+                    autoFocus
+                    value={draft}
+                    aria-label="ファイル名"
+                    className="h-6 min-w-0 flex-1 rounded-sm bg-raised px-1 text-xs text-fg outline-none focus-visible:ring-1 focus-visible:ring-brand"
+                    onChange={(e) => setDraft(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    onBlur={commit}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') commit();
+                        if (e.key === 'Escape') setDraft(null);
+                    }}
+                />
+                <span className="pl-0.5 text-xs text-fg-subtle">.json</span>
+            </span>
+        );
+    }
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    onClick={() => setDraft(stem)}
+                    className={cn(
+                        'h-6 min-w-0 flex-1 truncate rounded-sm px-1 text-left text-xs transition-colors hover:bg-raised',
+                        saved ? 'text-fg' : 'text-fg-muted',
+                    )}
+                >
+                    {fileName}
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>{status} ・ クリックで名前を変更</TooltipContent>
+        </Tooltip>
+    );
+}
+
 /**
  * 衛星配置（フォーメーション）。基準衛星のまわりに置く衛星を「衛星グループ」単位で組み合わせる。
  * 変更はすべてすぐにシミュレーションへ反映する（時刻は t = 0 に戻る）。
@@ -135,14 +194,21 @@ export function FormationSection() {
                 </div>
             }
         >
-            <div className="flex h-8 items-center gap-1.5 rounded-md border border-line bg-sunken pr-0.5 pl-2">
+            <div className="flex h-8 items-center gap-1 rounded-md border border-line bg-sunken pr-0.5 pl-2">
                 <FileJson className="size-3.5 shrink-0 text-fg-subtle" />
-                <span
-                    className={cn('min-w-0 flex-1 truncate text-xs', formationFile ? 'text-fg' : 'text-fg-muted')}
-                    title={`${fileName}（${fileStatus}）`}
-                >
-                    {fileName}
-                </span>
+                <FileNameField
+                    fileName={fileName}
+                    saved={formationFile !== null}
+                    status={fileStatus}
+                    onRename={(name) => {
+                        updateFormation((c) => ({ ...c, name }));
+                        if (formationFile) {
+                            appStore.getState().patch({
+                                formationFile: { ...formationFile, name: formationFileName({ name }) },
+                            });
+                        }
+                    }}
+                />
                 {modified && (
                     <span
                         className="size-1.5 shrink-0 rounded-full bg-warning"
