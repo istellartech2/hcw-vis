@@ -21,6 +21,8 @@ import {
 } from './satelliteMeshFactory.js';
 
 const COLLISION_COLOR = 0xff0000;
+/** 選択リングの色（UI のブランドカラー） */
+const SELECTION_COLOR = 0xf07214;
 const WHITE = new THREE.Color(0xffffff);
 
 function degToRad(deg: number): number {
@@ -38,6 +40,23 @@ function uiRotation(display: DisplaySettings): [number, number] {
         default:
             return [0, 0];
     }
+}
+
+/** 半径 1 のリング。描画時に衛星の大きさへスケールし、他の物体に隠れないよう最前面に描く */
+function createSelectionRing(): THREE.Mesh {
+    const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.92, 1, 64),
+        new THREE.MeshBasicMaterial({
+            color: SELECTION_COLOR,
+            transparent: true,
+            opacity: 0.95,
+            depthTest: false,
+            depthWrite: false,
+        }),
+    );
+    ring.renderOrder = 10;
+    ring.visible = false;
+    return ring;
 }
 
 export class RenderingSystem {
@@ -58,6 +77,9 @@ export class RenderingSystem {
 
     // Selection system
     private selectedSatelliteIndex: number = -1;
+    private selectionRing: THREE.Mesh;
+    private selectionBounds = new THREE.Box3();
+    private selectionSphere = new THREE.Sphere();
     private raycaster: THREE.Raycaster;
     private mouse: THREE.Vector2;
 
@@ -86,6 +108,8 @@ export class RenderingSystem {
         this.setupLighting();
         this.axesGroup = this.createAxes();
         this.gridHelper = this.createGrid();
+        this.selectionRing = createSelectionRing();
+        this.scene.add(this.selectionRing);
         this.setupSatelliteSelection(signal);
     }
 
@@ -293,7 +317,19 @@ export class RenderingSystem {
         this.onSelectionChange(this.selectedSatelliteIndex);
     }
 
+    /** 選択中の衛星を囲むリングを、常にカメラへ向けて衛星の大きさに合わせる */
+    private updateSelectionRing(): void {
+        const object = this.satelliteMeshes[this.selectedSatelliteIndex];
+        this.selectionRing.visible = !!object?.visible;
+        if (!object?.visible) return;
+        this.selectionBounds.setFromObject(object).getBoundingSphere(this.selectionSphere);
+        this.selectionRing.position.copy(this.selectionSphere.center);
+        this.selectionRing.quaternion.copy(this.camera.quaternion);
+        this.selectionRing.scale.setScalar(Math.max(this.selectionSphere.radius, 0.05) * 1.6);
+    }
+
     public render(): void {
+        this.updateSelectionRing();
         this.gridHelper.visible = this.getDisplay().showGrid;
         this.axesGroup.visible = this.getDisplay().showAxes;
         this.renderer.render(this.scene, this.camera);
