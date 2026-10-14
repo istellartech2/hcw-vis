@@ -8,7 +8,7 @@ import { FormationGenerator } from '@/formation/FormationGenerator';
 import { CollisionDetector } from '@/collision/CollisionDetector';
 import { CollisionResponse } from '@/collision/CollisionResponse';
 import { appStore, type AppStore } from '@/store/appStore';
-import { SATELLITE_PALETTE, type OrbitInputs } from '@/store/settings';
+import { SATELLITE_PALETTE, type OrbitInputs, type SatelliteShape } from '@/store/settings';
 import { CameraController } from './CameraController';
 import { CsvPlayback } from './CsvPlayback';
 
@@ -49,6 +49,8 @@ export class SimulationEngine {
     private orbitRadius = 6778137;
     private orbitElements!: OrbitalElements;
 
+    /** CSV 再生に入る前の衛星形状（終了時に戻す） */
+    private shapeBeforePlayback: SatelliteShape | null = null;
     private animationFrameId = 0;
     private abort = new AbortController();
     private unsubscribers: Array<() => void> = [];
@@ -449,6 +451,10 @@ export class SimulationEngine {
     /** CSV 再生モードを終了してシミュレーションに戻る */
     exitPlayback(): void {
         this.csvPlayback.deactivate();
+        if (this.shapeBeforePlayback) {
+            appStore.getState().setDisplay({ satelliteShape: this.shapeBeforePlayback });
+            this.shapeBeforePlayback = null;
+        }
         this.resetPositions();
     }
 
@@ -457,6 +463,7 @@ export class SimulationEngine {
         this.clearTrails();
         // 姿勢が見えるよう、球体なら立方体表示に切り替える
         const store = appStore.getState();
+        this.shapeBeforePlayback ??= store.display.satelliteShape;
         if (store.display.satelliteShape === 'sphere') {
             store.setDisplay({ satelliteShape: 'cube' });
         }
