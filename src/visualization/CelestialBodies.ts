@@ -3,9 +3,14 @@ import { Satellite } from '../simulation/Satellite.js';
 import { gstime } from 'satellite.js';
 import { FrameTransforms } from '../simulation/FrameTransforms.js';
 import { LoadingIndicator } from '@/engine/LoadingIndicator';
+import type { EarthBrightness } from '@/store/settings';
 
-/** 地球テクスチャに掛ける色（少し暗く青みを帯びさせて背景に沈める） */
-const EARTH_TINT = 0x46505f;
+/** 明るさごとに地球テクスチャへ掛ける色（暗いほど背景に沈み、衛星が目立つ） */
+const EARTH_TINTS: Record<EarthBrightness, number> = {
+    dim: 0x46505f,
+    normal: 0x8c99ad,
+    bright: 0xffffff,
+};
 
 export class CelestialBodies {
     private scene: THREE.Scene;
@@ -26,7 +31,11 @@ export class CelestialBodies {
     }
 
     // orbitRadius: m (meters)
-    createEarth(orbitRadius: number, textureFile: string = 'earth00.webp'): void {
+    createEarth(
+        orbitRadius: number,
+        textureFile: string = 'earth00.webp',
+        brightness: EarthBrightness = 'normal',
+    ): void {
         // 既存の地球があれば削除
         this.disposeAtmosphere();
         if (this.earth) {
@@ -110,7 +119,7 @@ export class CelestialBodies {
         // 地球のマテリアル（テクスチャ付き）。衛星より目立たないよう少し沈んだ色味にする
         const earthMaterial = new THREE.MeshStandardMaterial({
             map: earthTexture,
-            color: EARTH_TINT,
+            color: EARTH_TINTS[brightness],
             roughness: 1,
             metalness: 0,
         });
@@ -321,6 +330,11 @@ export class CelestialBodies {
 
         // --- 4.  地球オブジェクトの姿勢だけ更新
         if (this.earth) this.earth.setRotationFromMatrix(finalTransform);
+    }
+
+    setEarthBrightness(brightness: EarthBrightness): void {
+        if (!this.earth) return;
+        (this.earth.material as THREE.MeshStandardMaterial).color.setHex(EARTH_TINTS[brightness]);
     }
 
     setEarthVisibility(visible: boolean): void {

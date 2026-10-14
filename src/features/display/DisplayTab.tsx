@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { PanelSection } from '@/components/panel-section';
 import { useUiTheme, type UiTheme } from '@/lib/uiTheme';
 import { appStore, useAppStore } from '@/store/appStore';
-import { EARTH_TEXTURE_OPTIONS } from '@/store/settings';
+import { EARTH_BRIGHTNESS_OPTIONS, EARTH_TEXTURE_OPTIONS } from '@/store/settings';
 
 const README_URL = 'https://github.com/istellartech2/hcw-vis/blob/main/README.md';
 
@@ -127,6 +127,15 @@ function EarthSection() {
                                 ))}
                             </SelectContent>
                         </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-20 shrink-0 text-xs text-fg-muted">明るさ</span>
+                        <SegmentedControl
+                            ariaLabel="地球の明るさ"
+                            value={display.earthBrightness}
+                            options={EARTH_BRIGHTNESS_OPTIONS}
+                            onChange={(earthBrightness) => setDisplay({ earthBrightness })}
+                        />
                     </div>
                 </>
             )}
