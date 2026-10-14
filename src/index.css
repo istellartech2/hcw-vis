@@ -287,6 +287,16 @@
   transition: left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* 上部中央の学習シナリオボタン。パネルを開くと残りの領域の中央へずれる */
+.hud-top-center {
+  position: fixed;
+  left: calc(50% + var(--panel-offset) / 2);
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  z-index: 20;
+  transition: left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 /* 再生バー（高さ約 46px）の上に置き、狭い画面でも重ならないようにする */
 .hud-bottom-left {
   position: fixed;
@@ -355,10 +365,16 @@
   }
 
   /* シートが開いている間は下部 HUD を隠す */
+  :root[data-sheet-open] .hud-top-center,
   :root[data-sheet-open] .hud-bottom-center,
   :root[data-sheet-open] .hud-bottom-left {
     opacity: 0;
     pointer-events: none;
+  }
+  /* 上の行はメニューと視点操作で埋まるので、その下の行に置く */
+  .hud-top-center {
+    top: calc(60px + env(safe-area-inset-top, 0px));
+    max-width: calc(100vw - 24px);
   }
   .hud-bottom-center {
     left: 12px;

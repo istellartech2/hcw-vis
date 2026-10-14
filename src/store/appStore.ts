@@ -98,6 +98,8 @@ export interface AppState {
      * 既定の配置のまま、または「既定の配置に戻す」の後は null
      */
     formationFile: { name: string; config: FormationConfig } | null;
+    /** 最後に読み込んだ学習用シナリオ。`config` が formation と同じ参照なら、編集されずにそのシナリオのまま */
+    loadedScenario: { id: string; config: FormationConfig } | null;
     loading: LoadingState | null;
 
     ui: {
@@ -147,6 +149,7 @@ export const appStore = createStore<AppStore>()((set) => ({
     playback: { ...INITIAL_PLAYBACK },
     formation: createDefaultFormation(),
     formationFile: null,
+    loadedScenario: null,
     loading: null,
 
     ui: {

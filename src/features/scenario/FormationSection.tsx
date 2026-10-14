@@ -7,7 +7,6 @@ import { HelpTip } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
 import type { FormationConfig } from '@/formation/FormationTypes';
-import type { FormationScenario } from '@/formation/scenarios';
 import {
     addLayer,
     countSatellites,
@@ -20,7 +19,6 @@ import { appStore, useAppStore, type AppState } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 import { LayerCard } from './LayerCard';
 import { LayerEditor } from './LayerEditor';
-import { ScenarioPicker } from './ScenarioPicker';
 
 function downloadText(fileName: string, text: string): void {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
@@ -165,13 +163,6 @@ export function FormationSection() {
         toast.success(`${fileName} を保存しました`, { description: 'ブラウザのダウンロード先に保存されます' });
     };
 
-    const loadScenario = (scenario: FormationScenario) => {
-        const undo = replaceFormation(scenario.build(), null);
-        // 一時停止したまま読み込むと t = 0 で止まって見えるので、再生を始めて動きを見せる
-        appStore.getState().patch({ paused: false });
-        toast(`「${scenario.title}」を読み込みました`, { action: { label: '元に戻す', onClick: undo } });
-    };
-
     const resetToDefault = () => {
         const undo = replaceFormation(createDefaultFormation(), null);
         toast('既定の配置に戻しました', { action: { label: '元に戻す', onClick: undo } });
@@ -243,8 +234,6 @@ export function FormationSection() {
                     <Download />
                 </IconAction>
             </div>
-
-            <ScenarioPicker onSelect={loadScenario} />
 
             {config.description && (
                 <p className="flex gap-2 rounded-md border border-line bg-sunken px-2.5 py-2 text-xs leading-relaxed text-fg-muted">

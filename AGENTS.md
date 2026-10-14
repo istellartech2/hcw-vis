@@ -83,7 +83,7 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
 - 色は `src/index.css` の意味ベースのトークン（`bg-surface`, `bg-raised`, `bg-sunken`, `text-fg-muted`, `border-line`, `bg-brand` …）を使い、生の gray/hex は使わない。shadcn の変数もこのトークンに対応づけている
 - UI テーマは `<html data-theme="dark|light">`（`src/lib/uiTheme.ts`）。3D シーンの背景とは独立
 - フォントは Inter / JetBrains Mono（数値は `num` ユーティリティで等幅表示）
-- レイアウト: 左上メニュー（現在のモードを表示）→ 左パネル（モード切替 + タブ）、右上に視点リセット、下中央に再生バー（`glass` ユーティリティ）
+- レイアウト: 左上メニュー（現在のモードを表示）→ 左パネル（モード切替 + タブ）、上中央に学習シナリオ（`hud/ScenarioButton`、スマホでは 2 行目）、右上に視点リセット、下中央に再生バー（`glass` ユーティリティ）
 
 ### Technology Stack
 - Vite+ 1.2 (Vite 8 / Vitest 5 / Oxlint / Oxfmt) / React 19 / TypeScript
