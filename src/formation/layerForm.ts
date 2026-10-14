@@ -4,22 +4,66 @@
  */
 
 import type { FormationLayer, PatternType, PlacementMode, ShapeType } from './FormationTypes';
+import { layerSatelliteCount } from './formationConfig';
 
 export const PATTERN_LABELS: Record<PatternType, string> = {
-    origin: '原点配置',
-    axis: '軸上-速度0',
-    grid: '格子-速度0',
-    random_position: 'ランダム-速度0',
-    random_position_velocity: 'ランダム',
-    random_periodic: 'ランダム-周期解',
-    periodic_orbit: '楕円軌道',
+    origin: '単独（1 機）',
+    axis: '軸上',
+    grid: '立方格子',
+    random_position: 'ランダム位置',
+    random_position_velocity: 'ランダム位置・速度',
+    random_periodic: 'ランダム周期軌道',
+    periodic_orbit: '楕円軌道（係数指定）',
     circular_orbit: '円軌道',
-    hexagonal_disk: '円盤軌道（六角格子）',
-    square_lattice_disk: '円盤軌道（正方格子）',
-    concentric_disk: '円盤軌道（同心リング）',
-    vbar_approach: 'V-bar軌道',
-    rbar_approach: 'R-bar軌道',
+    hexagonal_disk: '円盤（六角格子）',
+    square_lattice_disk: '円盤（正方格子）',
+    concentric_disk: '円盤（同心リング）',
+    vbar_approach: 'V-bar 接近',
+    rbar_approach: 'R-bar 接近',
 };
+
+/** パターン選択時に表示する 1 行説明 */
+export const PATTERN_DESCRIPTIONS: Record<PatternType, string> = {
+    origin: '指定した位置に 1 機だけ置きます。',
+    axis: 'R・S・W の 3 軸上に、原点の両側へ等間隔に並べます。',
+    grid: '原点を中心とした 3 次元の格子点に並べます。',
+    random_position: '±範囲の立方体の中にランダムに置きます。',
+    random_position_velocity: '位置も速度もランダム。多くはドリフトして離れていきます。',
+    random_periodic: 'ランダムな位置・速度のうち、ドリフトしない条件を満たすものを置きます。',
+    periodic_orbit: 'HCW 周期解の係数 A, B, D, E, F を指定し、同じ楕円上に等間隔で並べます。',
+    circular_orbit: '基準衛星から一定距離（範囲の 2 倍）を保って回る軌道上に等間隔で並べます。',
+    hexagonal_disk: '基準衛星のまわりを回る円盤状の配置。六角格子に並べます。',
+    square_lattice_disk: '基準衛星のまわりを回る円盤状の配置。正方格子に並べます。',
+    concentric_disk: '基準衛星のまわりを回る円盤状の配置。同心円のリングに並べます。',
+    vbar_approach: '進行方向の後方（−S）に一列に並べ、基準衛星へ向かう速度を与えます。',
+    rbar_approach: '地球側（−R）に一列に並べ、基準衛星へ向かう速度を与えます。',
+};
+
+/** パターンの分類。選択メニューの見出しに使う */
+export const PATTERN_GROUPS: ReadonlyArray<{ label: string; note: string; patterns: PatternType[] }> = [
+    {
+        label: '周期軌道',
+        note: 'ドリフトせず、基準衛星のまわりを回り続けます',
+        patterns: [
+            'circular_orbit',
+            'hexagonal_disk',
+            'square_lattice_disk',
+            'concentric_disk',
+            'periodic_orbit',
+            'random_periodic',
+        ],
+    },
+    {
+        label: '静止配置',
+        note: '初速度 0。時間とともにドリフトして離れていきます',
+        patterns: ['axis', 'grid', 'random_position', 'origin'],
+    },
+    {
+        label: '接近・その他',
+        note: '',
+        patterns: ['vbar_approach', 'rbar_approach', 'random_position_velocity'],
+    },
+];
 
 export const SHAPE_LABELS: Record<ShapeType, string> = {
     sphere: '球体',
@@ -29,8 +73,8 @@ export const SHAPE_LABELS: Record<ShapeType, string> = {
 };
 
 export const PLACEMENT_MODE_LABELS: Record<PlacementMode, string> = {
-    radius: '範囲指定',
-    spacing: '衛星間距離',
+    radius: '全体の大きさで指定',
+    spacing: '衛星の間隔で指定',
 };
 
 /** フォームの入力値。数値入力は編集途中の文字列を保持できるよう string で持つ */
@@ -147,6 +191,78 @@ export function getSizeLabel(shape: ShapeType): string {
         default:
             return 'サイズ';
     }
+}
+
+/** 「範囲」入力欄のラベル。パターンによって意味が違う */
+export function getRadiusLabel(pattern: PatternType): string {
+    switch (pattern) {
+        case 'random_position':
+        case 'random_position_velocity':
+        case 'random_periodic':
+            return '範囲（±）';
+        case 'circular_orbit':
+            return '軌道の大きさ';
+        case 'periodic_orbit':
+            return '振幅 A（R 方向）';
+        case 'hexagonal_disk':
+        case 'square_lattice_disk':
+        case 'concentric_disk':
+            return '円盤の半径';
+        default:
+            return '最も遠い衛星までの距離';
+    }
+}
+
+/** 「衛星数」入力欄のラベル。軸上・格子は入力値と実際の機数が違う */
+export function getCountLabel(pattern: PatternType): string {
+    switch (pattern) {
+        case 'axis':
+            return '各軸・片側の機数';
+        case 'grid':
+            return '片側の格子数';
+        default:
+            return '衛星数';
+    }
+}
+
+/** 一度に生成できる衛星数の上限（ライブ反映で固まらないように） */
+export const MAX_GENERATED_SATELLITES = 20000;
+
+/**
+ * フォームの入力内容をチェックし、問題があれば利用者向けのメッセージを返す。
+ * 問題がなければ null（このときだけシミュレーションに反映する）。
+ */
+export function checkLayerForm(values: LayerFormValues): string | null {
+    const visible = getLayerFieldVisibility(values);
+    const positive = (value: string) => {
+        const n = parseFloat(value);
+        return Number.isFinite(n) && n > 0;
+    };
+    const finite = (value: string) => Number.isFinite(parseFloat(value));
+
+    if (visible.satelliteCount) {
+        const count = Number(values.satelliteCount);
+        if (!Number.isInteger(count) || count < 1)
+            return `${getCountLabel(values.pattern)}は 1 以上の整数で入力してください`;
+        const generated = layerSatelliteCount({ pattern: values.pattern, satelliteCount: count });
+        if (generated > MAX_GENERATED_SATELLITES) {
+            return `衛星が ${generated.toLocaleString()} 機になります（上限 ${MAX_GENERATED_SATELLITES.toLocaleString()} 機）`;
+        }
+    }
+    if (visible.radius && !positive(values.radius))
+        return `${getRadiusLabel(values.pattern)}は正の数で入力してください`;
+    if (visible.spacing && !positive(values.spacing)) return '衛星の間隔は正の数で入力してください';
+    if (!positive(values.size)) return 'サイズは正の数で入力してください';
+    if (visible.boxRatios && ![values.boxX, values.boxY, values.boxZ].every(positive)) {
+        return '直方体の比率は正の数で入力してください';
+    }
+    if (visible.color && !/^#[0-9a-fA-F]{6}$/.test(values.color)) return '色は #RRGGBB の形式で入力してください';
+    const numericKeys: Array<keyof LayerFormValues> = [];
+    if (visible.originOffset || visible.axisOffset) numericKeys.push('offsetR', 'offsetS', 'offsetW');
+    if (visible.periodicParams) numericKeys.push('ratioB', 'ratioD', 'ratioE', 'ratioF', 'zAmplitude');
+    if (visible.rotation) numericKeys.push('rotationR', 'rotationS');
+    if (numericKeys.some((key) => !finite(values[key] as string))) return '数値を入力してください';
+    return null;
 }
 
 /** 楕円軌道パラメータの離心率 e = sqrt((D-2)^2 + E^2) / 2 */

@@ -139,7 +139,7 @@ export const DEFAULT_FORMATION_CONFIG: FormationConfig = {
     layers: [
         {
             id: crypto.randomUUID(),
-            name: 'デフォルトレイヤー',
+            name: 'グループ 1',
             enabled: true,
             pattern: 'axis',
             placementMode: 'spacing',

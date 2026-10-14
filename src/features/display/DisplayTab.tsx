@@ -112,7 +112,7 @@ function SatelliteAppearanceSection() {
         <PanelSection title="衛星の色" icon={<Satellite />}>
             <ToggleRow
                 label="すべて同じ色にする"
-                help="オフのときはフォーメーションのレイヤーで設定した色で表示します。"
+                help="オフのときは衛星グループごとに設定した色で表示します。"
                 checked={display.uniformSatelliteColor}
                 onCheckedChange={(uniformSatelliteColor) => setDisplay({ uniformSatelliteColor })}
             />

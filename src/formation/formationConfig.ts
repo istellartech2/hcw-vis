@@ -24,7 +24,7 @@ export function addLayer(config: FormationConfig, name?: string): FormationConfi
     const layer: FormationLayer = {
         ...structuredClone(DEFAULT_LAYER),
         id: crypto.randomUUID(),
-        name: name ?? `レイヤー ${config.layers.length + 1}`,
+        name: name ?? `グループ ${config.layers.length + 1}`,
     };
     return { ...config, layers: [...config.layers, layer] };
 }
@@ -109,7 +109,7 @@ export function validateFormation(config: FormationConfig): ValidationResult {
     if (!config.version) errors.push('バージョン情報がありません');
     if (!config.name || config.name.trim().length === 0) errors.push('フォーメーション名が空です');
     if (!Array.isArray(config.layers)) {
-        errors.push('レイヤー情報が不正です');
+        errors.push('衛星グループの情報が不正です');
         return { valid: false, errors };
     }
 
@@ -119,7 +119,7 @@ export function validateFormation(config: FormationConfig): ValidationResult {
 
 function validateLayer(layer: FormationLayer, index: number): string[] {
     const errors: string[] = [];
-    const prefix = `レイヤー ${index + 1} (${layer.name}): `;
+    const prefix = `グループ ${index + 1} (${layer.name}): `;
 
     if (!layer.id) errors.push(`${prefix}IDがありません`);
     if (!layer.name) errors.push(`${prefix}名前がありません`);

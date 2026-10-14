@@ -91,10 +91,8 @@ export interface AppState {
     referenceInfo: ReferenceSatelliteInfo | null;
     selected: SelectedSatelliteInfo | null;
     playback: PlaybackStatus;
-    /** 編集中のフォーメーション設定（唯一の正）。エンジンは再配置時にこれを読む */
+    /** フォーメーション設定（唯一の正）。UI は変更のたびに engine.resetPositions() で反映する */
     formation: FormationConfig;
-    /** 現在シミュレーションに反映されているフォーメーション設定（エンジンが書く） */
-    appliedFormation: FormationConfig | null;
     loading: LoadingState | null;
 
     ui: {
@@ -143,7 +141,6 @@ export const appStore = createStore<AppStore>()((set) => ({
     selected: null,
     playback: { ...INITIAL_PLAYBACK },
     formation: createDefaultFormation(),
-    appliedFormation: null,
     loading: null,
 
     ui: {
