@@ -43,7 +43,9 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
             switch (e.key.toLowerCase()) {
                 case ' ':
                     e.preventDefault();
-                    engine.togglePause();
+                    // 再生バーの再生ボタンと同じ動作にする
+                    if (store.playback.active) engine.togglePlaybackPlay();
+                    else engine.togglePause();
                     break;
                 case 'r':
                     engine.resetPositions();

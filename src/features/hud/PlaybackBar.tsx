@@ -35,7 +35,16 @@ function PlayButton({ playing, onToggle }: { playing: boolean; onToggle: () => v
 }
 
 /** « 180× » の速度ステッパー */
-function SpeedStepper({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+function SpeedStepper({
+    value,
+    onChange,
+    compactOnMobile = false,
+}: {
+    value: number;
+    onChange: (value: number) => void;
+    /** スマホ幅では « » を隠して倍率の選択だけにする */
+    compactOnMobile?: boolean;
+}) {
     const index = Math.max(0, SPEEDS.indexOf(value));
     const step = (delta: number) => onChange(SPEEDS[Math.min(SPEEDS.length - 1, Math.max(0, index + delta))]);
     return (
@@ -43,7 +52,7 @@ function SpeedStepper({ value, onChange }: { value: number; onChange: (value: nu
             <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full text-fg-muted"
+                className={cn('rounded-full text-fg-muted', compactOnMobile && 'max-md:hidden')}
                 aria-label="遅くする (-)"
                 disabled={index === 0}
                 onClick={() => step(-1)}
@@ -65,7 +74,7 @@ function SpeedStepper({ value, onChange }: { value: number; onChange: (value: nu
             <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full text-fg-muted"
+                className={cn('rounded-full text-fg-muted', compactOnMobile && 'max-md:hidden')}
                 aria-label="速くする (+)"
                 disabled={index === SPEEDS.length - 1}
                 onClick={() => step(1)}
@@ -133,7 +142,7 @@ function CsvBar() {
                 <Square className="size-3.5 fill-current" />
             </Button>
             <Slider
-                className="mx-1 w-[min(16rem,30vw)]"
+                className="mx-1 min-w-16 flex-1 md:w-[min(16rem,30vw)] md:flex-none"
                 min={0}
                 max={1}
                 step={0.001}
@@ -142,7 +151,8 @@ function CsvBar() {
                 aria-label="再生位置"
             />
             <span className="num shrink-0 text-xs text-fg-muted">
-                <span className="text-fg">{playback.currentTime.toFixed(0)}</span> / {max.toFixed(0)} s
+                <span className="text-fg">{playback.currentTime.toFixed(0)}</span>
+                <span className="max-md:hidden"> / {max.toFixed(0)}</span> s
             </span>
             <Divider />
             <Button
@@ -155,7 +165,7 @@ function CsvBar() {
             >
                 <Repeat />
             </Button>
-            <SpeedStepper value={playback.speed} onChange={(v) => engine.setPlaybackSpeed(v)} />
+            <SpeedStepper value={playback.speed} onChange={(v) => engine.setPlaybackSpeed(v)} compactOnMobile />
         </>
     );
 }
