@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { CircleAlert, CircleCheck, ExternalLink, FileUp, Loader2, LogOut, Shapes, Table2 } from 'lucide-react';
+import { CircleAlert, CircleCheck, ExternalLink, FileUp, Info, Loader2, Shapes, Table2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InfoGrid, SegmentedControl, SliderRow } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
@@ -10,14 +10,30 @@ import { cn } from '@/lib/utils';
 
 const FORMAT_DOC_URL = 'https://github.com/istellartech2/hcw-vis/blob/main/docs/csv-playback-format.md';
 
-/** 再生: 事前計算した 6DOF 時系列（CSV）の再生 */
-export function PlaybackTab() {
+/** CSV 再生モードのデータ: 事前計算した 6DOF 時系列（CSV）の読み込みと衛星の見た目 */
+export function CsvTab() {
     const active = useAppStore((s) => s.playback.active);
     return (
         <div>
+            {!active && <CsvModeIntro />}
             <CsvFileSection />
             {active && <CsvDataSection />}
-            <ShapeSection />
+            {active && <ShapeSection />}
+        </div>
+    );
+}
+
+function CsvModeIntro() {
+    return (
+        <div className="mt-1 mb-3 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-3 py-2.5 text-xs text-fg">
+            <Info className="mt-0.5 size-3.5 shrink-0 text-info" />
+            <div className="space-y-1">
+                <p className="font-medium">CSV 再生モード</p>
+                <p className="text-fg-muted">
+                    HCW 方程式による計算の代わりに、外部で計算した位置・姿勢（6DOF）の時系列を再生します。
+                    衛星配置・軌道の設定は使いません。ファイルを読み込むと再生が始まります。
+                </p>
+            </div>
         </div>
     );
 }
@@ -48,6 +64,7 @@ function StatusMessage({ status }: { status: FileStatus }) {
 function CsvFileSection() {
     const engine = useEngine();
     const fileStatus = useAppStore((s) => s.playback.fileStatus);
+    const active = useAppStore((s) => s.playback.active);
     const inputRef = useRef<HTMLInputElement>(null);
 
     return (
@@ -63,7 +80,6 @@ function CsvFileSection() {
                 </Button>
             }
         >
-            <p className="text-xs text-fg-muted">事前計算した位置・姿勢（6DOF）の時系列を読み込んで再生します。</p>
             <input
                 ref={inputRef}
                 type="file"
@@ -75,12 +91,16 @@ function CsvFileSection() {
                     e.target.value = '';
                 }}
             />
-            <Button variant="secondary" className="w-full" onClick={() => inputRef.current?.click()}>
+            <Button
+                variant={active ? 'secondary' : 'default'}
+                className="w-full"
+                onClick={() => inputRef.current?.click()}
+            >
                 <FileUp />
-                CSV ファイルを選択
+                {active ? '別の CSV ファイルを開く' : 'CSV ファイルを開く'}
             </Button>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="text-xs text-fg-subtle">サンプル</span>
+                <span className="text-xs text-fg-subtle">サンプルで試す</span>
                 {CSV_SAMPLES.map((sample) => (
                     <Button
                         key={sample.path}
@@ -99,7 +119,6 @@ function CsvFileSection() {
 }
 
 function CsvDataSection() {
-    const engine = useEngine();
     const playback = useAppStore((s) => s.playback);
 
     return (
@@ -118,10 +137,6 @@ function CsvDataSection() {
                     ]}
                 />
             </div>
-            <Button variant="outline" size="sm" className="w-full" onClick={() => engine.exitPlayback()}>
-                <LogOut />
-                再生をやめてシミュレーションに戻る
-            </Button>
         </PanelSection>
     );
 }
@@ -133,9 +148,7 @@ function ShapeSection() {
 
     return (
         <PanelSection title="衛星の形状" icon={<Shapes />}>
-            <p className="text-xs text-fg-muted">
-                CSV の衛星にはフォーメーションの形状情報がないため、ここで指定します。
-            </p>
+            <p className="text-xs text-fg-muted">CSV には形状の情報がないため、ここで指定します。</p>
             <SegmentedControl<SatelliteShape>
                 ariaLabel="衛星の形状"
                 value={shape === '3dfile' ? 'cube' : shape}

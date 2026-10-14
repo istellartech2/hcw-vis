@@ -68,8 +68,17 @@ export interface LoadingState {
 
 export type ActiveDialog = 'thrust' | 'position' | null;
 
-/** 左パネルのタブ */
-export type PanelTab = 'scenario' | 'display' | 'playback';
+/**
+ * アプリのモード。
+ * - simulation: フォーメーションを HCW 方程式で積分する（既定）
+ * - csv: 事前計算した CSV の時系列を再生する
+ * 実際に CSV を再生しているかは `playback.active` が正。`ui.mode` は利用者が選んだモードで、
+ * CSV を選んだがまだファイルを読み込んでいない状態を表すために使う（`useAppMode` 参照）。
+ */
+export type AppMode = 'simulation' | 'csv';
+
+/** 左パネルのタブ。モードごとに表示するタブが変わる */
+export type PanelTab = 'formation' | 'orbit' | 'csv' | 'display';
 
 export interface AppState {
     display: DisplaySettings;
@@ -82,14 +91,13 @@ export interface AppState {
     referenceInfo: ReferenceSatelliteInfo | null;
     selected: SelectedSatelliteInfo | null;
     playback: PlaybackStatus;
-    /** 編集中のフォーメーション設定（唯一の正）。エンジンは再配置時にこれを読む */
+    /** フォーメーション設定（唯一の正）。UI は変更のたびに engine.resetPositions() で反映する */
     formation: FormationConfig;
-    /** 現在シミュレーションに反映されているフォーメーション設定（エンジンが書く） */
-    appliedFormation: FormationConfig | null;
     loading: LoadingState | null;
 
     ui: {
         panelOpen: boolean;
+        mode: AppMode;
         panelTab: PanelTab;
         helpOpen: boolean;
         activeDialog: ActiveDialog;
@@ -133,12 +141,12 @@ export const appStore = createStore<AppStore>()((set) => ({
     selected: null,
     playback: { ...INITIAL_PLAYBACK },
     formation: createDefaultFormation(),
-    appliedFormation: null,
     loading: null,
 
     ui: {
         panelOpen: false,
-        panelTab: 'scenario',
+        mode: 'simulation',
+        panelTab: 'formation',
         helpOpen: false,
         activeDialog: null,
     },
@@ -150,6 +158,11 @@ export const appStore = createStore<AppStore>()((set) => ({
     patch: (patch) => set(patch),
     patchPlayback: (patch) => set((s) => ({ playback: { ...s.playback, ...patch } })),
 }));
+
+/** 現在のモード。CSV 再生中なら常に csv */
+export function useAppMode(): AppMode {
+    return useStore(appStore, (s) => (s.playback.active ? 'csv' : s.ui.mode));
+}
 
 /** React コンポーネントからストアを購読するフック */
 export function useAppStore<T>(selector: (state: AppStore) => T): T {

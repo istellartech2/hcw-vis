@@ -1,39 +1,19 @@
-import { Atom, Info, Sparkles } from 'lucide-react';
+import { Atom, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NumberField } from '@/components/number-field';
 import { PanelSection } from '@/components/panel-section';
 import { COMPACT_INPUT_CLASS, ToggleRow, WithUnit } from '@/components/controls';
 import { useEngine } from '@/engine/EngineContext';
 import { appStore, useAppStore } from '@/store/appStore';
-import { FormationSection } from './FormationSection';
 import { OrbitSection } from './OrbitSection';
 
-/** シナリオ: 何をどう動かすか（初期配置・基準軌道・力学モデル・外乱） */
-export function ScenarioTab() {
-    const csvActive = useAppStore((s) => s.playback.active);
-
+/** 軌道・力学: 基準軌道、力学モデル、外乱と衝突 */
+export function OrbitTab() {
     return (
         <div>
-            {csvActive && <CsvModeNotice />}
-            <FormationSection />
             <OrbitSection />
             <DynamicsSection />
             <DisturbanceSection />
-        </div>
-    );
-}
-
-function CsvModeNotice() {
-    const engine = useEngine();
-    return (
-        <div className="mb-3 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-3 py-2 text-xs text-fg">
-            <Info className="mt-0.5 size-3.5 shrink-0 text-info" />
-            <div className="flex-1 space-y-1.5">
-                <p>CSV 再生中です。シナリオはシミュレーションに戻ると使われます。</p>
-                <Button size="xs" variant="outline" onClick={() => engine.exitPlayback()}>
-                    シミュレーションに戻る
-                </Button>
-            </div>
         </div>
     );
 }

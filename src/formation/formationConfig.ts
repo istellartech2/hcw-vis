@@ -16,6 +16,9 @@ import {
 
 const MAX_SATELLITES_PER_LAYER = 100000;
 
+/** 1 グループが生成できる衛星数の上限（多すぎると描画が固まる） */
+export const MAX_GENERATED_SATELLITES = 20000;
+
 export function createDefaultFormation(): FormationConfig {
     return structuredClone(DEFAULT_FORMATION_CONFIG);
 }
@@ -24,7 +27,7 @@ export function addLayer(config: FormationConfig, name?: string): FormationConfi
     const layer: FormationLayer = {
         ...structuredClone(DEFAULT_LAYER),
         id: crypto.randomUUID(),
-        name: name ?? `レイヤー ${config.layers.length + 1}`,
+        name: name ?? `グループ ${config.layers.length + 1}`,
     };
     return { ...config, layers: [...config.layers, layer] };
 }
@@ -59,9 +62,28 @@ export function moveLayer(config: FormationConfig, layerId: string, offset: -1 |
     return { ...config, layers };
 }
 
-/** 有効なレイヤーの衛星数の合計（基準衛星は含まない） */
+/**
+ * レイヤーが実際に生成する衛星数。
+ * `satelliteCount` の意味はパターンごとに違う（軸上は各軸の片側の機数、格子は片側の格子数）ので、
+ * 表示にはこちらを使う。OrbitInitializer の生成ロジックと一致させること。
+ */
+export function layerSatelliteCount(layer: Pick<FormationLayer, 'pattern' | 'satelliteCount'>): number {
+    const n = Math.max(0, Math.floor(layer.satelliteCount));
+    switch (layer.pattern) {
+        case 'origin':
+            return 1;
+        case 'axis':
+            return n * 6;
+        case 'grid':
+            return (2 * n + 1) ** 3 - 1;
+        default:
+            return n;
+    }
+}
+
+/** 有効なレイヤーが生成する衛星数の合計（基準衛星は含まない） */
 export function countSatellites(config: FormationConfig): number {
-    return config.layers.filter((l) => l.enabled).reduce((sum, l) => sum + l.satelliteCount, 0);
+    return config.layers.filter((l) => l.enabled).reduce((sum, l) => sum + layerSatelliteCount(l), 0);
 }
 
 export function serializeFormation(config: FormationConfig): string {
@@ -90,7 +112,7 @@ export function validateFormation(config: FormationConfig): ValidationResult {
     if (!config.version) errors.push('バージョン情報がありません');
     if (!config.name || config.name.trim().length === 0) errors.push('フォーメーション名が空です');
     if (!Array.isArray(config.layers)) {
-        errors.push('レイヤー情報が不正です');
+        errors.push('衛星グループの情報が不正です');
         return { valid: false, errors };
     }
 
@@ -100,7 +122,7 @@ export function validateFormation(config: FormationConfig): ValidationResult {
 
 function validateLayer(layer: FormationLayer, index: number): string[] {
     const errors: string[] = [];
-    const prefix = `レイヤー ${index + 1} (${layer.name}): `;
+    const prefix = `グループ ${index + 1} (${layer.name}): `;
 
     if (!layer.id) errors.push(`${prefix}IDがありません`);
     if (!layer.name) errors.push(`${prefix}名前がありません`);
@@ -111,6 +133,8 @@ function validateLayer(layer: FormationLayer, index: number): string[] {
 
     if (!(layer.satelliteCount >= 1 && layer.satelliteCount <= MAX_SATELLITES_PER_LAYER)) {
         errors.push(`${prefix}衛星数は1〜${MAX_SATELLITES_PER_LAYER}の範囲で指定してください`);
+    } else if (layerSatelliteCount(layer) > MAX_GENERATED_SATELLITES) {
+        errors.push(`${prefix}生成される衛星が ${MAX_GENERATED_SATELLITES} 機を超えます`);
     }
 
     if (layer.placementMode === 'radius' && !(layer.radius && layer.radius > 0)) {

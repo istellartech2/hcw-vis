@@ -1,10 +1,9 @@
-import { BookOpen, Box, Camera, Globe2, Keyboard, Monitor, Satellite } from 'lucide-react';
+import { BookOpen, Box, Globe2, Monitor, Satellite } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SegmentedControl, SliderRow, ToggleRow } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
-import { useEngine } from '@/engine/EngineContext';
 import { useUiTheme, type UiTheme } from '@/lib/uiTheme';
 import { appStore, useAppStore } from '@/store/appStore';
 import { EARTH_TEXTURE_OPTIONS } from '@/store/settings';
@@ -113,7 +112,7 @@ function SatelliteAppearanceSection() {
         <PanelSection title="衛星の色" icon={<Satellite />}>
             <ToggleRow
                 label="すべて同じ色にする"
-                help="オフのときはフォーメーションのレイヤーで設定した色で表示します。"
+                help="オフのときは衛星グループごとに設定した色で表示します。"
                 checked={display.uniformSatelliteColor}
                 onCheckedChange={(uniformSatelliteColor) => setDisplay({ uniformSatelliteColor })}
             />
@@ -134,7 +133,6 @@ function SatelliteAppearanceSection() {
 }
 
 function ScreenSection() {
-    const engine = useEngine();
     const [theme, setTheme] = useUiTheme();
 
     return (
@@ -150,16 +148,6 @@ function ScreenSection() {
                     ]}
                     onChange={setTheme}
                 />
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-                <Button variant="secondary" size="sm" onClick={() => engine.resetView()}>
-                    <Camera />
-                    視点をリセット
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => appStore.getState().setUI({ helpOpen: true })}>
-                    <Keyboard />
-                    ショートカット
-                </Button>
             </div>
             <Button variant="link" size="sm" className="h-auto px-0 text-fg-muted" asChild>
                 <a href={README_URL} target="_blank" rel="noopener noreferrer">

@@ -3,6 +3,7 @@ import {
     addLayer,
     countSatellites,
     createDefaultFormation,
+    layerSatelliteCount,
     moveLayer,
     parseFormation,
     removeLayer,
@@ -10,6 +11,7 @@ import {
     toggleLayer,
     updateLayer,
 } from './formationConfig';
+import { OrbitInitializer } from '@/simulation/OrbitInitializer';
 
 describe('formationConfig', () => {
     it('レイヤー操作は元の設定を変更しない', () => {
@@ -27,10 +29,32 @@ describe('formationConfig', () => {
     it('有効なレイヤーの衛星数だけを数える', () => {
         let config = addLayer(createDefaultFormation());
         const [a, b] = config.layers;
-        config = updateLayer(config, a.id, { satelliteCount: 4 });
-        config = updateLayer(config, b.id, { satelliteCount: 6 });
+        config = updateLayer(config, a.id, { pattern: 'circular_orbit', satelliteCount: 4 });
+        config = updateLayer(config, b.id, { pattern: 'circular_orbit', satelliteCount: 6 });
         expect(countSatellites(config)).toBe(10);
         expect(countSatellites(toggleLayer(config, b.id))).toBe(4);
+    });
+
+    it('衛星数はパターンが実際に生成する機数で数える', () => {
+        const initializer = new OrbitInitializer(0.001);
+        const cases = [
+            { pattern: 'origin', satelliteCount: 5 },
+            { pattern: 'axis', satelliteCount: 3 },
+            { pattern: 'grid', satelliteCount: 2 },
+            { pattern: 'hexagonal_disk', satelliteCount: 19 },
+            { pattern: 'random_position', satelliteCount: 7 },
+        ] as const;
+        for (const layer of cases) {
+            const generated = initializer.generatePositions(layer.pattern, layer.satelliteCount, 10, 0);
+            expect(layerSatelliteCount(layer), layer.pattern).toBe(generated.length);
+        }
+    });
+
+    it('生成される機数が上限を超える JSON は読み込まない', () => {
+        const config = createDefaultFormation();
+        config.layers[0] = { ...config.layers[0], pattern: 'grid', satelliteCount: 100 };
+        const result = parseFormation(serializeFormation(config));
+        expect(result.ok).toBe(false);
     });
 
     it('moveLayer は範囲外への移動を無視する', () => {

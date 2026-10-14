@@ -8,16 +8,16 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
         title: 'シミュレーション',
         items: [
             { keys: ['Space'], label: '一時停止 / 再開' },
-            { keys: ['R'], label: '衛星を初期位置に戻す' },
+            { keys: ['R'], label: 't = 0 に戻す（衛星を初期配置へ）' },
             { keys: ['+'], label: '時間倍率を上げる' },
             { keys: ['-'], label: '時間倍率を下げる' },
-            { keys: ['F'], label: 'シナリオ（フォーメーション）を開く' },
+            { keys: ['F'], label: '衛星配置を開く' },
         ],
     },
     {
         title: '表示',
         items: [
-            { keys: ['V'], label: 'カメラをリセット' },
+            { keys: ['V'], label: '視点をリセット' },
             { keys: ['G'], label: 'グリッド表示の切り替え' },
             { keys: ['E'], label: '地球表示の切り替え' },
             { keys: ['H'], label: 'このヘルプを表示' },

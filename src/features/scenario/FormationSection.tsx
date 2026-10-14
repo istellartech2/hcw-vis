@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Download, EllipsisVertical, Plus, RotateCcw, Satellite, Undo2, Upload } from 'lucide-react';
+import { Download, EllipsisVertical, Plus, Satellite, Undo2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,19 +9,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Kbd } from '@/components/ui/kbd';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
-import {
-    addLayer,
-    countSatellites,
-    parseFormation,
-    serializeFormation,
-    updateLayer,
-} from '@/formation/formationConfig';
+import type { FormationConfig } from '@/formation/FormationTypes';
+import { addLayer, countSatellites, parseFormation, serializeFormation } from '@/formation/formationConfig';
 import { appStore, useAppStore } from '@/store/appStore';
 import { LayerCard } from './LayerCard';
-import { LayerEditorDialog } from './LayerEditorDialog';
+import { LayerEditor } from './LayerEditor';
 
 function downloadText(fileName: string, text: string): void {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
@@ -33,19 +27,28 @@ function downloadText(fileName: string, text: string): void {
 }
 
 /**
- * フォーメーション（衛星の初期配置）をレイヤー単位で編集する。
- * 編集内容は「この配置で再配置」を押すまでシミュレーションに反映しない。
+ * 衛星配置（フォーメーション）。基準衛星のまわりに置く衛星を「衛星グループ」単位で組み合わせる。
+ * 変更はすべてすぐにシミュレーションへ反映する（時刻は t = 0 に戻る）。
+ * グループの編集はパネル内のサブ画面（LayerEditor）で行い、3D ビューを隠さない。
  */
 export function FormationSection() {
     const engine = useEngine();
     const config = useAppStore((s) => s.formation);
-    const applied = useAppStore((s) => s.appliedFormation);
     const updateFormation = useAppStore((s) => s.updateFormation);
-    const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
+    const [editing, setEditing] = useState<{ layerId: string; before?: FormationConfig } | null>(null);
     const importRef = useRef<HTMLInputElement>(null);
 
-    const dirty = config !== applied;
-    const editingLayer = config.layers.find((l) => l.id === editingLayerId) ?? null;
+    const editingLayer = config.layers.find((l) => l.id === editing?.layerId) ?? null;
+    if (editingLayer) {
+        return (
+            <LayerEditor
+                key={editingLayer.id}
+                layer={editingLayer}
+                restoreOnCancel={editing?.before}
+                onClose={() => setEditing(null)}
+            />
+        );
+    }
 
     const importJSON = async (file: File) => {
         const result = parseFormation(await file.text());
@@ -58,14 +61,9 @@ export function FormationSection() {
         }
     };
 
-    const discardChanges = () => {
-        const current = appStore.getState().appliedFormation;
-        if (current) updateFormation(() => current);
-    };
-
     return (
         <PanelSection
-            title="フォーメーション"
+            title="衛星配置"
             icon={<Satellite />}
             action={
                 <>
@@ -93,7 +91,7 @@ export function FormationSection() {
                                 }
                             >
                                 <Download />
-                                JSON に保存
+                                配置を JSON に保存
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => importRef.current?.click()}>
                                 <Upload />
@@ -109,10 +107,17 @@ export function FormationSection() {
                 </>
             }
         >
-            <div className="flex items-baseline justify-between text-xs text-fg-muted">
+            <p className="text-xs leading-relaxed text-fg-muted">
+                原点の基準衛星のまわりに、衛星を<span className="text-fg">グループ</span>
+                ごとに配置します。グループをクリックすると配置パターンや数を変更できます。
+            </p>
+
+            <div className="flex items-baseline justify-between gap-2 text-xs text-fg-muted">
                 <span className="truncate">{config.name}</span>
                 <span className="shrink-0">
-                    合計 <span className="num text-fg">{countSatellites(config) + 1}</span> 機（基準衛星を含む）
+                    合計{' '}
+                    <span className="num font-medium text-fg">{(countSatellites(config) + 1).toLocaleString()}</span>{' '}
+                    機（基準衛星を含む）
                 </span>
             </div>
 
@@ -123,7 +128,7 @@ export function FormationSection() {
                         layer={layer}
                         isFirst={index === 0}
                         isLast={index === config.layers.length - 1}
-                        onEdit={() => setEditingLayerId(layer.id)}
+                        onEdit={() => setEditing({ layerId: layer.id })}
                     />
                 ))}
                 <Button
@@ -131,44 +136,17 @@ export function FormationSection() {
                     size="sm"
                     className="w-full border-dashed text-fg-muted"
                     onClick={() => {
-                        const next = addLayer(appStore.getState().formation);
+                        const before = appStore.getState().formation;
+                        const next = addLayer(before);
                         updateFormation(() => next);
-                        setEditingLayerId(next.layers[next.layers.length - 1].id);
+                        engine.resetPositions();
+                        setEditing({ layerId: next.layers[next.layers.length - 1].id, before });
                     }}
                 >
                     <Plus />
-                    レイヤーを追加
+                    衛星グループを追加
                 </Button>
             </div>
-
-            {dirty ? (
-                <div className="flex gap-2">
-                    <Button className="flex-1" onClick={() => engine.resetPositions()}>
-                        <RotateCcw />
-                        この配置で再配置
-                    </Button>
-                    <Button variant="ghost" onClick={discardChanges}>
-                        変更を破棄
-                    </Button>
-                </div>
-            ) : (
-                <Button variant="secondary" className="w-full" onClick={() => engine.resetPositions()}>
-                    <RotateCcw />
-                    初期位置に戻す
-                    <Kbd className="ml-auto">R</Kbd>
-                </Button>
-            )}
-
-            <LayerEditorDialog
-                layer={editingLayer}
-                onClose={() => setEditingLayerId(null)}
-                onSave={(updates) => {
-                    if (!editingLayerId) return;
-                    updateFormation((c) => updateLayer(c, editingLayerId, updates));
-                    engine.resetPositions();
-                    setEditingLayerId(null);
-                }}
-            />
         </PanelSection>
     );
 }

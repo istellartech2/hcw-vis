@@ -9,9 +9,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { FormationLayer } from '@/formation/FormationTypes';
-import { moveLayer, removeLayer, toggleLayer } from '@/formation/formationConfig';
-import { PATTERN_LABELS, SHAPE_LABELS } from '@/formation/layerForm';
+import type { FormationConfig, FormationLayer } from '@/formation/FormationTypes';
+import { useEngine } from '@/engine/EngineContext';
+import { layerSatelliteCount, moveLayer, removeLayer, toggleLayer } from '@/formation/formationConfig';
+import { CIRCULAR_RADIUS_FACTOR, PATTERN_LABELS, SHAPE_LABELS } from '@/formation/layerForm';
 import { appStore, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 
@@ -24,14 +25,21 @@ interface LayerCardProps {
     onEdit: () => void;
 }
 
-/** フォーメーションの 1 レイヤー。クリックで編集ダイアログを開く */
+/** 衛星グループ（FormationLayer）1 つ分のカード。クリックで編集画面を開く。操作はすぐ 3D に反映する */
 export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
-    const updateFormation = useAppStore((s) => s.updateFormation);
+    const engine = useEngine();
+    const storeUpdate = useAppStore((s) => s.updateFormation);
+    const updateFormation = (update: (config: FormationConfig) => FormationConfig) => {
+        storeUpdate(update);
+        engine.resetPositions();
+    };
     const placement =
         layer.pattern === 'origin'
             ? null
             : layer.placementMode === 'radius'
-              ? `範囲 ${layer.radius} m`
+              ? layer.pattern === 'circular_orbit'
+                  ? `半径 ${(layer.radius ?? 10) * CIRCULAR_RADIUS_FACTOR} m`
+                  : `大きさ ${layer.radius} m`
               : `間隔 ${layer.spacing} m`;
     const remove = () => {
         const before = appStore.getState().formation;
@@ -53,7 +61,7 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
                 size="sm"
                 checked={layer.enabled}
                 onCheckedChange={() => updateFormation((c) => toggleLayer(c, layer.id))}
-                aria-label={`${layer.name} を有効化`}
+                aria-label={`${layer.name} を表示`}
             />
             <button type="button" className="min-w-0 flex-1 text-left" onClick={onEdit}>
                 <span className="flex items-center gap-1.5">
@@ -62,7 +70,7 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
                         style={{ background: layer.colorMode === 'random' ? RANDOM_COLOR_SWATCH : layer.color }}
                     />
                     <span className="truncate text-[13px] font-medium text-fg">{layer.name}</span>
-                    <span className="num ml-auto shrink-0 text-xs text-fg-muted">{layer.satelliteCount}機</span>
+                    <span className="num ml-auto shrink-0 text-xs text-fg-muted">{layerSatelliteCount(layer)}機</span>
                 </span>
                 <span className="mt-0.5 block truncate text-xs text-fg-subtle">
                     {PATTERN_LABELS[layer.pattern]}
@@ -71,7 +79,7 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
             </button>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon-sm" className="text-fg-subtle" aria-label="レイヤーの操作">
+                    <Button variant="ghost" size="icon-sm" className="text-fg-subtle" aria-label="グループの操作">
                         <EllipsisVertical />
                     </Button>
                 </DropdownMenuTrigger>

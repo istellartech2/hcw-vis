@@ -1,10 +1,10 @@
-import { ChevronsLeft, ChevronsRight, Pause, Play, Repeat, RotateCcw, Square } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, FileUp, Pause, Play, Repeat, SkipBack, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEngine } from '@/engine/EngineContext';
 import { formatSimTime } from '@/lib/format';
-import { appStore, useAppStore } from '@/store/appStore';
+import { appStore, useAppMode, useAppStore } from '@/store/appStore';
 import { TIME_SCALE_OPTIONS } from '@/store/settings';
 import { cn } from '@/lib/utils';
 
@@ -102,24 +102,24 @@ function SimulationBar() {
             <PlayButton playing={!paused} onToggle={() => engine.togglePause()} />
             <SpeedStepper value={timeScale} onChange={(v) => appStore.getState().setSimulation({ timeScale: v })} />
             <Divider />
-            <div className="num min-w-[7.5rem] text-xs leading-tight" aria-label="シミュレーション経過時間">
-                <div className={cn('font-medium text-fg', paused && 'text-fg-muted')}>{formatSimTime(simTime)}</div>
-                <div className="text-fg-subtle">{orbits === null ? '—' : `${orbits.toFixed(2)} 周回`}</div>
-            </div>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
                         variant="ghost"
                         size="icon"
                         className="rounded-full text-fg-muted"
-                        aria-label="初期位置に戻す"
+                        aria-label="t = 0 に戻す"
                         onClick={() => engine.resetPositions()}
                     >
-                        <RotateCcw />
+                        <SkipBack className="fill-current" />
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent>初期位置に戻す (R)</TooltipContent>
+                <TooltipContent>t = 0 に戻す（衛星を初期配置へ） (R)</TooltipContent>
             </Tooltip>
+            <div className="num min-w-[7.5rem] text-xs leading-tight" aria-label="シミュレーション経過時間">
+                <div className={cn('font-medium text-fg', paused && 'text-fg-muted')}>{formatSimTime(simTime)}</div>
+                <div className="text-fg-subtle">{orbits === null ? '—' : `${orbits.toFixed(2)} 周回`}</div>
+            </div>
         </>
     );
 }
@@ -170,8 +170,29 @@ function CsvBar() {
     );
 }
 
-/** 画面下中央の再生コントロール。CSV 再生中は再生位置のシークに切り替わる */
+/** CSV 再生モードを選んだが、まだファイルを読み込んでいないとき */
+function CsvEmptyBar() {
+    return (
+        <>
+            <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand-text">
+                CSV
+            </span>
+            <span className="px-1 text-xs text-fg-muted">ファイル未読み込み</span>
+            <Button
+                size="sm"
+                className="rounded-full"
+                onClick={() => appStore.getState().setUI({ panelOpen: true, panelTab: 'csv' })}
+            >
+                <FileUp />
+                開く
+            </Button>
+        </>
+    );
+}
+
+/** 画面下中央の再生コントロール。CSV 再生モードでは再生位置のシークに切り替わる */
 export function PlaybackBar() {
+    const mode = useAppMode();
     const csvActive = useAppStore((s) => s.playback.active);
     return (
         <div
@@ -179,7 +200,7 @@ export function PlaybackBar() {
             aria-label="再生コントロール"
             className="hud-bottom-center glass flex items-center justify-between gap-1.5 rounded-full py-[5px] pr-2 pl-[5px] text-fg select-none max-md:justify-between"
         >
-            {csvActive ? <CsvBar /> : <SimulationBar />}
+            {csvActive ? <CsvBar /> : mode === 'csv' ? <CsvEmptyBar /> : <SimulationBar />}
         </div>
     );
 }
