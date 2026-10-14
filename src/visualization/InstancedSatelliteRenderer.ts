@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Satellite } from '../simulation/Satellite.js';
+import { consumeCollisionFlash, setHillPosition, setHillRotation, setSatelliteAttitude } from './satelliteFrame.js';
 
 /**
  * InstancedMeshを使用した高性能な衛星レンダリング
@@ -154,102 +155,33 @@ export class InstancedSatelliteRenderer {
     ): void {
         if (!this.instancedMesh || satellites.length === 0) return;
 
-        const scale = 1; // 1m in Hill coords = 1 units in Three.js
-
         // 基準衛星（index=0）を更新
-        const centerPos = satellites[0].getPosition();
-        this.centerSatelliteMesh.position.set(centerPos.z * scale, centerPos.x * scale, centerPos.y * scale);
-
-        // 基準衛星の回転を適用
-        this.centerSatelliteMesh.rotation.set(0, 0, 0);
-        this.centerSatelliteMesh.rotateOnAxis(new THREE.Vector3(0, 1, 0), rotationR);
-        this.centerSatelliteMesh.rotateOnAxis(new THREE.Vector3(0, 0, 1), rotationS);
+        setHillPosition(this.centerSatelliteMesh.position, satellites[0].getPosition());
+        setHillRotation(this.centerSatelliteMesh.quaternion, rotationR, rotationS);
 
         // 基準衛星のハイライト（選択時は少し大きくする）
-        if (selectedIndex === 0) {
-            this.centerSatelliteMesh.scale.setScalar(1.3);
-        } else {
-            this.centerSatelliteMesh.scale.setScalar(1.0);
-        }
+        this.centerSatelliteMesh.scale.setScalar(selectedIndex === 0 ? 1.3 : 1.0);
 
         // 一般衛星（index >= 1）を更新
         for (let i = 0; i < this.satelliteCount && i + 1 < satellites.length; i++) {
             const sat = satellites[i + 1];
-            const pos = sat.getPosition();
 
-            // 位置設定（Hill座標 → Three.js座標変換）
-            this.tempPosition.set(pos.z * scale, pos.x * scale, pos.y * scale);
-
-            // 回転設定
-            // CSV quaternionがあればそれを使用、なければUI制御の回転を適用
-            const satelliteQuaternion = sat.quaternion;
-            if (satelliteQuaternion) {
-                // CSV quaternion: RSW座標系 → Three.js座標系への変換
-                // RSW(x,y,z) -> Three.js(z,x,y)
-                this.tempQuaternion.set(
-                    satelliteQuaternion.z, // RSW Z -> Three.js X
-                    satelliteQuaternion.x, // RSW X -> Three.js Y
-                    satelliteQuaternion.y, // RSW Y -> Three.js Z
-                    satelliteQuaternion.w,
-                );
-            } else {
-                // UI制御の回転を適用
-                this.tempQuaternion.identity();
-                const rotMatrixY = new THREE.Matrix4().makeRotationY(rotationR);
-                const rotMatrixZ = new THREE.Matrix4().makeRotationZ(rotationS);
-                this.tempMatrix.identity();
-                this.tempMatrix.multiply(rotMatrixY);
-                this.tempMatrix.multiply(rotMatrixZ);
-                this.tempQuaternion.setFromRotationMatrix(this.tempMatrix);
-            }
-
-            // スケールは固定
-            this.tempScale.set(1, 1, 1);
-
-            // Matrix4に変換
+            // 位置（Hill座標 → Three.js座標）と姿勢（CSV quaternion または UI 制御の回転）
+            setHillPosition(this.tempPosition, sat.getPosition());
+            setSatelliteAttitude(this.tempQuaternion, sat, rotationR, rotationS);
             this.tempMatrix.compose(this.tempPosition, this.tempQuaternion, this.tempScale);
             this.instancedMesh.setMatrixAt(i, this.tempMatrix);
 
-            // 色の設定（毎フレーム元の色に戻してから、選択時/衝突時のハイライト）
+            // 色: 衝突中は赤、選択中は元の色を2倍明るく、それ以外は元の色
             // originalColors[0]は基準衛星用なので、一般衛星はoriginalColors[i+1]から取得
-            const colorIndex = (i + 1) % this.originalColors.length;
-            const originalColor = this.originalColors[colorIndex];
-
-            // Check if satellite has collided
-            const collided = sat.collided;
-            const collisionTime = sat.collisionTime;
-
-            if (collided && collisionTime) {
-                const elapsed = Date.now() - collisionTime;
-                if (elapsed < 500) {
-                    // Show collision feedback for 500ms
-                    // Collision: Red color
-                    this.tempColor.setRGB(1, 0, 0); // Red
-                    this.tempColor.multiplyScalar(2.0);
-                    this.instancedMesh.setColorAt(i, this.tempColor);
-                } else {
-                    // Reset collision flag after feedback duration
-                    sat.collided = false;
-                    // Use original color
-                    if (selectedIndex === i + 1) {
-                        this.tempColor.setHex(originalColor);
-                        this.tempColor.multiplyScalar(2.0);
-                        this.instancedMesh.setColorAt(i, this.tempColor);
-                    } else {
-                        this.tempColor.setHex(originalColor);
-                        this.instancedMesh.setColorAt(i, this.tempColor);
-                    }
-                }
-            } else if (selectedIndex === i + 1) {
-                // 選択時: 元の色を2倍明るくする（より目立つように）
-                this.tempColor.setHex(originalColor);
+            if (consumeCollisionFlash(sat)) {
+                this.tempColor.setRGB(1, 0, 0);
                 this.tempColor.multiplyScalar(2.0);
-                this.instancedMesh.setColorAt(i, this.tempColor);
             } else {
-                // 非選択時: 元の色を設定
-                this.tempColor.setHex(originalColor);
-                this.instancedMesh.setColorAt(i, this.tempColor);
+                this.tempColor.setHex(this.originalColors[(i + 1) % this.originalColors.length]);
+                if (selectedIndex === i + 1) this.tempColor.multiplyScalar(2.0);
             }
+            this.instancedMesh.setColorAt(i, this.tempColor);
         }
 
         // 行列の更新を反映
