@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Download, FileJson, FolderOpen, Plus, RotateCcw, Satellite } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpTip } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
 import type { FormationConfig } from '@/formation/FormationTypes';
@@ -27,6 +28,20 @@ function downloadText(fileName: string, text: string): void {
     a.click();
     // 直後に revoke すると Safari / Firefox でダウンロードが失敗することがある
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** ツールチップ付きの小さなアイコンボタン */
+function IconAction({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-xs" className="text-fg-muted" aria-label={label} onClick={onClick}>
+                    {children}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+    );
 }
 
 /**
@@ -96,46 +111,45 @@ export function FormationSection() {
 
     const modified = formationFile !== null && formationFile.config !== config;
 
+    const fileName = formationFile?.name ?? formationFileName(config);
+    const fileStatus = formationFile === null ? '未保存' : modified ? '変更あり（未保存）' : 'ファイルと同じ内容';
+
     return (
         <PanelSection
             title="衛星配置"
             icon={<Satellite />}
             action={
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="text-fg-muted"
-                            aria-label="既定の配置に戻す"
-                            onClick={resetToDefault}
-                        >
-                            <RotateCcw />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>既定の配置に戻す</TooltipContent>
-                </Tooltip>
+                <div className="flex items-center gap-1">
+                    <span className="text-xs text-fg-muted" title="基準衛星を含む">
+                        <span className="num font-medium text-fg">
+                            {(countSatellites(config) + 1).toLocaleString()}
+                        </span>{' '}
+                        機
+                    </span>
+                    <HelpTip>
+                        原点の基準衛星のまわりに、衛星をグループごとに配置します。グループをクリックすると配置パターンや数を変更できます。機数は基準衛星を含みます。
+                    </HelpTip>
+                    <IconAction label="既定の配置に戻す" onClick={resetToDefault}>
+                        <RotateCcw />
+                    </IconAction>
+                </div>
             }
         >
-            <div className="rounded-lg border border-line bg-sunken p-2">
-                <div className="flex items-center gap-2 px-0.5">
-                    <FileJson className="size-4 shrink-0 text-fg-subtle" />
-                    <div className="min-w-0 flex-1">
-                        <div
-                            className="truncate text-[13px] font-medium text-fg"
-                            title={formationFile?.name ?? formationFileName(config)}
-                        >
-                            {formationFile?.name ?? formationFileName(config)}
-                        </div>
-                        <div className={cn('text-[11px]', modified ? 'text-warning' : 'text-fg-subtle')}>
-                            {formationFile === null
-                                ? 'まだファイルに保存していません'
-                                : modified
-                                  ? '● 変更あり（未保存）'
-                                  : 'ファイルと同じ内容です'}
-                        </div>
-                    </div>
-                </div>
+            <div className="flex h-8 items-center gap-1.5 rounded-md border border-line bg-sunken pr-0.5 pl-2">
+                <FileJson className="size-3.5 shrink-0 text-fg-subtle" />
+                <span
+                    className={cn('min-w-0 flex-1 truncate text-xs', formationFile ? 'text-fg' : 'text-fg-muted')}
+                    title={`${fileName}（${fileStatus}）`}
+                >
+                    {fileName}
+                </span>
+                {modified && (
+                    <span
+                        className="size-1.5 shrink-0 rounded-full bg-warning"
+                        role="img"
+                        aria-label="未保存の変更あり"
+                    />
+                )}
                 <input
                     ref={importRef}
                     type="file"
@@ -147,28 +161,12 @@ export function FormationSection() {
                         e.target.value = '';
                     }}
                 />
-                <div className="mt-2 grid grid-cols-2 gap-1.5">
-                    <Button variant="outline" size="sm" onClick={() => importRef.current?.click()}>
-                        <FolderOpen />
-                        JSON を開く
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={saveFile}>
-                        <Download />
-                        JSON に保存
-                    </Button>
-                </div>
-            </div>
-
-            <p className="text-xs leading-relaxed text-fg-muted">
-                原点の基準衛星のまわりに、衛星を<span className="text-fg">グループ</span>
-                ごとに配置します。グループをクリックすると配置パターンや数を変更できます。
-            </p>
-
-            <div className="text-right text-xs text-fg-muted">
-                合計 <span className="num font-medium text-fg">
-                    {(countSatellites(config) + 1).toLocaleString()}
-                </span>{' '}
-                機（基準衛星を含む）
+                <IconAction label="JSON を開く" onClick={() => importRef.current?.click()}>
+                    <FolderOpen />
+                </IconAction>
+                <IconAction label={`${fileName} として保存`} onClick={saveFile}>
+                    <Download />
+                </IconAction>
             </div>
 
             <div className="space-y-1.5">
