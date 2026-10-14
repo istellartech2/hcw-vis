@@ -72,11 +72,6 @@ export const SHAPE_LABELS: Record<ShapeType, string> = {
     '3dfile': '3Dファイル',
 };
 
-export const PLACEMENT_MODE_LABELS: Record<PlacementMode, string> = {
-    radius: '全体の大きさで指定',
-    spacing: '衛星の間隔で指定',
-};
-
 /** フォームの入力値。数値入力は編集途中の文字列を保持できるよう string で持つ */
 export interface LayerFormValues {
     name: string;
