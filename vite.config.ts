@@ -1,14 +1,12 @@
-import path from 'node:path';
 import { defineConfig } from 'vite-plus';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
     plugins: [react(), tailwindcss()],
+    // `@/*` などの import エイリアスは tsconfig.json の paths をそのまま使う
     resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src'),
-        },
+        tsconfigPaths: true,
     },
     build: {
         // three.js 単体で約550kBあるため

@@ -3,20 +3,19 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "bun",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
-        "run",
+        "vp",
         "dev"
       ],
       "port": 3000
     },
     {
       "name": "preview",
-      "runtimeExecutable": "bun",
+      "runtimeExecutable": "bunx",
       "runtimeArgs": [
-        "run",
+        "vp",
         "preview",
-        "--",
         "--port",
         "4173"
       ],

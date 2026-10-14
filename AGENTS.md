@@ -17,8 +17,9 @@ vp preview           # 本番ビルドのプレビュー
 ```
 
 - `vp build` は Vite のビルドだけを行う組み込みコマンド。CI・Vercel と同じ「型チェック込みのビルド」は `vp run build`（= `bun run build`）
-- グローバルの `vp` が無い環境では `bun run <script>`（dev / build / preview / check / test）でも同じことができる
+- グローバルの `vp` が無い環境ではプロジェクト内の CLI を `bunx vp <command>` で使う。`package.json` のスクリプトは組み込みコマンドと重複しないもの（`build`）だけ置く
 - 設定は `vite.config.ts` に集約（Vite / Vitest `test` / Oxlint `lint` / Oxfmt `fmt`）。`vite` は `@voidzero-dev/vite-plus-core` へエイリアスされている。ツールのバージョンは `vp toolchain` で確認できる
+- `@/*` の import エイリアスは `tsconfig.json` の `paths` が唯一の定義（Vite 側は `resolve.tsconfigPaths`）。tsconfig は `src` と `vite.config.ts` を 1 つでまとめて型チェックする
 - フォーマット規約: 4 スペース・シングルクォート・120 桁（JSON/HTML/CSS は 2 スペース）。`src/components/ui/` は shadcn 生成コードなので対象外
 - Node は `^22.18.0 || ^24.11.0 || >=26` が必要
 - 変更後は `vp check` と `vp test` を通すこと
@@ -28,7 +29,8 @@ shadcn/ui コンポーネントの追加: `vpx shadcn@latest add <component>`（
 ## Deployment
 
 Vercel（チーム: `interstellar-technologies-inc`）の Git 連携でデプロイする。
-`main` への push で本番、PR ごとにプレビューがデプロイされる。ビルド設定は `vercel.json`。
+`main` への push で本番、PR ごとにプレビューがデプロイされる。
+`vercel.json` は Vite プリセット（出力 `dist`、ビルドは `package.json` の `build`）と bun の frozen install だけを指定している。Vercel ダッシュボード側のプリセットは「Other」なので、`vercel.json` を消すとビルドが壊れる点に注意
 
 ## Architecture Overview
 

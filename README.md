@@ -45,7 +45,7 @@ vp run build   # 型チェック + 本番ビルド（dist/）
 vp preview     # ビルド結果のプレビュー
 ```
 
-グローバルの `vp` を入れない場合は `bun install` / `bun run dev` / `bun run build` などでも同じように動きます。
+グローバルの `vp` を入れない場合は `bun install` のあと `bunx vp dev` のようにプロジェクト内の `vp` を使えます。
 
 ### 技術スタック
 
