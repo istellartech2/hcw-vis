@@ -6,13 +6,14 @@
  */
 
 import {
-    ALL_PATTERNS,
     DEFAULT_FORMATION_CONFIG,
     DEFAULT_LAYER,
+    FORMATION_FILE_VERSION,
     type FormationConfig,
     type FormationLayer,
     type ValidationResult,
 } from './FormationTypes';
+import { decodeFormation } from './formationDecoder';
 
 const MAX_SATELLITES_PER_LAYER = 100000;
 
@@ -86,36 +87,49 @@ export function countSatellites(config: FormationConfig): number {
     return config.layers.filter((l) => l.enabled).reduce((sum, l) => sum + layerSatelliteCount(l), 0);
 }
 
+/** 保存用の JSON 文字列。バージョンは常に現在のファイル形式で書き出す */
 export function serializeFormation(config: FormationConfig): string {
-    return JSON.stringify(config, null, 2);
+    return JSON.stringify({ ...config, version: FORMATION_FILE_VERSION }, null, 2);
+}
+
+/** 保存時のファイル名。OS で使えない文字は _ に置き換える */
+export function formationFileName(config: Pick<FormationConfig, 'name'>): string {
+    const stem = config.name
+        // oxlint-disable-next-line no-control-regex -- 制御文字もファイル名に使えないので置き換える
+        .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_')
+        .trim()
+        .slice(0, 100);
+    return `${stem || 'formation'}.json`;
 }
 
 export type ParseResult = { ok: true; config: FormationConfig } | { ok: false; errors: string[] };
 
-export function parseFormation(json: string): ParseResult {
-    let config: FormationConfig;
+/**
+ * JSON 文字列をフォーメーション設定として読み込む。
+ * `JSON.parse` の結果は unknown として扱い、型の検査（decodeFormation）と
+ * 値の範囲の検査（validateFormation）の両方を通ったものだけを返す。
+ * @param fallbackName ファイルに name が無いときに使う名前（ファイル名など）
+ */
+export function parseFormation(json: string, fallbackName?: string): ParseResult {
+    let raw: unknown;
     try {
-        config = JSON.parse(json) as FormationConfig;
+        raw = JSON.parse(json);
     } catch (error) {
-        return { ok: false, errors: [`JSON解析エラー: ${error instanceof Error ? error.message : String(error)}`] };
+        return {
+            ok: false,
+            errors: [`JSON として読めません: ${error instanceof Error ? error.message : String(error)}`],
+        };
     }
-    const validation = validateFormation(config);
-    return validation.valid ? { ok: true, config } : { ok: false, errors: validation.errors };
+    const decoded = decodeFormation(raw, fallbackName);
+    if (!decoded.ok) return decoded;
+    const validation = validateFormation(decoded.config);
+    return validation.valid ? decoded : { ok: false, errors: validation.errors };
 }
 
+/** 型が正しい設定について、値の範囲や組み合わせを検査する */
 export function validateFormation(config: FormationConfig): ValidationResult {
     const errors: string[] = [];
-
-    if (!config || typeof config !== 'object') {
-        return { valid: false, errors: ['フォーメーション設定が不正です'] };
-    }
-    if (!config.version) errors.push('バージョン情報がありません');
-    if (!config.name || config.name.trim().length === 0) errors.push('フォーメーション名が空です');
-    if (!Array.isArray(config.layers)) {
-        errors.push('衛星グループの情報が不正です');
-        return { valid: false, errors };
-    }
-
+    if (config.name.trim().length === 0) errors.push('フォーメーション名が空です');
     config.layers.forEach((layer, index) => errors.push(...validateLayer(layer, index)));
     return { valid: errors.length === 0, errors };
 }
@@ -124,15 +138,12 @@ function validateLayer(layer: FormationLayer, index: number): string[] {
     const errors: string[] = [];
     const prefix = `グループ ${index + 1} (${layer.name}): `;
 
-    if (!layer.id) errors.push(`${prefix}IDがありません`);
-    if (!layer.name) errors.push(`${prefix}名前がありません`);
-
-    if (!(ALL_PATTERNS as readonly string[]).includes(layer.pattern)) {
-        errors.push(`${prefix}配置パターンが不正です`);
-    }
-
-    if (!(layer.satelliteCount >= 1 && layer.satelliteCount <= MAX_SATELLITES_PER_LAYER)) {
-        errors.push(`${prefix}衛星数は1〜${MAX_SATELLITES_PER_LAYER}の範囲で指定してください`);
+    if (
+        !Number.isInteger(layer.satelliteCount) ||
+        layer.satelliteCount < 1 ||
+        layer.satelliteCount > MAX_SATELLITES_PER_LAYER
+    ) {
+        errors.push(`${prefix}衛星数は1〜${MAX_SATELLITES_PER_LAYER}の整数で指定してください`);
     } else if (layerSatelliteCount(layer) > MAX_GENERATED_SATELLITES) {
         errors.push(`${prefix}生成される衛星が ${MAX_GENERATED_SATELLITES} 機を超えます`);
     }
@@ -154,7 +165,7 @@ function validateLayer(layer: FormationLayer, index: number): string[] {
         }
     }
 
-    if (!layer.color || !/^#[0-9a-fA-F]{6}$/.test(layer.color)) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(layer.color)) {
         errors.push(`${prefix}色は16進数カラーコード（例: #ff6b6b）で指定してください`);
     }
 

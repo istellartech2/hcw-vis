@@ -1,19 +1,22 @@
-import { useRef, useState } from 'react';
-import { Download, EllipsisVertical, Plus, Satellite, Undo2, Upload } from 'lucide-react';
+import { useRef, useState, type ReactNode } from 'react';
+import { Download, FileJson, FolderOpen, Plus, RotateCcw, Satellite } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { HelpTip } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
 import type { FormationConfig } from '@/formation/FormationTypes';
-import { addLayer, countSatellites, parseFormation, serializeFormation } from '@/formation/formationConfig';
-import { appStore, useAppStore } from '@/store/appStore';
+import {
+    addLayer,
+    countSatellites,
+    createDefaultFormation,
+    formationFileName,
+    parseFormation,
+    serializeFormation,
+} from '@/formation/formationConfig';
+import { appStore, useAppStore, type AppState } from '@/store/appStore';
+import { cn } from '@/lib/utils';
 import { LayerCard } from './LayerCard';
 import { LayerEditor } from './LayerEditor';
 
@@ -23,7 +26,81 @@ function downloadText(fileName: string, text: string): void {
     a.href = url;
     a.download = fileName;
     a.click();
-    URL.revokeObjectURL(url);
+    // 直後に revoke すると Safari / Firefox でダウンロードが失敗することがある
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** ツールチップ付きの小さなアイコンボタン */
+function IconAction({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-xs" className="text-fg-muted" aria-label={label} onClick={onClick}>
+                    {children}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+    );
+}
+
+/** ファイル名。クリックするとその場で名前（拡張子なし）を編集できる */
+function FileNameField({
+    fileName,
+    saved,
+    status,
+    onRename,
+}: {
+    fileName: string;
+    saved: boolean;
+    status: string;
+    onRename: (name: string) => void;
+}) {
+    const [draft, setDraft] = useState<string | null>(null);
+    const stem = fileName.replace(/\.json$/i, '');
+
+    if (draft !== null) {
+        const commit = () => {
+            const name = draft.trim();
+            if (name && name !== stem) onRename(name);
+            setDraft(null);
+        };
+        return (
+            <span className="flex min-w-0 flex-1 items-center">
+                <input
+                    autoFocus
+                    value={draft}
+                    aria-label="ファイル名"
+                    className="h-6 min-w-0 flex-1 rounded-sm bg-raised px-1 text-xs text-fg outline-none focus-visible:ring-1 focus-visible:ring-brand"
+                    onChange={(e) => setDraft(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    onBlur={commit}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') commit();
+                        if (e.key === 'Escape') setDraft(null);
+                    }}
+                />
+                <span className="pl-0.5 text-xs text-fg-subtle">.json</span>
+            </span>
+        );
+    }
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    onClick={() => setDraft(stem)}
+                    className={cn(
+                        'h-6 min-w-0 flex-1 truncate rounded-sm px-1 text-left text-xs transition-colors hover:bg-raised',
+                        saved ? 'text-fg' : 'text-fg-muted',
+                    )}
+                >
+                    {fileName}
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>{status} ・ クリックで名前を変更</TooltipContent>
+        </Tooltip>
+    );
 }
 
 /**
@@ -34,6 +111,7 @@ function downloadText(fileName: string, text: string): void {
 export function FormationSection() {
     const engine = useEngine();
     const config = useAppStore((s) => s.formation);
+    const formationFile = useAppStore((s) => s.formationFile);
     const updateFormation = useAppStore((s) => s.updateFormation);
     const [editing, setEditing] = useState<{ layerId: string; before?: FormationConfig } | null>(null);
     const importRef = useRef<HTMLInputElement>(null);
@@ -50,75 +128,111 @@ export function FormationSection() {
         );
     }
 
-    const importJSON = async (file: File) => {
-        const result = parseFormation(await file.text());
-        if (result.ok) {
-            updateFormation(() => result.config);
-            engine.resetPositions();
-            toast.success(`「${result.config.name}」を読み込みました`);
-        } else {
-            toast.error('読み込みに失敗しました', { description: result.errors.join('\n') });
-        }
+    /** 配置とファイル情報をまとめて差し替え、「元に戻す」用に直前の状態を返す */
+    const replaceFormation = (next: FormationConfig, file: AppState['formationFile']) => {
+        const { formation: prevFormation, formationFile: prevFile } = appStore.getState();
+        updateFormation(() => next);
+        appStore.getState().patch({ formationFile: file });
+        engine.resetPositions();
+        return () => replaceFormation(prevFormation, prevFile);
     };
+
+    const openFile = async (file: File) => {
+        const result = parseFormation(await file.text(), file.name.replace(/\.json$/i, ''));
+        if (!result.ok) {
+            toast.error(`${file.name} を読み込めませんでした`, {
+                description: (
+                    <ul className="list-disc space-y-0.5 pl-4">
+                        {result.errors.slice(0, 5).map((e) => (
+                            <li key={e}>{e}</li>
+                        ))}
+                        {result.errors.length > 5 && <li>ほか {result.errors.length - 5} 件</li>}
+                    </ul>
+                ),
+            });
+            return;
+        }
+        const undo = replaceFormation(result.config, { name: file.name, config: result.config });
+        toast.success(`${file.name} を読み込みました`, { action: { label: '元に戻す', onClick: undo } });
+    };
+
+    const saveFile = () => {
+        const fileName = formationFile?.name ?? formationFileName(config);
+        downloadText(fileName, serializeFormation(config));
+        appStore.getState().patch({ formationFile: { name: fileName, config } });
+        toast.success(`${fileName} を保存しました`, { description: 'ブラウザのダウンロード先に保存されます' });
+    };
+
+    const resetToDefault = () => {
+        const undo = replaceFormation(createDefaultFormation(), null);
+        toast('既定の配置に戻しました', { action: { label: '元に戻す', onClick: undo } });
+    };
+
+    const modified = formationFile !== null && formationFile.config !== config;
+
+    const fileName = formationFile?.name ?? formationFileName(config);
+    const fileStatus = formationFile === null ? '未保存' : modified ? '変更あり（未保存）' : 'ファイルと同じ内容';
 
     return (
         <PanelSection
             title="衛星配置"
             icon={<Satellite />}
             action={
-                <>
-                    <input
-                        ref={importRef}
-                        type="file"
-                        accept=".json,application/json"
-                        className="hidden"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void importJSON(file);
-                            e.target.value = '';
-                        }}
-                    />
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm" className="text-fg-muted" aria-label="ファイル操作">
-                                <EllipsisVertical />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
-                            <DropdownMenuItem
-                                onSelect={() =>
-                                    downloadText(`${config.name}_formation.json`, serializeFormation(config))
-                                }
-                            >
-                                <Download />
-                                配置を JSON に保存
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => importRef.current?.click()}>
-                                <Upload />
-                                JSON から読み込む
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem variant="destructive" onSelect={() => engine.resetFormation()}>
-                                <Undo2 />
-                                既定の配置に戻す
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </>
+                <div className="flex items-center gap-1">
+                    <span className="text-xs text-fg-muted" title="基準衛星を含む">
+                        <span className="num font-medium text-fg">
+                            {(countSatellites(config) + 1).toLocaleString()}
+                        </span>{' '}
+                        機
+                    </span>
+                    <HelpTip>
+                        原点の基準衛星のまわりに、衛星をグループごとに配置します。グループをクリックすると配置パターンや数を変更できます。機数は基準衛星を含みます。
+                    </HelpTip>
+                    <IconAction label="既定の配置に戻す" onClick={resetToDefault}>
+                        <RotateCcw />
+                    </IconAction>
+                </div>
             }
         >
-            <p className="text-xs leading-relaxed text-fg-muted">
-                原点の基準衛星のまわりに、衛星を<span className="text-fg">グループ</span>
-                ごとに配置します。グループをクリックすると配置パターンや数を変更できます。
-            </p>
-
-            <div className="flex items-baseline justify-between gap-2 text-xs text-fg-muted">
-                <span className="truncate">{config.name}</span>
-                <span className="shrink-0">
-                    合計{' '}
-                    <span className="num font-medium text-fg">{(countSatellites(config) + 1).toLocaleString()}</span>{' '}
-                    機（基準衛星を含む）
-                </span>
+            <div className="flex h-8 items-center gap-1 rounded-md border border-line bg-sunken pr-0.5 pl-2">
+                <FileJson className="size-3.5 shrink-0 text-fg-subtle" />
+                <FileNameField
+                    fileName={fileName}
+                    saved={formationFile !== null}
+                    status={fileStatus}
+                    onRename={(name) => {
+                        updateFormation((c) => ({ ...c, name }));
+                        if (formationFile) {
+                            appStore.getState().patch({
+                                formationFile: { ...formationFile, name: formationFileName({ name }) },
+                            });
+                        }
+                    }}
+                />
+                {modified && (
+                    <span
+                        className="size-1.5 shrink-0 rounded-full bg-warning"
+                        role="img"
+                        aria-label="未保存の変更あり"
+                    />
+                )}
+                <input
+                    ref={importRef}
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void openFile(file);
+                        e.target.value = '';
+                    }}
+                />
+                <IconAction label="JSON を開く" onClick={() => importRef.current?.click()}>
+                    <FolderOpen />
+                </IconAction>
+                <IconAction label={`${fileName} として保存`} onClick={saveFile}>
+                    <Download />
+                </IconAction>
             </div>
 
             <div className="space-y-1.5">

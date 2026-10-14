@@ -1,7 +1,7 @@
 import { useRef } from 'react';
-import { CircleAlert, CircleCheck, ExternalLink, FileUp, Info, Loader2, Shapes, Table2 } from 'lucide-react';
+import { CircleAlert, CircleCheck, ExternalLink, FileUp, Loader2, Shapes } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { InfoGrid, SegmentedControl, SliderRow } from '@/components/controls';
+import { HelpTip, SegmentedControl, SliderRow } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
 import { appStore, useAppStore, type FileStatus } from '@/store/appStore';
@@ -15,25 +15,8 @@ export function CsvTab() {
     const active = useAppStore((s) => s.playback.active);
     return (
         <div>
-            {!active && <CsvModeIntro />}
             <CsvFileSection />
-            {active && <CsvDataSection />}
             {active && <ShapeSection />}
-        </div>
-    );
-}
-
-function CsvModeIntro() {
-    return (
-        <div className="mt-1 mb-3 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-3 py-2.5 text-xs text-fg">
-            <Info className="mt-0.5 size-3.5 shrink-0 text-info" />
-            <div className="space-y-1">
-                <p className="font-medium">CSV 再生モード</p>
-                <p className="text-fg-muted">
-                    HCW 方程式による計算の代わりに、外部で計算した位置・姿勢（6DOF）の時系列を再生します。
-                    衛星配置・軌道の設定は使いません。ファイルを読み込むと再生が始まります。
-                </p>
-            </div>
         </div>
     );
 }
@@ -64,7 +47,8 @@ function StatusMessage({ status }: { status: FileStatus }) {
 function CsvFileSection() {
     const engine = useEngine();
     const fileStatus = useAppStore((s) => s.playback.fileStatus);
-    const active = useAppStore((s) => s.playback.active);
+    const playback = useAppStore((s) => s.playback);
+    const active = playback.active;
     const inputRef = useRef<HTMLInputElement>(null);
 
     return (
@@ -72,12 +56,18 @@ function CsvFileSection() {
             title="CSV ファイル"
             icon={<FileUp />}
             action={
-                <Button variant="link" size="xs" className="h-auto px-0 text-fg-muted" asChild>
-                    <a href={FORMAT_DOC_URL} target="_blank" rel="noopener noreferrer">
-                        形式
-                        <ExternalLink />
-                    </a>
-                </Button>
+                <div className="flex items-center gap-1">
+                    <HelpTip>
+                        HCW
+                        方程式による計算の代わりに、外部で計算した位置・姿勢（6DOF）の時系列を再生します。衛星配置・軌道の設定は使いません。
+                    </HelpTip>
+                    <Button variant="link" size="xs" className="h-auto px-0 text-fg-muted" asChild>
+                        <a href={FORMAT_DOC_URL} target="_blank" rel="noopener noreferrer">
+                            形式
+                            <ExternalLink />
+                        </a>
+                    </Button>
+                </div>
             }
         >
             <input
@@ -114,29 +104,13 @@ function CsvFileSection() {
                 ))}
             </div>
             {fileStatus && <StatusMessage status={fileStatus} />}
-        </PanelSection>
-    );
-}
-
-function CsvDataSection() {
-    const playback = useAppStore((s) => s.playback);
-
-    return (
-        <PanelSection title="読み込んだデータ" icon={<Table2 />}>
-            <div className="rounded-lg border border-line bg-sunken px-2.5 py-2">
-                <InfoGrid
-                    rows={[
-                        ['衛星数', playback.satelliteCount],
-                        ['データ点数', playback.dataPoints],
-                        [
-                            '時間範囲',
-                            playback.timeRange
-                                ? `${playback.timeRange.min.toFixed(1)} – ${playback.timeRange.max.toFixed(1)} s`
-                                : '—',
-                        ],
-                    ]}
-                />
-            </div>
+            {active && (
+                <p className="num text-xs text-fg-muted">
+                    {playback.satelliteCount.toLocaleString()} 機 · {playback.dataPoints.toLocaleString()} 点
+                    {playback.timeRange &&
+                        ` · ${playback.timeRange.min.toFixed(1)} – ${playback.timeRange.max.toFixed(1)} s`}
+                </p>
+            )}
         </PanelSection>
     );
 }
@@ -147,14 +121,17 @@ function ShapeSection() {
     const setDisplay = appStore.getState().setDisplay;
 
     return (
-        <PanelSection title="衛星の形状" icon={<Shapes />}>
-            <p className="text-xs text-fg-muted">CSV には形状の情報がないため、ここで指定します。</p>
+        <PanelSection
+            title="衛星の形状"
+            icon={<Shapes />}
+            action={<HelpTip>CSV には形状の情報がないため、ここで指定します。立方体にすると姿勢が見えます。</HelpTip>}
+        >
             <SegmentedControl<SatelliteShape>
                 ariaLabel="衛星の形状"
                 value={shape === '3dfile' ? 'cube' : shape}
                 options={[
                     { value: 'sphere', label: '球' },
-                    { value: 'cube', label: '立方体（姿勢を表示）' },
+                    { value: 'cube', label: '立方体' },
                 ]}
                 onChange={(satelliteShape) => setDisplay({ satelliteShape })}
             />

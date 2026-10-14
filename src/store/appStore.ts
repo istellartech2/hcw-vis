@@ -93,6 +93,11 @@ export interface AppState {
     playback: PlaybackStatus;
     /** フォーメーション設定（唯一の正）。UI は変更のたびに engine.resetPositions() で反映する */
     formation: FormationConfig;
+    /**
+     * 最後に読み込んだ／保存した JSON ファイル。`config` がその時点の formation と同じ参照なら未変更。
+     * 既定の配置のまま、または「既定の配置に戻す」の後は null
+     */
+    formationFile: { name: string; config: FormationConfig } | null;
     loading: LoadingState | null;
 
     ui: {
@@ -141,6 +146,7 @@ export const appStore = createStore<AppStore>()((set) => ({
     selected: null,
     playback: { ...INITIAL_PLAYBACK },
     formation: createDefaultFormation(),
+    formationFile: null,
     loading: null,
 
     ui: {

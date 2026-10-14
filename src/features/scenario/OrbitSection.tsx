@@ -3,7 +3,7 @@ import { Orbit } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { COMPACT_INPUT_CLASS, InfoGrid, WithUnit } from '@/components/controls';
+import { COMPACT_INPUT_CLASS, HelpTip, WithUnit } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
 import { formatPeriod } from '@/lib/format';
@@ -60,7 +60,17 @@ export function OrbitSection() {
     };
 
     return (
-        <PanelSection title="基準軌道" icon={<Orbit />}>
+        <PanelSection
+            title="基準軌道"
+            icon={<Orbit />}
+            action={
+                <HelpTip>
+                    基準衛星の円軌道（離心率 0）です。値を変えたら「軌道を反映」で適用します。
+                    {info?.geodetic &&
+                        ` 現在位置: ${formatLatitude(info.geodetic.latitude)} ${formatLongitude(info.geodetic.longitude)}`}
+                </HelpTip>
+            }
+        >
             <form
                 className="space-y-2"
                 onSubmit={(e) => {
@@ -87,9 +97,14 @@ export function OrbitSection() {
                             </WithUnit>
                         </label>
                     ))}
-                    <div className="flex items-end">
-                        <span className="pb-1.5 text-[11px] text-fg-subtle">離心率 0（円軌道）</span>
-                    </div>
+                    {info && (
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-xs text-fg-muted">軌道周期</span>
+                            <span className="num flex h-7 items-center text-xs text-fg">
+                                {formatPeriod(info.orbit.periodMinutes)}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <div className={cn('flex gap-2', !pending && 'hidden')}>
@@ -109,24 +124,6 @@ export function OrbitSection() {
                     </Button>
                 </div>
             </form>
-
-            {info && (
-                <div className="rounded-lg border border-line bg-sunken px-2.5 py-2">
-                    <InfoGrid
-                        rows={[
-                            ['軌道周期', formatPeriod(info.orbit.periodMinutes)],
-                            ...(info.geodetic
-                                ? ([
-                                      [
-                                          '現在位置',
-                                          `${formatLatitude(info.geodetic.latitude)} ${formatLongitude(info.geodetic.longitude)}`,
-                                      ],
-                                  ] as const)
-                                : []),
-                        ]}
-                    />
-                </div>
-            )}
         </PanelSection>
     );
 }

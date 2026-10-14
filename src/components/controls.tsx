@@ -141,20 +141,6 @@ export function SliderRow({
     );
 }
 
-/** キー・値の 2 列表示（読み取り専用の数値） */
-export function InfoGrid({ rows }: { rows: ReadonlyArray<readonly [ReactNode, ReactNode]> }) {
-    return (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
-            {rows.map(([label, value], i) => (
-                <div key={i} className="contents">
-                    <dt className="text-fg-muted">{label}</dt>
-                    <dd className="num text-right text-fg">{value}</dd>
-                </div>
-            ))}
-        </dl>
-    );
-}
-
 /** パネル内の小さな数値入力に付けるクラス */
 export const COMPACT_INPUT_CLASS = 'num h-7 bg-sunken pr-9 text-xs md:text-xs dark:bg-sunken';
 

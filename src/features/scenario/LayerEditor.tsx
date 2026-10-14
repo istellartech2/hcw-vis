@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowLeft, CircleAlert, Palette, Ruler, Shapes } from 'lucide-react';
+import { ArrowLeft, CircleAlert, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,7 +13,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { COMPACT_INPUT_CLASS, HelpTip, SegmentedControl, WithUnit } from '@/components/controls';
-import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
 import type {
     FormationConfig,
@@ -27,7 +26,6 @@ import {
     PATTERN_DESCRIPTIONS,
     PATTERN_GROUPS,
     PATTERN_LABELS,
-    PLACEMENT_MODE_LABELS,
     SHAPE_LABELS,
     checkLayerForm,
     computeEccentricity,
@@ -101,49 +99,63 @@ export function LayerEditor({ layer, restoreOnCancel, onClose }: LayerEditorProp
         onClose();
     };
 
+    const count = Number(values.satelliteCount);
+    const total = getLayerFieldVisibility(values).satelliteCount
+        ? Number.isInteger(count) && count > 0
+            ? layerSatelliteCount({ ...values, satelliteCount: count })
+            : null
+        : 1;
+
     return (
         <div className="flex min-h-full flex-col">
-            <div className="mb-2 flex items-center gap-1">
+            <div className="mb-3 flex items-center gap-1">
                 <Button variant="ghost" size="icon-sm" aria-label="一覧に戻る" onClick={done}>
                     <ArrowLeft />
                 </Button>
-                <span className="text-[13px] font-semibold text-fg">衛星グループを編集</span>
+                <Input
+                    value={values.name}
+                    aria-label="グループ名"
+                    placeholder="グループ名"
+                    className="h-8 min-w-0 flex-1 border-transparent bg-transparent px-1.5 text-[13px] font-semibold shadow-none hover:border-line focus-visible:border-line-strong dark:bg-transparent"
+                    onChange={(e) => change({ name: e.target.value })}
+                />
             </div>
-            <p className="mb-3 text-xs text-fg-muted">変更はすぐ 3D に反映されます（時刻は t = 0 に戻ります）。</p>
 
             <form
-                className="flex-1"
+                className="flex-1 space-y-4"
                 onSubmit={(e) => {
                     e.preventDefault();
                     done();
                 }}
             >
-                <label className="mb-3 flex flex-col gap-1">
-                    <span className="text-xs text-fg-muted">名前</span>
-                    <Input
-                        value={values.name}
-                        className="h-8 bg-sunken text-[13px] dark:bg-sunken"
-                        onChange={(e) => change({ name: e.target.value })}
-                    />
-                </label>
-                <PatternSection values={values} onChange={change} />
-                <SizeSection values={values} onChange={change} />
-                <AppearanceSection values={values} onChange={change} />
+                <PatternGroup values={values} onChange={change} />
+                <PlacementGroup values={values} onChange={change} />
+                <AppearanceGroup values={values} onChange={change} />
                 <button type="submit" hidden />
             </form>
 
-            <div className="sticky bottom-0 -mx-3 mt-2 border-t border-line bg-surface-solid px-3 pt-2.5 pb-1">
+            <div className="sticky bottom-0 -mx-3 mt-4 border-t border-line bg-surface-solid px-3 pt-2.5 pb-1">
                 {problem && (
                     <p role="alert" className="mb-2 flex items-start gap-1.5 text-xs text-danger">
                         <CircleAlert className="mt-px size-3.5 shrink-0" />
                         {problem}
                     </p>
                 )}
-                <div className="flex gap-2">
-                    <Button variant="ghost" className="flex-1" onClick={cancel}>
+                <div className="flex items-center gap-2">
+                    <span
+                        className="mr-auto text-xs text-fg-muted"
+                        title="変更はすぐ 3D に反映されます（時刻は t = 0 に戻ります）"
+                    >
+                        {total !== null && (
+                            <>
+                                合計 <span className="num font-medium text-fg">{total.toLocaleString()}</span> 機
+                            </>
+                        )}
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={cancel}>
                         キャンセル
                     </Button>
-                    <Button className="flex-1" disabled={problem !== null} onClick={done}>
+                    <Button size="sm" className="px-5" disabled={problem !== null} onClick={done}>
                         完了
                     </Button>
                 </div>
@@ -190,9 +202,64 @@ function NumberInput({
     );
 }
 
-function PatternSection({ values, onChange }: SectionProps) {
+/** 編集画面内の小見出し付きグループ（PanelSection より軽い区切り） */
+function Group({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
     return (
-        <PanelSection title="配置パターン" icon={<Shapes />}>
+        <section className="space-y-2">
+            <div className="flex min-h-6 items-center justify-between gap-2">
+                <h3 className="text-xs font-medium text-fg-muted">{title}</h3>
+                {action}
+            </div>
+            {children}
+        </section>
+    );
+}
+
+/** R/S/W や X/Y/Z の 3 成分を 1 行で入力する */
+function Vec3Input<K extends TextKey>({
+    label,
+    keys,
+    axes,
+    values,
+    onChange,
+    step = 0.1,
+    min,
+}: SectionProps & {
+    label: string;
+    keys: readonly [K, K, K];
+    axes: readonly [string, string, string];
+    step?: number;
+    min?: number;
+}) {
+    return (
+        <div className="flex items-center gap-2">
+            <span className="w-16 shrink-0 text-xs text-fg-muted">{label}</span>
+            <div className="grid min-w-0 flex-1 grid-cols-3 gap-1.5">
+                {keys.map((key, i) => (
+                    <span key={key} className="relative block min-w-0">
+                        <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-[11px] font-medium text-fg-subtle">
+                            {axes[i]}
+                        </span>
+                        <Input
+                            type="number"
+                            inputMode="decimal"
+                            step={step}
+                            min={min}
+                            aria-label={`${label} ${axes[i]}`}
+                            value={values[key]}
+                            className={cn(COMPACT_INPUT_CLASS, 'pr-1.5 pl-6')}
+                            onChange={(e) => onChange({ [key]: e.target.value })}
+                        />
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PatternGroup({ values, onChange }: SectionProps) {
+    return (
+        <Group title="配置パターン">
             <Select value={values.pattern} onValueChange={(pattern) => onChange({ pattern: pattern as PatternType })}>
                 <SelectTrigger className="h-8! w-full bg-sunken text-[13px] dark:bg-sunken" aria-label="配置パターン">
                     <SelectValue />
@@ -217,74 +284,76 @@ function PatternSection({ values, onChange }: SectionProps) {
                     ))}
                 </SelectContent>
             </Select>
-            <p className="text-xs leading-relaxed text-fg-muted">{PATTERN_DESCRIPTIONS[values.pattern]}</p>
-        </PanelSection>
+            <p className="text-[11px] leading-relaxed text-fg-subtle">{PATTERN_DESCRIPTIONS[values.pattern]}</p>
+        </Group>
     );
 }
 
-function SizeSection({ values, onChange }: SectionProps) {
+function PlacementGroup({ values, onChange }: SectionProps) {
     const visible = getLayerFieldVisibility(values);
-    const count = Number(values.satelliteCount);
-    const generated =
-        Number.isInteger(count) && count > 0 ? layerSatelliteCount({ ...values, satelliteCount: count }) : null;
+    const [showOffset, setShowOffset] = useState(() =>
+        [values.offsetR, values.offsetS, values.offsetW].some((v) => parseFloat(v) !== 0),
+    );
 
     return (
-        <PanelSection title="数と大きさ" icon={<Ruler />}>
-            {visible.placementMode && (
-                <SegmentedControl<PlacementMode>
-                    ariaLabel="大きさの指定方法"
-                    value={values.placementMode}
-                    options={(Object.keys(PLACEMENT_MODE_LABELS) as PlacementMode[]).map((m) => ({
-                        value: m,
-                        label: PLACEMENT_MODE_LABELS[m],
-                    }))}
-                    onChange={(placementMode) => onChange({ placementMode })}
-                />
-            )}
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-                {visible.satelliteCount && (
-                    <NumberInput
-                        label={getCountLabel(values.pattern)}
-                        unit="機"
-                        inputMode="numeric"
-                        min={1}
-                        step={1}
-                        value={values.satelliteCount}
-                        onChange={(satelliteCount) => onChange({ satelliteCount })}
-                    />
-                )}
-                {visible.radius && (
-                    <NumberInput
-                        label={getRadiusLabel(values.pattern)}
-                        unit="m"
-                        min={0.1}
-                        step={0.1}
-                        value={values.radius}
-                        onChange={(radius) => onChange({ radius })}
-                    />
-                )}
-                {visible.spacing && (
-                    <NumberInput
-                        label="衛星の間隔"
-                        unit="m"
-                        min={0.01}
-                        step={0.1}
-                        value={values.spacing}
-                        onChange={(spacing) => onChange({ spacing })}
-                    />
-                )}
-            </div>
-            {visible.satelliteCount && generated !== null && generated !== count && (
-                <p className="text-xs text-fg-muted">
-                    {values.pattern === 'axis' ? '3 軸 × 両側で ' : '原点を除く格子点で '}
-                    合計 <span className="num font-medium text-fg">{generated.toLocaleString()}</span> 機になります
-                </p>
+        <Group
+            title={visible.originOffset ? '位置' : '数と大きさ'}
+            action={
+                visible.placementMode && (
+                    <div className="w-40">
+                        <SegmentedControl<PlacementMode>
+                            ariaLabel="大きさの指定方法"
+                            value={values.placementMode}
+                            options={[
+                                { value: 'spacing', label: '間隔' },
+                                { value: 'radius', label: '全体' },
+                            ]}
+                            onChange={(placementMode) => onChange({ placementMode })}
+                        />
+                    </div>
+                )
+            }
+        >
+            {(visible.satelliteCount || visible.radius || visible.spacing) && (
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
+                    {visible.satelliteCount && (
+                        <NumberInput
+                            label={getCountLabel(values.pattern)}
+                            unit="機"
+                            inputMode="numeric"
+                            min={1}
+                            step={1}
+                            value={values.satelliteCount}
+                            onChange={(satelliteCount) => onChange({ satelliteCount })}
+                        />
+                    )}
+                    {visible.radius && (
+                        <NumberInput
+                            label={getRadiusLabel(values.pattern)}
+                            unit="m"
+                            min={0.1}
+                            step={0.1}
+                            value={values.radius}
+                            onChange={(radius) => onChange({ radius })}
+                        />
+                    )}
+                    {visible.spacing && (
+                        <NumberInput
+                            label="衛星の間隔"
+                            unit="m"
+                            min={0.01}
+                            step={0.1}
+                            value={values.spacing}
+                            onChange={(spacing) => onChange({ spacing })}
+                        />
+                    )}
+                </div>
             )}
 
             {visible.positiveZ && (
                 <div className="flex items-center gap-2">
-                    <span className="inline-flex w-24 shrink-0 items-center gap-0.5 text-xs text-fg-muted">
-                        傾きの向き
+                    <span className="inline-flex w-16 shrink-0 items-center gap-0.5 text-xs text-fg-muted">
+                        傾き
                         <HelpTip>軌道面を W 軸の正・負どちら側へ傾けるか。</HelpTip>
                     </span>
                     <SegmentedControl<'plus' | 'minus'>
@@ -299,39 +368,40 @@ function SizeSection({ values, onChange }: SectionProps) {
                 </div>
             )}
 
-            {(visible.originOffset || visible.axisOffset) && (
-                <div className="space-y-1">
-                    <span className="text-xs text-fg-muted">
-                        {visible.originOffset ? '置く位置' : '全体をずらす量'}（基準衛星から, m）
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5">
-                        <NumberInput
-                            label="R 動径"
-                            step={0.1}
-                            value={values.offsetR}
-                            onChange={(offsetR) => onChange({ offsetR })}
-                        />
-                        <NumberInput
-                            label="S 進行"
-                            step={0.1}
-                            value={values.offsetS}
-                            onChange={(offsetS) => onChange({ offsetS })}
-                        />
-                        <NumberInput
-                            label="W 面外"
-                            step={0.1}
-                            value={values.offsetW}
-                            onChange={(offsetW) => onChange({ offsetW })}
-                        />
-                    </div>
-                </div>
+            {visible.originOffset && (
+                <Vec3Input
+                    label="基準から (m)"
+                    keys={['offsetR', 'offsetS', 'offsetW']}
+                    axes={['R', 'S', 'W']}
+                    values={values}
+                    onChange={onChange}
+                />
             )}
+            {visible.axisOffset &&
+                (showOffset ? (
+                    <Vec3Input
+                        label="ずらす (m)"
+                        keys={['offsetR', 'offsetS', 'offsetW']}
+                        axes={['R', 'S', 'W']}
+                        values={values}
+                        onChange={onChange}
+                    />
+                ) : (
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-xs text-fg-muted transition-colors hover:text-fg"
+                        onClick={() => setShowOffset(true)}
+                    >
+                        <Plus className="size-3" />
+                        全体の位置をずらす
+                    </button>
+                ))}
 
             {/* zAmplitude は periodicParams が無い古い JSON 用のフォールバックでしか使われないので編集欄は出さない */}
             {visible.periodicParams && (
-                <div className="space-y-1.5 rounded-lg border border-line bg-sunken/50 p-2.5">
+                <div className="space-y-1.5">
                     <div className="flex items-baseline justify-between gap-2">
-                        <span className="inline-flex items-center gap-0.5 text-xs font-medium text-fg">
+                        <span className="inline-flex items-center gap-0.5 text-xs text-fg-muted">
                             楕円の係数（A に対する比）
                             <HelpTip>
                                 R = A cos nt + B sin nt,　S = −2A sin nt + 2B cos nt + D,　W = E cos nt + F sin nt
@@ -343,99 +413,91 @@ function SizeSection({ values, onChange }: SectionProps) {
                     </div>
                     <div className="grid grid-cols-4 gap-1.5">
                         {(['ratioB', 'ratioD', 'ratioE', 'ratioF'] as const satisfies readonly TextKey[]).map((key) => (
-                            <NumberInput
-                                key={key}
-                                label={`${key.slice(-1)}/A`}
-                                step={0.1}
-                                value={values[key]}
-                                onChange={(v) => onChange({ [key]: v })}
-                            />
+                            <span key={key} className="relative block min-w-0">
+                                <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-[11px] font-medium text-fg-subtle">
+                                    {key.slice(-1)}
+                                </span>
+                                <Input
+                                    type="number"
+                                    inputMode="decimal"
+                                    step={0.1}
+                                    aria-label={`${key.slice(-1)}/A`}
+                                    value={values[key]}
+                                    className={cn(COMPACT_INPUT_CLASS, 'pr-1.5 pl-5')}
+                                    onChange={(e) => onChange({ [key]: e.target.value })}
+                                />
+                            </span>
                         ))}
                     </div>
                 </div>
             )}
-        </PanelSection>
+        </Group>
     );
 }
 
-function AppearanceSection({ values, onChange }: SectionProps) {
+function AppearanceGroup({ values, onChange }: SectionProps) {
     const visible = getLayerFieldVisibility(values);
     const shapes = EDITABLE_SHAPES.includes(values.shape) ? EDITABLE_SHAPES : [...EDITABLE_SHAPES, values.shape];
 
     return (
-        <PanelSection title="見た目" icon={<Palette />}>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-                <label className="flex min-w-0 flex-col gap-0.5">
-                    <span className="text-xs text-fg-muted">形状</span>
-                    <Select value={values.shape} onValueChange={(shape) => onChange({ shape: shape as ShapeType })}>
-                        <SelectTrigger size="sm" className="h-7! w-full bg-sunken text-xs dark:bg-sunken">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {shapes.map((s) => (
-                                <SelectItem key={s} value={s}>
-                                    {SHAPE_LABELS[s]}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </label>
-                <NumberInput
-                    label={getSizeLabel(values.shape)}
-                    unit="m"
-                    min={0.01}
-                    step={0.1}
-                    value={values.size}
-                    onChange={(size) => onChange({ size })}
-                />
+        <Group title="見た目">
+            <SegmentedControl<ShapeType>
+                ariaLabel="形状"
+                value={values.shape}
+                options={shapes.map((s) => ({ value: s, label: SHAPE_LABELS[s] }))}
+                onChange={(shape) => onChange({ shape })}
+            />
+            <div className="flex items-center gap-2">
+                <span className="w-16 shrink-0 text-xs text-fg-muted">{getSizeLabel(values.shape)}</span>
+                <WithUnit unit="m">
+                    <Input
+                        type="number"
+                        inputMode="decimal"
+                        min={0.01}
+                        step={0.1}
+                        aria-label={getSizeLabel(values.shape)}
+                        value={values.size}
+                        className={COMPACT_INPUT_CLASS}
+                        onChange={(e) => onChange({ size: e.target.value })}
+                    />
+                </WithUnit>
             </div>
-
             {visible.boxRatios && (
-                <div className="grid grid-cols-3 gap-1.5">
-                    <NumberInput
-                        label="比率 X"
-                        min={0.1}
-                        step={0.1}
-                        value={values.boxX}
-                        onChange={(boxX) => onChange({ boxX })}
-                    />
-                    <NumberInput
-                        label="比率 Y"
-                        min={0.1}
-                        step={0.1}
-                        value={values.boxY}
-                        onChange={(boxY) => onChange({ boxY })}
-                    />
-                    <NumberInput
-                        label="比率 Z"
-                        min={0.1}
-                        step={0.1}
-                        value={values.boxZ}
-                        onChange={(boxZ) => onChange({ boxZ })}
-                    />
-                </div>
+                <Vec3Input
+                    label="比率"
+                    keys={['boxX', 'boxY', 'boxZ']}
+                    axes={['X', 'Y', 'Z']}
+                    min={0.1}
+                    values={values}
+                    onChange={onChange}
+                />
             )}
             {visible.rotation && (
-                <div className="grid grid-cols-2 gap-x-2">
-                    <NumberInput
-                        label="R 軸まわりの回転"
-                        unit="°"
-                        step={5}
-                        value={values.rotationR}
-                        onChange={(rotationR) => onChange({ rotationR })}
-                    />
-                    <NumberInput
-                        label="S 軸まわりの回転"
-                        unit="°"
-                        step={5}
-                        value={values.rotationS}
-                        onChange={(rotationS) => onChange({ rotationS })}
-                    />
+                <div className="flex items-center gap-2">
+                    <span className="w-16 shrink-0 text-xs text-fg-muted">回転 (°)</span>
+                    <div className="grid min-w-0 flex-1 grid-cols-2 gap-1.5">
+                        {(['rotationR', 'rotationS'] as const).map((key) => (
+                            <span key={key} className="relative block min-w-0">
+                                <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-[11px] font-medium text-fg-subtle">
+                                    {key.slice(-1)} 軸
+                                </span>
+                                <Input
+                                    type="number"
+                                    inputMode="decimal"
+                                    step={5}
+                                    aria-label={`${key.slice(-1)} 軸まわりの回転`}
+                                    value={values[key]}
+                                    className={cn(COMPACT_INPUT_CLASS, 'pr-1.5 pl-9')}
+                                    onChange={(e) => onChange({ [key]: e.target.value })}
+                                />
+                            </span>
+                        ))}
+                    </div>
                 </div>
             )}
 
             <div className="flex items-center gap-2">
-                <span className="w-10 shrink-0 text-xs text-fg-muted">色</span>
+                <span className="w-16 shrink-0 text-xs text-fg-muted">色</span>
                 <SegmentedControl<LayerFormValues['colorMode']>
                     ariaLabel="色の付け方"
                     value={values.colorMode}
@@ -449,12 +511,12 @@ function AppearanceSection({ values, onChange }: SectionProps) {
                     <input
                         type="color"
                         aria-label="色"
-                        className="h-7 w-10 shrink-0 cursor-pointer rounded-md border border-line-strong bg-sunken p-0.5"
+                        className="h-7 w-9 shrink-0 cursor-pointer rounded-md border border-line-strong bg-sunken p-0.5"
                         value={/^#[0-9a-fA-F]{6}$/.test(values.color) ? values.color : '#ffffff'}
                         onChange={(e) => onChange({ color: e.target.value })}
                     />
                 )}
             </div>
-        </PanelSection>
+        </Group>
     );
 }

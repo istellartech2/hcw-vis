@@ -74,20 +74,22 @@ function DisturbanceSection() {
                 disabled={!collisionAvailable}
                 onCheckedChange={(collisionEnabled) => setSimulation({ collisionEnabled })}
             />
-            <div className="flex items-center gap-2">
-                <span className="w-20 shrink-0 text-xs text-fg-muted">衛星質量</span>
-                <WithUnit unit="kg">
-                    <NumberField
-                        min={0.1}
-                        max={1000}
-                        step={0.1}
-                        value={simulation.satelliteMass}
-                        onValueChange={(satelliteMass) => setSimulation({ satelliteMass })}
-                        className={COMPACT_INPUT_CLASS}
-                        aria-label="衛星質量"
-                    />
-                </WithUnit>
-            </div>
+            {simulation.collisionEnabled && collisionAvailable && (
+                <div className="flex items-center gap-2">
+                    <span className="w-20 shrink-0 text-xs text-fg-muted">衛星質量</span>
+                    <WithUnit unit="kg">
+                        <NumberField
+                            min={0.1}
+                            max={1000}
+                            step={0.1}
+                            value={simulation.satelliteMass}
+                            onValueChange={(satelliteMass) => setSimulation({ satelliteMass })}
+                            className={COMPACT_INPUT_CLASS}
+                            aria-label="衛星質量"
+                        />
+                    </WithUnit>
+                </div>
+            )}
         </PanelSection>
     );
 }
