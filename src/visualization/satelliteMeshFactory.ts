@@ -66,14 +66,16 @@ export function createSatelliteMaterial(color: number, emissiveIntensity: number
     });
 }
 
-/** 立方体: size は半辺長 */
+// size はどの形状でも「差し渡しの長さ」（球は直径、立方体は一辺）。同じ値なら同じ大きさに見える
+
+/** 立方体: size は一辺 */
 export function createCubeGeometry(size: number): THREE.BufferGeometry {
-    return new THREE.BoxGeometry(size * 2, size * 2, size * 2);
+    return new THREE.BoxGeometry(size, size, size);
 }
 
-/** 直方体: 立方体を各軸の比率で伸縮 */
+/** 直方体: 一辺 size の立方体を各軸の比率で伸縮 */
 export function createBoxGeometry(size: number, ratios: BoxRatios): THREE.BufferGeometry {
-    return new THREE.BoxGeometry(size * 2 * ratios.x, size * 2 * ratios.y, size * 2 * ratios.z);
+    return new THREE.BoxGeometry(size * ratios.x, size * ratios.y, size * ratios.z);
 }
 
 /** 球: size は直径 */
@@ -105,7 +107,8 @@ export function createModelObject(
             (child as THREE.Mesh).material = createSatelliteMaterial(color, emissiveIntensity);
         }
     });
-    object.scale.setScalar(size);
+    // モデルは読み込み時に最長辺 1 へ正規化した scale を持っているので、置き換えずに掛ける
+    object.scale.multiplyScalar(size);
     return object;
 }
 
