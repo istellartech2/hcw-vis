@@ -8,8 +8,8 @@ export class CameraController {
     private mouseDown: boolean = false;
     // Initial camera position configuration
     // Position camera so that blue (X) and green (Z) axes point left
-    // Scale=1: 1m = 1 unit, 10m range needs ~30 unit distance
-    private readonly INITIAL_CAMERA_DISTANCE: number = 30;
+    // Scale=1: 1m = 1 unit, 10m range needs ~45 unit distance at FOV 50°
+    private readonly INITIAL_CAMERA_DISTANCE: number = 45;
     private readonly INITIAL_CAMERA_PHI: number = Math.PI / 3;
     private readonly INITIAL_CAMERA_THETA: number = (Math.PI * 4) / 5;
     private cameraPhi: number = this.INITIAL_CAMERA_PHI;
@@ -156,7 +156,10 @@ export class CameraController {
     }
 
     public resetView(): void {
-        this.cameraDistance = this.INITIAL_CAMERA_DISTANCE;
+        // 縦長画面では水平方向の画角が狭くなるので、少し引いて全体を収める
+        const { clientWidth, clientHeight } = this.container;
+        const portrait = clientHeight > 0 && clientWidth < clientHeight;
+        this.cameraDistance = this.INITIAL_CAMERA_DISTANCE * (portrait ? 1.4 : 1);
         this.cameraPhi = this.INITIAL_CAMERA_PHI;
         this.cameraTheta = this.INITIAL_CAMERA_THETA;
         this.updateCameraPosition();

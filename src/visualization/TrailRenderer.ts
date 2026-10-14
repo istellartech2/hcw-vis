@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { Satellite } from '../simulation/Satellite.js';
 
+/** 軌跡の先端（最新点）の不透明度 */
+const TRAIL_OPACITY = 0.7;
+
 export class TrailRenderer {
     private scene: THREE.Scene;
 
@@ -34,16 +37,23 @@ export class TrailRenderer {
                 if (!sat.trailGeometry) {
                     sat.trailGeometry = new THREE.BufferGeometry();
                     sat.trailMaterial = new THREE.LineBasicMaterial({
-                        color: color,
-                        opacity: 0.5,
+                        vertexColors: true,
                         transparent: true,
+                        depthWrite: false,
                     });
                     sat.trailLine = new THREE.Line(sat.trailGeometry, sat.trailMaterial);
                     this.scene.add(sat.trailLine);
                 }
 
-                // 頂点データのみ更新（新規オブジェクト作成なし）
+                // 古い点ほど透明にして、衛星の後ろへ尾を引くように見せる
                 sat.trailGeometry.setFromPoints(sat.trail);
+                const count = sat.trail.length;
+                const colors = new Float32Array(count * 4);
+                for (let i = 0; i < count; i++) {
+                    const t = i / (count - 1);
+                    colors.set([color.r, color.g, color.b, TRAIL_OPACITY * t * t], i * 4);
+                }
+                sat.trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
             }
         }
     }

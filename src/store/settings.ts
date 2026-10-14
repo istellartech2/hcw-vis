@@ -113,3 +113,10 @@ export const SATELLITE_PALETTE = [
     '#ff9ff3',
     '#54a0ff',
 ] as const;
+
+/** RSW 座標軸の色。3D の座標軸と HUD の凡例で共有する */
+export const AXIS_COLORS = {
+    r: '#ff6b6b',
+    s: '#2ecc71',
+    w: '#00bfff',
+} as const;

@@ -45,7 +45,7 @@ describe('createSatelliteObject', () => {
         const object = createSatelliteObject(appearance('3dfile'), 0x00ff00, 0.2, model);
         expect(object).not.toBe(model);
         expect(object.scale.x).toBe(0.5);
-        const material = (object.children[0] as THREE.Mesh).material as THREE.MeshPhongMaterial;
+        const material = (object.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
         expect(material.color.getHex()).toBe(0x00ff00);
         expect(material.emissiveIntensity).toBe(0.2);
     });

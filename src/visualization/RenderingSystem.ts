@@ -2,17 +2,19 @@ import * as THREE from 'three';
 import { Satellite } from '../simulation/Satellite.js';
 import { TrailRenderer } from './TrailRenderer.js';
 import { CelestialBodies } from './CelestialBodies.js';
-import type { DisplaySettings } from '@/store/settings';
+import { AXIS_COLORS, type DisplaySettings } from '@/store/settings';
+import { createAxes, createGrid } from './sceneDecor.js';
 import { ModelLoader } from './ModelLoader.js';
 import { consumeCollisionFlash, setHillPosition, setSatelliteAttitude } from './satelliteFrame.js';
 import {
     REFERENCE_COLOR,
     REFERENCE_EMISSIVE_INTENSITY,
     SATELLITE_EMISSIVE_INTENSITY,
+    SELECTED_EMISSIVE_INTENSITY,
     createSatelliteObject,
     displayColor,
     disposeSatelliteObject,
-    forEachPhongMaterial,
+    forEachEmissiveMaterial,
     resolveAppearance,
     resolveSatelliteColor,
     type SatelliteObject,
@@ -44,7 +46,7 @@ export class RenderingSystem {
     private renderer: THREE.WebGLRenderer;
     private container: HTMLElement;
     private satelliteMeshes: SatelliteObject[] = [];
-    private gridHelper: THREE.GridHelper;
+    private gridHelper: THREE.Group;
     private axesGroup: THREE.Group;
     private trailRenderer: TrailRenderer;
     private celestialBodies: CelestialBodies;
@@ -74,7 +76,7 @@ export class RenderingSystem {
         this.getDisplay = getDisplay;
 
         this.trailRenderer = new TrailRenderer(this.scene);
-        this.celestialBodies = new CelestialBodies(this.scene);
+        this.celestialBodies = new CelestialBodies(this.scene, this.renderer.capabilities.getMaxAnisotropy());
         this.modelLoader = new ModelLoader();
 
         this.raycaster = new THREE.Raycaster();
@@ -96,73 +98,32 @@ export class RenderingSystem {
     }
 
     private setupLighting(): void {
-        // 環境光を強化（全体的な明るさ）
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        this.scene.add(ambientLight);
+        // 空（上）と地球側（下）の色を分けた半球光で柔らかい陰影をつける
+        this.scene.add(new THREE.HemisphereLight(0xdbe6ff, 0x1a2030, 1.4));
 
-        // メインの指向性ライト（上前方から）
-        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
-        directionalLight1.position.set(100, 100, 50);
-        this.scene.add(directionalLight1);
+        // 太陽光に見立てたキーライト 1 灯と、輪郭を拾う弱いリムライト
+        const key = new THREE.DirectionalLight(0xffffff, 2.4);
+        key.position.set(60, 100, 40);
+        this.scene.add(key);
 
-        // サブの指向性ライト（下後方から、影を柔らかく）
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
-        directionalLight2.position.set(-50, -50, -50);
-        this.scene.add(directionalLight2);
-
-        // サイドライト（左右から）
-        const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight3.position.set(100, 0, -100);
-        this.scene.add(directionalLight3);
-
-        const directionalLight4 = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight4.position.set(-100, 0, 100);
-        this.scene.add(directionalLight4);
+        const rim = new THREE.DirectionalLight(0x9fb8ff, 0.6);
+        rim.position.set(-80, -20, -100);
+        this.scene.add(rim);
     }
 
     private createAxes(): THREE.Group {
-        const axesGroup = new THREE.Group();
-
-        // X-axis (Along-track)
-        const xGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(15, 0, 0), // 15m axis for 10m range
-        ]);
-        const xMaterial = new THREE.LineBasicMaterial({ color: 0x00bfff });
-        const xAxis = new THREE.Line(xGeometry, xMaterial);
-        axesGroup.add(xAxis);
-
-        // Y-axis (Radial)
-        const yGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 15, 0), // 15m axis for 10m range
-        ]);
-        const yMaterial = new THREE.LineBasicMaterial({ color: 0xff6b6b });
-        const yAxis = new THREE.Line(yGeometry, yMaterial);
-        axesGroup.add(yAxis);
-
-        // Z-axis (Cross-track)
-        const zGeometry = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 0, 15), // 15m axis for 10m range
-        ]);
-        const zMaterial = new THREE.LineBasicMaterial({ color: 0x2ecc71 });
-        const zAxis = new THREE.Line(zGeometry, zMaterial);
-        axesGroup.add(zAxis);
-
+        const axesGroup = createAxes(AXIS_COLORS);
         this.scene.add(axesGroup);
         axesGroup.visible = this.getDisplay().showAxes;
         return axesGroup;
     }
 
-    private createGrid(): THREE.GridHelper {
-        // Grid adapted for 10m range with 1x scaling
-        // Size: 30 units = 30m total, Divisions: 30 = 1m per division
-        // Subtle colors for background reference
-        const gridHelper = new THREE.GridHelper(30, 30, 0x777777);
-        gridHelper.position.y = -10; // Just below origin level
-        this.scene.add(gridHelper);
-        return gridHelper;
+    private createGrid(): THREE.Group {
+        // 1 m 間隔（5 m ごとに主線）。原点の少し下に置き、外側へフェードさせる
+        const grid = createGrid();
+        grid.position.y = -10;
+        this.scene.add(grid);
+        return grid;
     }
 
     private setupSatelliteSelection(signal?: AbortSignal): void {
@@ -239,8 +200,10 @@ export class RenderingSystem {
 
             // 選択ハイライトと衝突フィードバック（赤く発光）
             const flashing = consumeCollisionFlash(sat);
-            const intensity = flashing || index === this.selectedSatelliteIndex ? 0.8 : 0.2;
-            forEachPhongMaterial(object, (material) => {
+            const baseIntensity = index === 0 ? REFERENCE_EMISSIVE_INTENSITY : SATELLITE_EMISSIVE_INTENSITY;
+            const intensity =
+                flashing || index === this.selectedSatelliteIndex ? SELECTED_EMISSIVE_INTENSITY : baseIntensity;
+            forEachEmissiveMaterial(object, (material) => {
                 material.emissiveIntensity = intensity;
                 if (flashing) {
                     material.emissive.setHex(COLLISION_COLOR);
@@ -251,7 +214,7 @@ export class RenderingSystem {
 
             if (display.showTrails && index > 0) {
                 let color = WHITE;
-                forEachPhongMaterial(object, (material) => {
+                forEachEmissiveMaterial(object, (material) => {
                     color = material.color;
                 });
                 this.trailRenderer.updateTrail(sat, pos, 1, color, display.trailLength);
@@ -263,7 +226,7 @@ export class RenderingSystem {
         const display = this.getDisplay();
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
             const color = displayColor(display, i - 1);
-            forEachPhongMaterial(this.satelliteMeshes[i], (material) => {
+            forEachEmissiveMaterial(this.satelliteMeshes[i], (material) => {
                 material.color.setHex(color);
                 material.emissive.setHex(color);
             });

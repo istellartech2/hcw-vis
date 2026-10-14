@@ -4,16 +4,22 @@ import { gstime } from 'satellite.js';
 import { FrameTransforms } from '../simulation/FrameTransforms.js';
 import { LoadingIndicator } from '@/engine/LoadingIndicator';
 
+/** 地球テクスチャに掛ける色（少し暗く青みを帯びさせて背景に沈める） */
+const EARTH_TINT = 0x46505f;
+
 export class CelestialBodies {
     private scene: THREE.Scene;
     private earth: THREE.Mesh | null = null;
+    private atmosphere: THREE.Mesh | null = null;
     private earthGroup: THREE.Group;
     private showEarth: boolean = false;
     private loadingIndicator: LoadingIndicator;
     private latLongLines: THREE.Object3D[] = [];
+    private maxAnisotropy: number;
 
-    constructor(scene: THREE.Scene) {
+    constructor(scene: THREE.Scene, maxAnisotropy = 1) {
         this.scene = scene;
+        this.maxAnisotropy = maxAnisotropy;
         this.earthGroup = new THREE.Group();
         this.scene.add(this.earthGroup);
         this.loadingIndicator = new LoadingIndicator();
@@ -22,6 +28,7 @@ export class CelestialBodies {
     // orbitRadius: m (meters)
     createEarth(orbitRadius: number, textureFile: string = 'earth00.webp'): void {
         // 既存の地球があれば削除
+        this.disposeAtmosphere();
         if (this.earth) {
             this.earthGroup.remove(this.earth);
             if (this.earth.geometry) this.earth.geometry.dispose();
@@ -70,9 +77,12 @@ export class CelestialBodies {
                 // 成功時
                 (texture) => {
                     console.log(`Earth texture loaded successfully from: ${currentPath}`);
+                    // 色テクスチャは sRGB。斜めから見ることが多いので異方性フィルタでぼけを抑える
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.anisotropy = this.maxAnisotropy;
                     if (this.earth && this.earth.material) {
-                        (this.earth.material as THREE.MeshPhongMaterial).map = texture;
-                        (this.earth.material as THREE.MeshPhongMaterial).needsUpdate = true;
+                        (this.earth.material as THREE.MeshStandardMaterial).map = texture;
+                        (this.earth.material as THREE.MeshStandardMaterial).needsUpdate = true;
                     }
                     this.loadingIndicator.hide();
                 },
@@ -97,12 +107,12 @@ export class CelestialBodies {
         const earthTexture = new THREE.Texture();
         tryLoadTexture(texturePaths);
 
-        // 地球のマテリアル（テクスチャ付き）
-        const earthMaterial = new THREE.MeshPhongMaterial({
+        // 地球のマテリアル（テクスチャ付き）。衛星より目立たないよう少し沈んだ色味にする
+        const earthMaterial = new THREE.MeshStandardMaterial({
             map: earthTexture,
-            emissive: 0x000033,
-            emissiveIntensity: 0.05,
-            shininess: 10,
+            color: EARTH_TINT,
+            roughness: 1,
+            metalness: 0,
         });
 
         this.earth = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -113,6 +123,7 @@ export class CelestialBodies {
         this.earth.position.set(0, -orbitRadius, 0);
 
         this.earthGroup.add(this.earth);
+        this.earth.add(this.createAtmosphere(earthRadiusInScene));
 
         // 緯度経度線を追加
         this.addLatitudeLongitudeLines(earthRadiusInScene);
@@ -129,8 +140,7 @@ export class CelestialBodies {
         const normalLineMaterial = new THREE.LineBasicMaterial({
             color: 0xffffff,
             transparent: true,
-            opacity: 0.7,
-            linewidth: 1,
+            opacity: 0.12,
         });
 
         // 経度線（縦線）を追加 - ECEF座標系（X=Greenwich, Y=90°E, Z=North Pole）
@@ -183,7 +193,14 @@ export class CelestialBodies {
             }
         }
 
-        // 赤道線を特別に強調（赤色）
+        // 赤道とグリニッジ子午線は同系色で少しだけ強調する
+        const accentLineMaterial = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.3,
+        });
+
+        // 赤道線
         const equatorPoints: THREE.Vector3[] = [];
         for (let longitude = 0; longitude <= 360; longitude += 1) {
             const lon_rad = (longitude * Math.PI) / 180;
@@ -195,17 +212,11 @@ export class CelestialBodies {
         }
 
         const equatorGeometry = new THREE.BufferGeometry().setFromPoints(equatorPoints);
-        const equatorMaterial = new THREE.LineBasicMaterial({
-            color: 0xff0000,
-            transparent: false,
-            opacity: 1.0,
-            linewidth: 3,
-        });
-        const equatorLine = new THREE.Line(equatorGeometry, equatorMaterial);
+        const equatorLine = new THREE.Line(equatorGeometry, accentLineMaterial);
         this.earth!.add(equatorLine);
         this.latLongLines.push(equatorLine);
 
-        // グリニッジ子午線を特別に強調（青色）
+        // グリニッジ子午線
         const greenwichPoints: THREE.Vector3[] = [];
         for (let latitude = -90; latitude <= 90; latitude += 1) {
             const lat_rad = (latitude * Math.PI) / 180;
@@ -217,31 +228,9 @@ export class CelestialBodies {
         }
 
         const greenwichGeometry = new THREE.BufferGeometry().setFromPoints(greenwichPoints);
-        const greenwichMaterial = new THREE.LineBasicMaterial({
-            color: 0x0000ff,
-            transparent: false,
-            opacity: 1.0,
-            linewidth: 3,
-        });
-        const greenwichLine = new THREE.Line(greenwichGeometry, greenwichMaterial);
+        const greenwichLine = new THREE.Line(greenwichGeometry, accentLineMaterial.clone());
         this.earth!.add(greenwichLine);
         this.latLongLines.push(greenwichLine);
-
-        // 北極点マーカー（赤い球）
-        const northPoleGeometry = new THREE.SphereGeometry(earthRadius * 0.03, 16, 16);
-        const northPoleMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const northPole = new THREE.Mesh(northPoleGeometry, northPoleMaterial);
-        northPole.position.set(0, 0, lineRadius);
-        this.earth!.add(northPole);
-        this.latLongLines.push(northPole);
-
-        // 南極点マーカー（青い球）
-        const southPoleGeometry = new THREE.SphereGeometry(earthRadius * 0.03, 16, 16);
-        const southPoleMaterial = new THREE.MeshBasicMaterial({ color: 0x0066ff });
-        const southPole = new THREE.Mesh(southPoleGeometry, southPoleMaterial);
-        southPole.position.set(0, 0, -lineRadius);
-        this.earth!.add(southPole);
-        this.latLongLines.push(southPole);
 
         // 回転軸を表示（薄い線で北極-南極を結ぶ）
         const axisGeometry = new THREE.BufferGeometry().setFromPoints([
@@ -249,14 +238,66 @@ export class CelestialBodies {
             new THREE.Vector3(0, 0, lineRadius * 1.2),
         ]);
         const axisMaterial = new THREE.LineBasicMaterial({
-            color: 0x666666,
+            color: 0xffffff,
             transparent: true,
-            opacity: 0.5,
-            linewidth: 2,
+            opacity: 0.15,
         });
         const axisLine = new THREE.Line(axisGeometry, axisMaterial);
         this.earth!.add(axisLine);
         this.latLongLines.push(axisLine);
+    }
+
+    /**
+     * 大気のリム。地球より少し大きい球の裏面に、視線が地表をかすめる高さに応じて
+     * 指数的に減衰する光を描く（地平線のすぐ上が最も明るく、上空へ溶けていく）
+     */
+    private createAtmosphere(earthRadius: number): THREE.Mesh {
+        const scaleHeight = 30000; // m
+        const geometry = new THREE.SphereGeometry(earthRadius + scaleHeight * 6, 128, 64);
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                glowColor: { value: new THREE.Color(0x6aa8ff) },
+                earthRadius: { value: earthRadius },
+                scaleHeight: { value: scaleHeight },
+            },
+            vertexShader: /* glsl */ `
+                #include <common>
+                #include <logdepthbuf_pars_vertex>
+                varying vec3 vViewPosition;
+                varying vec3 vCenter;
+                void main() {
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    vViewPosition = mvPosition.xyz;
+                    vCenter = (modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+                    gl_Position = projectionMatrix * mvPosition;
+                    #include <logdepthbuf_vertex>
+                }
+            `,
+            fragmentShader: /* glsl */ `
+                #include <logdepthbuf_pars_fragment>
+                uniform vec3 glowColor;
+                uniform float earthRadius;
+                uniform float scaleHeight;
+                varying vec3 vViewPosition;
+                varying vec3 vCenter;
+                void main() {
+                    #include <logdepthbuf_fragment>
+                    // 視線（カメラ→画素）と地球中心の最短距離 = 視線が最も地表に近づく高さ
+                    vec3 dir = normalize(vViewPosition);
+                    float closest = length(vCenter - dot(vCenter, dir) * dir);
+                    float altitude = max(closest - earthRadius, 0.0);
+                    float intensity = exp(-altitude / scaleHeight);
+                    gl_FragColor = vec4(glowColor, intensity * 0.7);
+                }
+            `,
+            side: THREE.BackSide,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+        });
+        const atmosphere = new THREE.Mesh(geometry, material);
+        this.atmosphere = atmosphere;
+        return atmosphere;
     }
 
     update(time: number, simulationStartTime?: Date): void {
@@ -326,7 +367,16 @@ export class CelestialBodies {
         return textureNames[textureFile] || `地球テクスチャ (${textureFile})`;
     }
 
+    private disposeAtmosphere(): void {
+        if (!this.atmosphere) return;
+        this.atmosphere.removeFromParent();
+        this.atmosphere.geometry.dispose();
+        (this.atmosphere.material as THREE.Material).dispose();
+        this.atmosphere = null;
+    }
+
     dispose(): void {
+        this.disposeAtmosphere();
         if (this.earth) {
             if (this.earth.geometry) this.earth.geometry.dispose();
             if (this.earth.material) {

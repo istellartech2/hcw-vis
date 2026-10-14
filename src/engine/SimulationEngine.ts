@@ -58,7 +58,7 @@ export class SimulationEngine {
         this.viewport = viewport;
         const { signal } = this.abort;
 
-        this.camera = new THREE.PerspectiveCamera(75, this.aspect(), 0.001, 50000000);
+        this.camera = new THREE.PerspectiveCamera(50, this.aspect(), 0.001, 50000000);
         this.renderer = new THREE.WebGLRenderer({
             canvas,
             antialias: true,
