@@ -4,7 +4,6 @@ import { TrailRenderer } from './TrailRenderer.js';
 import { CelestialBodies } from './CelestialBodies.js';
 import type { DisplaySettings } from '@/store/settings';
 import { ModelLoader } from './ModelLoader.js';
-import { InstancedSatelliteRenderer } from './InstancedSatelliteRenderer.js';
 import { consumeCollisionFlash, setHillPosition, setSatelliteAttitude } from './satelliteFrame.js';
 import {
     REFERENCE_COLOR,
@@ -21,16 +20,6 @@ import {
 
 const COLLISION_COLOR = 0xff0000;
 const WHITE = new THREE.Color(0xffffff);
-
-/** 色一括更新時に InstancedSatelliteRenderer へ渡す色数（従来どおりの固定長） */
-const INSTANCED_COLOR_UPDATE_COUNT = 502;
-
-/**
- * InstancedSatelliteRenderer 用の色配列。colors[0] が基準衛星、instance i は colors[i + 1] を使う
- */
-function instancedColors(display: DisplaySettings, count: number): number[] {
-    return Array.from({ length: count }, (_, i) => displayColor(display, i));
-}
 
 function degToRad(deg: number): number {
     return (deg * Math.PI) / 180;
@@ -64,11 +53,6 @@ export class RenderingSystem {
     private animationFrameCounter: number = 0;
     private modelLoader: ModelLoader;
     private loadedModel: SatelliteObject | null = null;
-    private trailColor = new THREE.Color();
-
-    // InstancedMesh renderer (for sphere/cube shapes)
-    private instancedRenderer: InstancedSatelliteRenderer | null = null;
-    private useInstancedRendering: boolean = false; // true if using InstancedMesh
 
     // Selection system
     private selectedSatelliteIndex: number = -1;
@@ -92,7 +76,6 @@ export class RenderingSystem {
         this.trailRenderer = new TrailRenderer(this.scene);
         this.celestialBodies = new CelestialBodies(this.scene);
         this.modelLoader = new ModelLoader();
-        this.instancedRenderer = new InstancedSatelliteRenderer(this.scene);
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
@@ -208,52 +191,6 @@ export class RenderingSystem {
 
         const display = this.getDisplay();
         const showReference = options.showReference ?? false;
-        const hasMetadata = satellites.some((sat) => sat.metadata !== null);
-
-        // InstancedMesh はフォーメーションでない球・立方体のみ。
-        // CSV再生ではクォータニオン姿勢を反映するため個別メッシュを使う
-        this.useInstancedRendering =
-            !showReference &&
-            !hasMetadata &&
-            (display.satelliteShape === 'sphere' || display.satelliteShape === 'cube') &&
-            satellites.length > 1;
-
-        if (this.useInstancedRendering) {
-            this.createSatelliteMeshesInstanced(satellites, display);
-        } else {
-            this.createSatelliteMeshesTraditional(satellites, display, showReference);
-        }
-    }
-
-    private disposeSatelliteMeshes(): void {
-        this.instancedRenderer?.disposeAll();
-        this.satelliteMeshes.forEach((object) => {
-            this.scene.remove(object);
-            disposeSatelliteObject(object);
-        });
-        this.satelliteMeshes = [];
-    }
-
-    /**
-     * InstancedMeshを使用した衛星メッシュ作成（球体・立方体専用）
-     */
-    private createSatelliteMeshesInstanced(satellites: Satellite[], display: DisplaySettings): void {
-        this.instancedRenderer?.createSatellites(
-            satellites.length - 1, // 基準衛星を除く
-            display.satelliteSize,
-            display.satelliteShape as 'sphere' | 'cube',
-            instancedColors(display, satellites.length),
-        );
-    }
-
-    /**
-     * 従来方式の個別メッシュ作成（フォーメーション・3Dファイル・CSV再生・単機）
-     */
-    private createSatelliteMeshesTraditional(
-        satellites: Satellite[],
-        display: DisplaySettings,
-        showReference: boolean,
-    ): void {
         satellites.forEach((sat, index) => {
             const isReference = index === 0;
             const object = createSatelliteObject(
@@ -270,35 +207,15 @@ export class RenderingSystem {
         });
     }
 
+    private disposeSatelliteMeshes(): void {
+        this.satelliteMeshes.forEach((object) => {
+            this.scene.remove(object);
+            disposeSatelliteObject(object);
+        });
+        this.satelliteMeshes = [];
+    }
+
     public updateSatellitePositions(satellites: Satellite[]): void {
-        if (this.useInstancedRendering && this.instancedRenderer) {
-            this.updateSatellitePositionsInstanced(satellites);
-        } else {
-            this.updateSatellitePositionsTraditional(satellites);
-        }
-    }
-
-    /**
-     * InstancedMeshを使用した衛星位置更新
-     */
-    private updateSatellitePositionsInstanced(satellites: Satellite[]): void {
-        const display = this.getDisplay();
-        const [rotR, rotS] = uiRotation(display);
-        this.instancedRenderer?.updateSatellitePositions(satellites, rotR, rotS, this.selectedSatelliteIndex);
-
-        if (display.showTrails) {
-            for (let index = 1; index < satellites.length; index++) {
-                const sat = satellites[index];
-                this.trailColor.setHex(displayColor(display, index - 1));
-                this.trailRenderer.updateTrail(sat, sat.getPosition(), 1, this.trailColor, display.trailLength);
-            }
-        }
-    }
-
-    /**
-     * 従来方式の衛星位置更新
-     */
-    private updateSatellitePositionsTraditional(satellites: Satellite[]): void {
         const display = this.getDisplay();
         // 既定の回転は UI の形状で決まる（衛星ごとの形状ではない）
         const [defaultRotR, defaultRotS] = uiRotation(display);
@@ -344,12 +261,6 @@ export class RenderingSystem {
 
     public updateAllSatelliteColors(): void {
         const display = this.getDisplay();
-
-        if (this.useInstancedRendering && this.instancedRenderer) {
-            this.instancedRenderer.updateColors(instancedColors(display, INSTANCED_COLOR_UPDATE_COUNT));
-            return;
-        }
-
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
             const color = displayColor(display, i - 1);
             forEachPhongMaterial(this.satelliteMeshes[i], (material) => {
@@ -369,75 +280,35 @@ export class RenderingSystem {
         try {
             this.raycaster.setFromCamera(this.mouse, this.camera);
 
-            if (this.useInstancedRendering && this.instancedRenderer) {
-                // InstancedMesh mode: check both center satellite and instanced mesh
-                const objectsToTest: THREE.Object3D[] = [];
+            // Groups (3D models) need recursive intersection
+            const intersects = this.raycaster.intersectObjects(this.satelliteMeshes, true);
 
-                const centerMesh = this.instancedRenderer.getCenterSatelliteMesh();
-                if (centerMesh) objectsToTest.push(centerMesh);
+            if (intersects.length > 0) {
+                const clickedObject = intersects[0].object;
 
-                const instancedMesh = this.instancedRenderer.getInstancedMesh();
-                if (instancedMesh) objectsToTest.push(instancedMesh);
-
-                const intersects = this.raycaster.intersectObjects(objectsToTest, true);
-
-                if (intersects.length > 0) {
-                    const intersection = intersects[0];
-
-                    // Check if it's the center satellite
-                    if (intersection.object === centerMesh) {
-                        this.selectedSatelliteIndex = 0;
-                        console.log(`Selected satellite 0 (center)`);
-                        this.updateSelectedSatelliteInfo();
+                // Find which satellite mesh/group contains the clicked object
+                let index = -1;
+                for (let i = 0; i < this.satelliteMeshes.length; i++) {
+                    const satelliteMesh = this.satelliteMeshes[i];
+                    if (
+                        satelliteMesh === clickedObject ||
+                        (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))
+                    ) {
+                        index = i;
+                        break;
                     }
-                    // Check if it's an instance from InstancedMesh
-                    else if (intersection.object === instancedMesh && intersection.instanceId !== undefined) {
-                        const satelliteIndex = this.instancedRenderer.getSatelliteIndexFromInstanceId(
-                            intersection.instanceId,
-                        );
-                        if (satelliteIndex >= 0) {
-                            this.selectedSatelliteIndex = satelliteIndex;
-                            console.log(
-                                `Selected satellite ${satelliteIndex} (instanceId: ${intersection.instanceId})`,
-                            );
-                            this.updateSelectedSatelliteInfo();
-                        }
-                    }
-                } else {
-                    this.selectedSatelliteIndex = -1;
+                }
+
+                if (index >= 0 && index < this.satelliteMeshes.length) {
+                    this.selectedSatelliteIndex = index;
+                    console.log(`Selected satellite ${index}`);
                     this.updateSelectedSatelliteInfo();
+                } else {
+                    console.warn(`Invalid satellite index: ${index}`);
                 }
             } else {
-                // Traditional mode: use recursive intersection to handle Groups
-                const intersects = this.raycaster.intersectObjects(this.satelliteMeshes, true);
-
-                if (intersects.length > 0) {
-                    const clickedObject = intersects[0].object;
-
-                    // Find which satellite mesh/group contains the clicked object
-                    let index = -1;
-                    for (let i = 0; i < this.satelliteMeshes.length; i++) {
-                        const satelliteMesh = this.satelliteMeshes[i];
-                        if (
-                            satelliteMesh === clickedObject ||
-                            (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))
-                        ) {
-                            index = i;
-                            break;
-                        }
-                    }
-
-                    if (index >= 0 && index < this.satelliteMeshes.length) {
-                        this.selectedSatelliteIndex = index;
-                        console.log(`Selected satellite ${index}`);
-                        this.updateSelectedSatelliteInfo();
-                    } else {
-                        console.warn(`Invalid satellite index: ${index}`);
-                    }
-                } else {
-                    this.selectedSatelliteIndex = -1;
-                    this.updateSelectedSatelliteInfo();
-                }
+                this.selectedSatelliteIndex = -1;
+                this.updateSelectedSatelliteInfo();
             }
         } catch (error) {
             console.error('Error in satellite selection:', error);

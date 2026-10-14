@@ -3,7 +3,7 @@ import type { AttitudeQuaternion, Satellite } from '../simulation/Satellite.js';
 
 /**
  * 衛星 1 機ぶんの毎フレーム更新（位置・姿勢・衝突フラッシュ）。
- * InstancedMesh 方式と個別メッシュ方式の両方から使う。結果は target に書き込み、毎フレームの確保を避ける。
+ * 結果は target に書き込み、毎フレームの確保を避ける。
  */
 
 /** 衝突時に赤く光らせる時間 [ms] */
