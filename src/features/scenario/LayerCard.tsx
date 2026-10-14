@@ -10,7 +10,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { FormationLayer } from '@/formation/FormationTypes';
-import { moveLayer, removeLayer, toggleLayer } from '@/formation/formationConfig';
+import { layerSatelliteCount, moveLayer, removeLayer, toggleLayer } from '@/formation/formationConfig';
 import { PATTERN_LABELS, SHAPE_LABELS } from '@/formation/layerForm';
 import { appStore, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
@@ -62,7 +62,7 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
                         style={{ background: layer.colorMode === 'random' ? RANDOM_COLOR_SWATCH : layer.color }}
                     />
                     <span className="truncate text-[13px] font-medium text-fg">{layer.name}</span>
-                    <span className="num ml-auto shrink-0 text-xs text-fg-muted">{layer.satelliteCount}機</span>
+                    <span className="num ml-auto shrink-0 text-xs text-fg-muted">{layerSatelliteCount(layer)}機</span>
                 </span>
                 <span className="mt-0.5 block truncate text-xs text-fg-subtle">
                     {PATTERN_LABELS[layer.pattern]}

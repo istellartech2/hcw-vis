@@ -1,4 +1,4 @@
-import { ChevronsLeft, ChevronsRight, Pause, Play, Repeat, RotateCcw, Square } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Pause, Play, Repeat, SkipBack, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -102,24 +102,24 @@ function SimulationBar() {
             <PlayButton playing={!paused} onToggle={() => engine.togglePause()} />
             <SpeedStepper value={timeScale} onChange={(v) => appStore.getState().setSimulation({ timeScale: v })} />
             <Divider />
-            <div className="num min-w-[7.5rem] text-xs leading-tight" aria-label="シミュレーション経過時間">
-                <div className={cn('font-medium text-fg', paused && 'text-fg-muted')}>{formatSimTime(simTime)}</div>
-                <div className="text-fg-subtle">{orbits === null ? '—' : `${orbits.toFixed(2)} 周回`}</div>
-            </div>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
                         variant="ghost"
                         size="icon"
                         className="rounded-full text-fg-muted"
-                        aria-label="初期位置に戻す"
+                        aria-label="t = 0 に戻す"
                         onClick={() => engine.resetPositions()}
                     >
-                        <RotateCcw />
+                        <SkipBack className="fill-current" />
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent>初期位置に戻す (R)</TooltipContent>
+                <TooltipContent>t = 0 に戻す（衛星を初期配置へ） (R)</TooltipContent>
             </Tooltip>
+            <div className="num min-w-[7.5rem] text-xs leading-tight" aria-label="シミュレーション経過時間">
+                <div className={cn('font-medium text-fg', paused && 'text-fg-muted')}>{formatSimTime(simTime)}</div>
+                <div className="text-fg-subtle">{orbits === null ? '—' : `${orbits.toFixed(2)} 周回`}</div>
+            </div>
         </>
     );
 }

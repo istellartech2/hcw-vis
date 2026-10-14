@@ -59,9 +59,28 @@ export function moveLayer(config: FormationConfig, layerId: string, offset: -1 |
     return { ...config, layers };
 }
 
-/** 有効なレイヤーの衛星数の合計（基準衛星は含まない） */
+/**
+ * レイヤーが実際に生成する衛星数。
+ * `satelliteCount` の意味はパターンごとに違う（軸上は各軸の片側の機数、格子は片側の格子数）ので、
+ * 表示にはこちらを使う。OrbitInitializer の生成ロジックと一致させること。
+ */
+export function layerSatelliteCount(layer: Pick<FormationLayer, 'pattern' | 'satelliteCount'>): number {
+    const n = Math.max(0, Math.floor(layer.satelliteCount));
+    switch (layer.pattern) {
+        case 'origin':
+            return 1;
+        case 'axis':
+            return n * 6;
+        case 'grid':
+            return (2 * n + 1) ** 3 - 1;
+        default:
+            return n;
+    }
+}
+
+/** 有効なレイヤーが生成する衛星数の合計（基準衛星は含まない） */
 export function countSatellites(config: FormationConfig): number {
-    return config.layers.filter((l) => l.enabled).reduce((sum, l) => sum + l.satelliteCount, 0);
+    return config.layers.filter((l) => l.enabled).reduce((sum, l) => sum + layerSatelliteCount(l), 0);
 }
 
 export function serializeFormation(config: FormationConfig): string {

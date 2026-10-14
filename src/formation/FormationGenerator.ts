@@ -123,30 +123,4 @@ export class FormationGenerator {
     static getSatelliteMetadata(satellite: Satellite): SatelliteMetadata | undefined {
         return satellite.metadata ?? undefined;
     }
-
-    /**
-     * フォーメーションの統計情報を取得
-     */
-    getStatistics(config: FormationConfig): {
-        totalLayers: number;
-        enabledLayers: number;
-        totalSatellites: number;
-        satellitesByLayer: Map<string, number>;
-    } {
-        const enabledLayers = config.layers.filter((layer) => layer.enabled);
-        const satellitesByLayer = new Map<string, number>();
-
-        for (const layer of enabledLayers) {
-            satellitesByLayer.set(layer.name, layer.satelliteCount);
-        }
-
-        const totalSatellites = enabledLayers.reduce((sum, layer) => sum + layer.satelliteCount, 0) + 1; // +1 for center satellite
-
-        return {
-            totalLayers: config.layers.length,
-            enabledLayers: enabledLayers.length,
-            totalSatellites,
-            satellitesByLayer,
-        };
-    }
 }
