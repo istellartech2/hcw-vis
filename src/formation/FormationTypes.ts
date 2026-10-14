@@ -3,20 +3,27 @@
  */
 
 export type ShapeType = 'sphere' | 'cube' | 'box' | '3dfile';
-export type PatternType =
-    | 'origin'
-    | 'axis'
-    | 'grid'
-    | 'random_position'
-    | 'random_position_velocity'
-    | 'random_periodic'
-    | 'periodic_orbit'
-    | 'circular_orbit'
-    | 'hexagonal_disk'
-    | 'square_lattice_disk'
-    | 'concentric_disk'
-    | 'vbar_approach'
-    | 'rbar_approach';
+
+/**
+ * 有効な配置パターンの一覧（型定義と検証で共通使用）
+ */
+export const ALL_PATTERNS = [
+    'origin',
+    'axis',
+    'grid',
+    'random_position',
+    'random_position_velocity',
+    'random_periodic',
+    'periodic_orbit',
+    'circular_orbit',
+    'hexagonal_disk',
+    'square_lattice_disk',
+    'concentric_disk',
+    'vbar_approach',
+    'rbar_approach'
+] as const;
+
+export type PatternType = typeof ALL_PATTERNS[number];
 export type PlacementMode = 'radius' | 'spacing';
 
 /**

@@ -1,34 +1,32 @@
 # Keyboard Shortcuts
 
-## General Controls
-- **Space** - Pause/Resume simulation
-- **R** - Reset simulation
-- **P** - Add perturbation
-- **V** - Reset view
-- **H** - Show help (displays keyboard shortcuts)
-- **Escape** - Clear selection / Exit fullscreen
+アプリ内では左上ツールバーのキーボードアイコン、または **H** キーで一覧を表示できます。
+入力欄にフォーカスがあるときはショートカットは無効になります。
 
-## Display Toggle Controls
-- **T** - Toggle trail display
-- **G** - Toggle grid display
-- **E** - Toggle Earth display
+## シミュレーション
+- **Space** - 一時停止 / 再開
+- **R** - 衛星を初期位置に戻す（CSV再生中は再生位置を先頭に戻す）
+- **+** / **=** - 時間倍率を1段階上げる
+- **-** / **_** - 時間倍率を1段階下げる
+- **F** - フォーメーション設計を開く
 
-## Time Control
-- **+** or **=** - Increase time scale (by 0.5)
-- **-** or **_** - Decrease time scale (by 0.5)
+## 表示
+- **V** - カメラをリセット
+- **G** - グリッド表示の切り替え
+- **E** - 地球表示の切り替え
+- **H** / **?** - キーボードショートカット一覧を表示
 
-## Thrust Controls (when satellite is selected)
-- **Arrow Up** - Apply positive thrust in S-axis (along-track direction)
-- **Arrow Down** - Apply negative thrust in S-axis
-- **Arrow Left** - Apply negative thrust in R-axis (radial direction)
-- **Arrow Right** - Apply positive thrust in R-axis
-- **Shift + Arrow Up** - Apply positive thrust in W-axis (cross-track direction)
-- **Shift + Arrow Down** - Apply negative thrust in W-axis
+## 衛星選択時
+- **T** - 推力付加フォームを開く
+- **P** - 位置変更フォームを開く
+- **↑ / ↓** - S軸（Along-track）方向に ±0.001 m/s
+- **← / →** - R軸（Radial）方向に ±0.001 m/s
+- **Shift + ↑ / ↓** - W軸（Cross-track）方向に ±0.001 m/s
+- **Esc** - フォームを閉じる / 選択解除
 
-## Mouse Controls
-- **Click** - Select satellite
-- **Drag** - Rotate camera
-- **Scroll/Pinch** - Zoom in/out
+## マウス
+- **クリック** - 衛星を選択
+- **ドラッグ** - カメラ回転
+- **スクロール / ピンチ** - ズーム
 
-## UI Controls
-- **Fullscreen button** - Toggle fullscreen mode (bottom-right corner)
+一覧の定義は `src/features/help/shortcuts.ts`、処理は `src/hooks/useKeyboardShortcuts.ts` にあります。

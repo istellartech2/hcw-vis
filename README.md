@@ -2,8 +2,6 @@
 
 円軌道上で近接距離（軌道半径の1%以内）にある複数の人工衛星の相対運動を3自由度で可視化するWebアプリケーション。
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-blue)](https://istellartech2.github.io/hcw-vis/)
-
 ## 概要
 
 HCW(Hill-Clohessy-Wiltshire) Equations Visualizerは、HCW方程式（Hill's Equations / Clohessy-Wiltshire方程式とも呼ばれる）を用いて、複数の衛星の相対運動をシミュレーションし、3D可視化するWebアプリケーションです。
@@ -34,8 +32,18 @@ bun run dev
 bun run build
 
 # TypeScriptの型チェック
-bun run typecheck
+bun run type-check
 ```
+
+### 技術スタック
+
+Vite / React / TypeScript / Tailwind CSS v4 / shadcn/ui / zustand / Three.js / satellite.js
+
+UI とシミュレーションエンジンの分離方針は [CLAUDE.md](CLAUDE.md) を参照してください。
+
+### デプロイ
+
+Vercel（Interstellar Technologies チーム）の Git 連携でデプロイされます。`main` への push で本番、Pull Request ごとにプレビュー環境が作成されます。
 
 ## 📚 ドキュメント
 

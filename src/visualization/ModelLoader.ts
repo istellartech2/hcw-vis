@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
-import { LoadingIndicator } from '../ui/LoadingIndicator.js';
+import { LoadingIndicator } from '@/engine/LoadingIndicator';
 
 export class ModelLoader {
     private gltfLoader: GLTFLoader;

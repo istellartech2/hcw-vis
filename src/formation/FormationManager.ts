@@ -8,7 +8,7 @@ import type {
     ValidationResult,
     DEFAULT_LAYER
 } from './FormationTypes.js';
-import { DEFAULT_LAYER as defaultLayerConfig, DEFAULT_FORMATION_CONFIG } from './FormationTypes.js';
+import { DEFAULT_LAYER as defaultLayerConfig, DEFAULT_FORMATION_CONFIG, ALL_PATTERNS } from './FormationTypes.js';
 
 export class FormationManager {
     private config: FormationConfig;
@@ -252,12 +252,7 @@ export class FormationManager {
         if (!layer.name) errors.push(`${prefix}名前がありません`);
 
         // パターンの妥当性チェック
-        const validPatterns = [
-            'axis', 'grid', 'random_position', 'random_position_velocity', 'random_periodic',
-            'periodic_orbit', 'circular_orbit', 'hexagonal_disk', 'square_lattice_disk', 'concentric_disk',
-            'vbar_approach', 'rbar_approach'
-        ];
-        if (!validPatterns.includes(layer.pattern)) {
+        if (!(ALL_PATTERNS as readonly string[]).includes(layer.pattern)) {
             errors.push(`${prefix}配置パターンが不正です`);
         }
 
