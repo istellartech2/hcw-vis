@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { HelpTip } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
-import { useEngine } from '@/engine/EngineContext';
 import type { FormationConfig } from '@/formation/FormationTypes';
 import {
     addLayer,
@@ -15,7 +14,7 @@ import {
     parseFormation,
     serializeFormation,
 } from '@/formation/formationConfig';
-import { appStore, useAppStore, type AppState } from '@/store/appStore';
+import { appStore, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 import { LayerCard } from './LayerCard';
 import { LayerEditor } from './LayerEditor';
@@ -109,7 +108,6 @@ function FileNameField({
  * グループの編集はパネル内のサブ画面（LayerEditor）で行い、3D ビューを隠さない。
  */
 export function FormationSection() {
-    const engine = useEngine();
     const config = useAppStore((s) => s.formation);
     const formationFile = useAppStore((s) => s.formationFile);
     const updateFormation = useAppStore((s) => s.updateFormation);
@@ -128,15 +126,6 @@ export function FormationSection() {
         );
     }
 
-    /** 配置とファイル情報をまとめて差し替え、「元に戻す」用に直前の状態を返す */
-    const replaceFormation = (next: FormationConfig, file: AppState['formationFile']) => {
-        const { formation: prevFormation, formationFile: prevFile } = appStore.getState();
-        updateFormation(() => next);
-        appStore.getState().patch({ formationFile: file });
-        engine.resetPositions();
-        return () => replaceFormation(prevFormation, prevFile);
-    };
-
     const openFile = async (file: File) => {
         const result = parseFormation(await file.text(), file.name.replace(/\.json$/i, ''));
         if (!result.ok) {
@@ -152,7 +141,10 @@ export function FormationSection() {
             });
             return;
         }
-        const undo = replaceFormation(result.config, { name: file.name, config: result.config });
+        const undo = appStore.getState().replaceFormation({
+            formation: result.config,
+            formationFile: { name: file.name, config: result.config },
+        });
         toast.success(`${file.name} を読み込みました`, { action: { label: '元に戻す', onClick: undo } });
     };
 
@@ -164,7 +156,7 @@ export function FormationSection() {
     };
 
     const resetToDefault = () => {
-        const undo = replaceFormation(createDefaultFormation(), null);
+        const undo = appStore.getState().replaceFormation({ formation: createDefaultFormation(), formationFile: null });
         toast('既定の配置に戻しました', { action: { label: '元に戻す', onClick: undo } });
     };
 
@@ -260,7 +252,6 @@ export function FormationSection() {
                         const before = appStore.getState().formation;
                         const next = addLayer(before);
                         updateFormation(() => next);
-                        engine.resetPositions();
                         setEditing({ layerId: next.layers[next.layers.length - 1].id, before });
                     }}
                 >

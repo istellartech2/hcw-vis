@@ -50,21 +50,22 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
 ### Layers
 
 1. **Domain / 3D（フレームワーク非依存、DOM に触れない）**
-   - `src/simulation/` HCW ソルバ、軌道要素、座標変換、CSV パーサ、再生エンジン
+   - `src/simulation/` HCW ソルバ、軌道要素、座標変換、配置パターン（`OrbitInitializer` / `diskPatterns`）、衝突（`collision.ts`）、CSV パーサ、再生エンジン。Three.js の描画オブジェクトは持たない
    - `src/formation/` フォーメーション定義・生成（`formationConfig.ts` は設定操作・検証・JSON 入出力、`layerForm.ts` はレイヤー編集フォームの純粋関数、`scenarios.ts` は学習用シナリオのプリセット）。UI 上ではレイヤーを「衛星グループ」と呼ぶ
-   - `src/collision/` 衝突検出・応答
-   - `src/visualization/` Three.js の描画（`RenderingSystem` は表示設定を `getDisplay()` 経由で受け取る）
+   - `src/visualization/` Three.js の描画（`RenderingSystem` は表示設定を `getDisplay()` 経由で受け取る。地球は `CelestialBodies`、軌跡は `TrailRenderer` が衛星ごとに保持）
 
 2. **Engine** `src/engine/`
-   - `SimulationEngine.ts` シーン・メインループ・物理積分を管理。UI からは public メソッド（`resetPositions`, `applyDeltaV`, `applyOrbit`, `loadCsvFile` …）を呼ぶ
-   - `CsvPlayback.ts` CSV 再生モード、`CameraController.ts` カメラ操作、`LoadingIndicator.ts` ローディング状態
+   - `SimulationEngine.ts` シーン・メインループ・物理積分を管理。UI からは public メソッド（`setMode`, `togglePlay`, `resetPositions`, `applyDeltaV`, `applyOrbit`, `loadCsvFile` …）を呼ぶ
+     - メインループは毎フレーム衛星メッシュを現在の状態に同期し、時間が進んだフレームだけ物理積分・軌跡・テレメトリを進める。一時停止中に衛星を動かすコマンドも、位置を書き換えるだけで次のフレームに反映される
+   - `CsvPlayback.ts` CSV 再生モード（再生状態をストアの `playback` に反映）、`CameraController.ts` カメラ操作
    - `EngineContext.tsx` React から `useEngine()` でエンジンを取得
 
 3. **State** `src/store/`
    - `appStore.ts` zustand の vanilla store。React では `useAppStore(selector)`、エンジンでは `appStore.getState()`
      - `display` / `simulation`: UI が書き、エンジンが購読
-     - `formation`: UI が `updateFormation` で書き、すぐ `engine.resetPositions()` を呼んで反映する（編集画面 `LayerEditor` は入力のたびに自動反映）
-     - `simTime` / `referenceInfo` / `selected` / `playback` / `loading`: エンジンが書き、UI が表示
+     - `formation`: UI が `updateFormation`（「元に戻す」付きなら `replaceFormation`）で書く。`formation.layers` が変わるとエンジンが購読して衛星を再配置する（名前・説明だけの変更では再配置しない）
+     - `simTime` / `referenceInfo` / `selected` / `playback` / `loading` / `orbit`: エンジンが書き、UI が表示
+     - 毎フレーム近く変わる値（`simTime`, `playback.currentTime` など）は、表示する小さな子コンポーネントだけで購読する
      - `ui`: パネル・ダイアログの開閉状態
    - `settings.ts` 設定の型・既定値・選択肢
 
@@ -73,8 +74,8 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
    - `panel/`（左サイドパネル。スマホではボトムシート。最上部でモード「シミュレーション / CSV 再生」を切り替え、モードごとにタブが変わる）
      - シミュレーション: `scenario/FormationSection`（衛星配置）, `scenario/OrbitTab`（軌道・力学）, `display/`（表示）
      - CSV 再生: `csv/`（CSV データ）, `display/`（表示）
-     - モードは `useAppMode()`（`playback.active` が真なら常に csv、そうでなければ `ui.mode`）
-   - `hud/`（再生バー・選択衛星カードなど 3D ビュー上の浮遊 UI）, `help/`
+     - モードは `useAppMode()`（`playback.active` が真なら常に csv、そうでなければ `ui.mode`）。切り替えは `engine.setMode()`
+   - `hud/`（再生バー・選択衛星カード・学習シナリオなど 3D ビュー上の浮遊 UI）, `help/`（ショートカットの一覧と処理は `shortcuts.ts` に同居）
    - `src/components/` 直下はパネル用の共通部品（`panel-section.tsx`, `controls.tsx`）
    - `src/components/ui/` は shadcn/ui の生成コード（button/slider/sonner はトークンに合わせて調整済み）
 

@@ -45,7 +45,7 @@ describe('formationConfig', () => {
             { pattern: 'random_position', satelliteCount: 7 },
         ] as const;
         for (const layer of cases) {
-            const generated = initializer.generatePositions(layer.pattern, layer.satelliteCount, 10, 0);
+            const generated = initializer.generatePositions(layer.pattern, layer.satelliteCount, 10);
             expect(layerSatelliteCount(layer), layer.pattern).toBe(generated.length);
         }
     });

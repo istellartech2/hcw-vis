@@ -13,13 +13,13 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { COMPACT_INPUT_CLASS, HelpTip, SegmentedControl, WithUnit } from '@/components/controls';
-import { useEngine } from '@/engine/EngineContext';
-import type {
-    FormationConfig,
-    FormationLayer,
-    PatternType,
-    PlacementMode,
-    ShapeType,
+import {
+    isHexColor,
+    type FormationConfig,
+    type FormationLayer,
+    type PatternType,
+    type PlacementMode,
+    type ShapeType,
 } from '@/formation/FormationTypes';
 import { layerSatelliteCount, updateLayer } from '@/formation/formationConfig';
 import {
@@ -61,7 +61,6 @@ interface LayerEditorProps {
  * 「キャンセル」で開いたときの配置に戻す。
  */
 export function LayerEditor({ layer, restoreOnCancel, onClose }: LayerEditorProps) {
-    const engine = useEngine();
     const updateFormation = useAppStore((s) => s.updateFormation);
     const [values, setValues] = useState(() => layerToForm(layer));
     const [snapshot] = useState(() => restoreOnCancel ?? appStore.getState().formation);
@@ -71,9 +70,8 @@ export function LayerEditor({ layer, restoreOnCancel, onClose }: LayerEditorProp
     const apply = useCallback(
         (next: LayerFormValues) => {
             updateFormation((c) => updateLayer(c, layer.id, formToLayerUpdates(next)));
-            engine.resetPositions();
         },
-        [engine, layer.id, updateFormation],
+        [layer.id, updateFormation],
     );
 
     useEffect(() => {
@@ -95,7 +93,6 @@ export function LayerEditor({ layer, restoreOnCancel, onClose }: LayerEditorProp
     // 追加直後のグループは、何も変えずに閉じても残す（キャンセルしたときだけ取り消す）
     const cancel = () => {
         updateFormation(() => snapshot);
-        engine.resetPositions();
         onClose();
     };
 
@@ -512,7 +509,7 @@ function AppearanceGroup({ values, onChange }: SectionProps) {
                         type="color"
                         aria-label="色"
                         className="h-7 w-9 shrink-0 cursor-pointer rounded-md border border-line-strong bg-sunken p-0.5"
-                        value={/^#[0-9a-fA-F]{6}$/.test(values.color) ? values.color : '#ffffff'}
+                        value={isHexColor(values.color) ? values.color : '#ffffff'}
                         onChange={(e) => onChange({ color: e.target.value })}
                     />
                 )}

@@ -3,12 +3,26 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEngine } from '@/engine/EngineContext';
-import { formatSimTime } from '@/lib/format';
+import { orbitPeriodMinutes } from '@/simulation/OrbitElements';
 import { appStore, useAppMode, useAppStore } from '@/store/appStore';
-import { TIME_SCALE_OPTIONS } from '@/store/settings';
+import { stepTimeScale, TIME_SCALE_OPTIONS } from '@/store/settings';
 import { cn } from '@/lib/utils';
 
-const SPEEDS = TIME_SCALE_OPTIONS.map((o) => o.value);
+const MIN_SPEED = TIME_SCALE_OPTIONS[0].value;
+const MAX_SPEED = TIME_SCALE_OPTIONS[TIME_SCALE_OPTIONS.length - 1].value;
+
+/** シミュレーション時刻を「1日2時間03分04秒」形式で表示する */
+function formatSimTime(seconds: number): string {
+    const total = Math.floor(seconds);
+    const days = Math.floor(total / 86400);
+    const hours = Math.floor((total % 86400) / 3600);
+    const minutes = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+    const secs = String(total % 60).padStart(2, '0');
+
+    if (days > 0) return `${days}日${hours}時間${minutes}分${secs}秒`;
+    if (hours > 0) return `${hours}時間${minutes}分${secs}秒`;
+    return `${minutes}分${secs}秒`;
+}
 
 /** 再生／一時停止。ブランド色の丸ボタン */
 function PlayButton({ playing, onToggle }: { playing: boolean; onToggle: () => void }) {
@@ -51,8 +65,6 @@ function SpeedStepper({
     /** スマホ幅では « » を隠して倍率の選択だけにする */
     compactOnMobile?: boolean;
 }) {
-    const index = Math.max(0, SPEEDS.indexOf(value));
-    const step = (delta: number) => onChange(SPEEDS[Math.min(SPEEDS.length - 1, Math.max(0, index + delta))]);
     return (
         <div className="flex shrink-0 items-center">
             <Button
@@ -60,8 +72,8 @@ function SpeedStepper({
                 size="icon"
                 className={cn('rounded-full text-fg-muted', compactOnMobile && 'max-md:hidden')}
                 aria-label="遅くする (-)"
-                disabled={index === 0}
-                onClick={() => step(-1)}
+                disabled={value <= MIN_SPEED}
+                onClick={() => onChange(stepTimeScale(value, -1))}
             >
                 <ChevronsLeft />
             </Button>
@@ -82,8 +94,8 @@ function SpeedStepper({
                 size="icon"
                 className={cn('rounded-full text-fg-muted', compactOnMobile && 'max-md:hidden')}
                 aria-label="速くする (+)"
-                disabled={index === SPEEDS.length - 1}
-                onClick={() => step(1)}
+                disabled={value >= MAX_SPEED}
+                onClick={() => onChange(stepTimeScale(value, 1))}
             >
                 <ChevronsRight />
             </Button>
@@ -95,17 +107,32 @@ function Divider() {
     return <div aria-hidden className="mx-1 my-1.5 w-px self-stretch bg-line-strong" />;
 }
 
+/** 経過時間と周回数。simTime は頻繁に変わるので、ここだけが購読して再描画する */
+function SimClock() {
+    const paused = useAppStore((s) => s.paused);
+    const simTime = useAppStore((s) => s.simTime);
+    const periodMinutes = useAppStore((s) => orbitPeriodMinutes(s.orbit.altitudeKm));
+
+    return (
+        <div className="num min-w-[7.5rem] text-xs leading-tight" aria-label="シミュレーション経過時間">
+            <div className={cn('font-medium text-fg', paused && 'text-fg-muted')}>{formatSimTime(simTime)}</div>
+            {paused ? (
+                <div className="font-medium text-warning">一時停止中</div>
+            ) : (
+                <div className="text-fg-subtle">{`${(simTime / (periodMinutes * 60)).toFixed(2)} 周回`}</div>
+            )}
+        </div>
+    );
+}
+
 function SimulationBar() {
     const engine = useEngine();
     const paused = useAppStore((s) => s.paused);
-    const simTime = useAppStore((s) => s.simTime);
     const timeScale = useAppStore((s) => s.simulation.timeScale);
-    const periodMinutes = useAppStore((s) => s.referenceInfo?.orbit.periodMinutes);
-    const orbits = periodMinutes ? simTime / (periodMinutes * 60) : null;
 
     return (
         <>
-            <PlayButton playing={!paused} onToggle={() => engine.togglePause()} />
+            <PlayButton playing={!paused} onToggle={() => engine.togglePlay()} />
             <SpeedStepper value={timeScale} onChange={(v) => appStore.getState().setSimulation({ timeScale: v })} />
             <Divider />
             <Tooltip>
@@ -122,26 +149,46 @@ function SimulationBar() {
                 </TooltipTrigger>
                 <TooltipContent>t = 0 に戻す（衛星を初期配置へ） (R)</TooltipContent>
             </Tooltip>
-            <div className="num min-w-[7.5rem] text-xs leading-tight" aria-label="シミュレーション経過時間">
-                <div className={cn('font-medium text-fg', paused && 'text-fg-muted')}>{formatSimTime(simTime)}</div>
-                {paused ? (
-                    <div className="font-medium text-warning">一時停止中</div>
-                ) : (
-                    <div className="text-fg-subtle">{orbits === null ? '—' : `${orbits.toFixed(2)} 周回`}</div>
-                )}
-            </div>
+            <SimClock />
+        </>
+    );
+}
+
+/** 再生位置のシークと現在時刻。再生中は頻繁に変わるので、ここだけが購読して再描画する */
+function CsvPosition() {
+    const engine = useEngine();
+    const progress = useAppStore((s) => s.playback.progress);
+    const currentTime = useAppStore((s) => s.playback.currentTime);
+    const max = useAppStore((s) => s.playback.timeRange?.max ?? 0);
+
+    return (
+        <>
+            <Slider
+                className="mx-1 min-w-16 flex-1 md:w-64 md:flex-[0_1_auto]"
+                min={0}
+                max={1}
+                step={0.001}
+                value={[progress]}
+                onValueChange={([value]) => engine.seekPlayback(value)}
+                aria-label="再生位置"
+            />
+            <span className="num shrink-0 text-xs text-fg-muted">
+                <span className="text-fg">{currentTime.toFixed(0)}</span>
+                <span className="max-md:hidden"> / {max.toFixed(0)}</span> s
+            </span>
         </>
     );
 }
 
 function CsvBar() {
     const engine = useEngine();
-    const playback = useAppStore((s) => s.playback);
-    const max = playback.timeRange?.max ?? 0;
+    const isPlaying = useAppStore((s) => s.playback.isPlaying);
+    const loop = useAppStore((s) => s.playback.loop);
+    const speed = useAppStore((s) => s.playback.speed);
 
     return (
         <>
-            <PlayButton playing={playback.isPlaying} onToggle={() => engine.togglePlaybackPlay()} />
+            <PlayButton playing={isPlaying} onToggle={() => engine.togglePlay()} />
             <Button
                 variant="ghost"
                 size="icon"
@@ -151,31 +198,19 @@ function CsvBar() {
             >
                 <Square className="size-3.5 fill-current" />
             </Button>
-            <Slider
-                className="mx-1 min-w-16 flex-1 md:w-64 md:flex-[0_1_auto]"
-                min={0}
-                max={1}
-                step={0.001}
-                value={[playback.progress]}
-                onValueChange={([progress]) => engine.seekPlayback(progress)}
-                aria-label="再生位置"
-            />
-            <span className="num shrink-0 text-xs text-fg-muted">
-                <span className="text-fg">{playback.currentTime.toFixed(0)}</span>
-                <span className="max-md:hidden"> / {max.toFixed(0)}</span> s
-            </span>
+            <CsvPosition />
             <Divider />
             <Button
                 variant="ghost"
                 size="icon"
-                aria-pressed={playback.loop}
+                aria-pressed={loop}
                 aria-label="ループ再生"
-                className={cn('rounded-full text-fg-subtle', playback.loop && 'bg-brand-soft text-brand-text')}
-                onClick={() => engine.setPlaybackLoop(!playback.loop)}
+                className={cn('rounded-full text-fg-subtle', loop && 'bg-brand-soft text-brand-text')}
+                onClick={() => engine.setPlaybackLoop(!loop)}
             >
                 <Repeat />
             </Button>
-            <SpeedStepper value={playback.speed} onChange={(v) => engine.setPlaybackSpeed(v)} compactOnMobile />
+            <SpeedStepper value={speed} onChange={(v) => engine.setPlaybackSpeed(v)} compactOnMobile />
         </>
     );
 }

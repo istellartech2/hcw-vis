@@ -1,30 +1,27 @@
 import * as THREE from 'three';
 
+// 青（X）と緑（Z）の軸が左を向く初期視点。1 m = 1 単位で、10 m の範囲が FOV 50° に収まる距離
+const INITIAL_DISTANCE = 45;
+const INITIAL_PHI = Math.PI / 3;
+const INITIAL_THETA = (Math.PI * 4) / 5;
+
+/** 原点を注視する球面座標カメラ。ドラッグで回転、ホイール・ピンチで拡大縮小 */
 export class CameraController {
-    private camera: THREE.PerspectiveCamera;
-    private container: HTMLElement;
-    private mouseX: number = 0;
-    private mouseY: number = 0;
-    private mouseDown: boolean = false;
-    // Initial camera position configuration
-    // Position camera so that blue (X) and green (Z) axes point left
-    // Scale=1: 1m = 1 unit, 10m range needs ~45 unit distance at FOV 50°
-    private readonly INITIAL_CAMERA_DISTANCE: number = 45;
-    private readonly INITIAL_CAMERA_PHI: number = Math.PI / 3;
-    private readonly INITIAL_CAMERA_THETA: number = (Math.PI * 4) / 5;
-    private cameraPhi: number = this.INITIAL_CAMERA_PHI;
-    private cameraTheta: number = this.INITIAL_CAMERA_THETA;
-    private cameraDistance: number = this.INITIAL_CAMERA_DISTANCE;
+    private phi = INITIAL_PHI;
+    private theta = INITIAL_THETA;
+    private distance = INITIAL_DISTANCE;
+    private dragging = false;
+    private lastX = 0;
+    private lastY = 0;
     private pinchStartDistance: number | null = null;
-    private initialCameraDistance: number = this.INITIAL_CAMERA_DISTANCE;
+    private distanceAtPinchStart = INITIAL_DISTANCE;
 
-    private signal?: AbortSignal;
-
-    constructor(camera: THREE.PerspectiveCamera, container: HTMLElement, signal?: AbortSignal) {
-        this.camera = camera;
-        this.container = container;
-        this.signal = signal;
-        this.setupMouseControls();
+    constructor(
+        private camera: THREE.PerspectiveCamera,
+        private container: HTMLElement,
+        private signal?: AbortSignal,
+    ) {
+        this.setupControls();
     }
 
     private listen<K extends keyof HTMLElementEventMap>(
@@ -35,138 +32,83 @@ export class CameraController {
         this.container.addEventListener(type, handler, { ...options, signal: this.signal });
     }
 
-    private setupMouseControls(): void {
-        this.listen('mousedown', (e) => {
-            this.mouseDown = true;
-            this.mouseX = e.clientX;
-            this.mouseY = e.clientY;
+    private startDrag(x: number, y: number): void {
+        this.dragging = true;
+        this.lastX = x;
+        this.lastY = y;
+    }
+
+    private drag(x: number, y: number): void {
+        if (!this.dragging) return;
+        this.theta -= (x - this.lastX) * 0.01;
+        this.phi = THREE.MathUtils.clamp(this.phi + (y - this.lastY) * 0.01, 0.1, Math.PI - 0.1);
+        this.lastX = x;
+        this.lastY = y;
+    }
+
+    private setupControls(): void {
+        this.listen('mousedown', (e) => this.startDrag(e.clientX, e.clientY));
+        this.listen('mousemove', (e) => this.drag(e.clientX, e.clientY));
+        // キャンバス外でボタンを離してもドラッグ状態が残らないよう window で受ける
+        window.addEventListener('mouseup', () => (this.dragging = false), { signal: this.signal });
+        this.listen('wheel', (e) => {
+            this.distance = THREE.MathUtils.clamp(this.distance * (1 + e.deltaY * 0.001), 1, 1000);
         });
 
+        // タッチ: 1 本指で回転、2 本指でピンチ。ページのスクロールやズームは止める
+        const pinchDistance = (e: TouchEvent) =>
+            Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        const passive = { passive: false };
         this.listen(
             'touchstart',
             (e) => {
-                if (!this.isInteractiveTarget(e.target)) {
-                    e.preventDefault();
-                }
+                e.preventDefault();
                 if (e.touches.length === 1) {
-                    this.mouseDown = true;
-                    this.mouseX = e.touches[0].clientX;
-                    this.mouseY = e.touches[0].clientY;
+                    this.startDrag(e.touches[0].clientX, e.touches[0].clientY);
                 } else if (e.touches.length === 2) {
-                    this.mouseDown = false;
-                    this.pinchStartDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
-                    this.initialCameraDistance = this.cameraDistance;
+                    this.dragging = false;
+                    this.pinchStartDistance = pinchDistance(e);
+                    this.distanceAtPinchStart = this.distance;
                 }
             },
-            { passive: false },
+            passive,
         );
-
-        this.listen('mousemove', (e) => {
-            if (this.mouseDown) {
-                const deltaX = e.clientX - this.mouseX;
-                const deltaY = e.clientY - this.mouseY;
-                this.cameraTheta -= deltaX * 0.01;
-                this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
-                this.mouseX = e.clientX;
-                this.mouseY = e.clientY;
-            }
-        });
-
         this.listen(
             'touchmove',
             (e) => {
-                if (!this.isInteractiveTarget(e.target)) {
-                    e.preventDefault();
-                }
-                if (e.touches.length === 1 && this.mouseDown) {
-                    const deltaX = e.touches[0].clientX - this.mouseX;
-                    const deltaY = e.touches[0].clientY - this.mouseY;
-                    this.cameraTheta -= deltaX * 0.01;
-                    this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
-                    this.mouseX = e.touches[0].clientX;
-                    this.mouseY = e.touches[0].clientY;
+                e.preventDefault();
+                if (e.touches.length === 1) {
+                    this.drag(e.touches[0].clientX, e.touches[0].clientY);
                 } else if (e.touches.length === 2 && this.pinchStartDistance !== null) {
-                    const newDist = this.getTouchDistance(e.touches[0], e.touches[1]);
-                    const scale = this.pinchStartDistance / newDist;
-                    this.cameraDistance = this.initialCameraDistance * scale;
-                    this.cameraDistance = Math.max(5, Math.min(2000, this.cameraDistance));
+                    const scale = this.pinchStartDistance / pinchDistance(e);
+                    this.distance = THREE.MathUtils.clamp(this.distanceAtPinchStart * scale, 5, 2000);
                 }
             },
-            { passive: false },
+            passive,
         );
-
-        // キャンバス外でボタンを離してもドラッグ状態が残らないよう window で受ける
-        window.addEventListener(
-            'mouseup',
-            () => {
-                this.mouseDown = false;
-            },
-            { signal: this.signal },
-        );
-
         this.listen(
             'touchend',
             (e) => {
-                if (!this.isInteractiveTarget(e.target)) {
-                    e.preventDefault();
-                }
-                this.mouseDown = false;
+                e.preventDefault();
+                this.dragging = false;
                 this.pinchStartDistance = null;
             },
-            { passive: false },
-        );
-
-        this.listen('wheel', (e) => {
-            this.cameraDistance *= 1 + e.deltaY * 0.001;
-            this.cameraDistance = Math.max(1, Math.min(1000, this.cameraDistance));
-        });
-    }
-
-    private getTouchDistance(t1: Touch, t2: Touch): number {
-        const dx = t1.clientX - t2.clientX;
-        const dy = t1.clientY - t2.clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    private isInteractiveTarget(target: EventTarget | null): boolean {
-        if (!(target instanceof HTMLElement)) {
-            return false;
-        }
-        return (
-            target.closest('button') !== null ||
-            target.closest('input') !== null ||
-            target.closest('select') !== null ||
-            target.closest('textarea') !== null
+            passive,
         );
     }
 
-    public syncWithCameraPosition(): void {
-        const { x, y, z } = this.camera.position;
-        this.cameraDistance = Math.sqrt(x * x + y * y + z * z);
-        if (this.cameraDistance === 0) return;
-        this.cameraPhi = Math.acos(y / this.cameraDistance);
-        this.cameraTheta = Math.atan2(x, z);
-    }
-
-    public updateCameraPosition(): void {
-        this.camera.position.x = Math.sin(this.cameraTheta) * Math.sin(this.cameraPhi) * this.cameraDistance;
-        this.camera.position.y = Math.cos(this.cameraPhi) * this.cameraDistance;
-        this.camera.position.z = Math.cos(this.cameraTheta) * Math.sin(this.cameraPhi) * this.cameraDistance;
+    updateCameraPosition(): void {
+        this.camera.position.setFromSphericalCoords(this.distance, this.phi, this.theta);
         this.camera.lookAt(0, 0, 0);
     }
 
-    public resetView(): void {
+    resetView(): void {
         // 縦長画面では水平方向の画角が狭くなるので、少し引いて全体を収める
         const { clientWidth, clientHeight } = this.container;
         const portrait = clientHeight > 0 && clientWidth < clientHeight;
-        this.cameraDistance = this.INITIAL_CAMERA_DISTANCE * (portrait ? 1.4 : 1);
-        this.cameraPhi = this.INITIAL_CAMERA_PHI;
-        this.cameraTheta = this.INITIAL_CAMERA_THETA;
+        this.distance = INITIAL_DISTANCE * (portrait ? 1.4 : 1);
+        this.phi = INITIAL_PHI;
+        this.theta = INITIAL_THETA;
         this.updateCameraPosition();
-    }
-
-    public handleResize(): void {
-        this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
-        this.camera.updateProjectionMatrix();
     }
 }

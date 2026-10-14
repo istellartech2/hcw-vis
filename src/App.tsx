@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { EngineContext } from '@/engine/EngineContext';
 import type { SimulationEngine } from '@/engine/SimulationEngine';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useKeyboardShortcuts } from '@/features/help/shortcuts';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Viewport } from '@/features/viewport/Viewport';

@@ -6,22 +6,37 @@
  */
 
 import {
-    DEFAULT_FORMATION_CONFIG,
     DEFAULT_LAYER,
     FORMATION_FILE_VERSION,
+    isHexColor,
     type FormationConfig,
     type FormationLayer,
-    type ValidationResult,
 } from './FormationTypes';
-import { decodeFormation } from './formationDecoder';
+import { decodeFormation, type DecodeResult } from './formationDecoder';
 
 const MAX_SATELLITES_PER_LAYER = 100000;
 
 /** 1 グループが生成できる衛星数の上限（多すぎると描画が固まる） */
 export const MAX_GENERATED_SATELLITES = 20000;
 
+/** アプリ起動時と「既定の配置に戻す」で使う配置（軸上に 1 グループ） */
 export function createDefaultFormation(): FormationConfig {
-    return structuredClone(DEFAULT_FORMATION_CONFIG);
+    return {
+        version: FORMATION_FILE_VERSION,
+        name: 'デフォルトフォーメーション',
+        description: '',
+        createdAt: new Date().toISOString(),
+        layers: [
+            {
+                ...structuredClone(DEFAULT_LAYER),
+                id: crypto.randomUUID(),
+                name: 'グループ 1',
+                spacing: 2.0,
+                satelliteCount: 5,
+                size: 0.5,
+            },
+        ],
+    };
 }
 
 /**
@@ -114,15 +129,13 @@ export function formationFileName(config: Pick<FormationConfig, 'name'>): string
     return `${stem || 'formation'}.json`;
 }
 
-export type ParseResult = { ok: true; config: FormationConfig } | { ok: false; errors: string[] };
-
 /**
  * JSON 文字列をフォーメーション設定として読み込む。
  * `JSON.parse` の結果は unknown として扱い、型の検査（decodeFormation）と
  * 値の範囲の検査（validateFormation）の両方を通ったものだけを返す。
  * @param fallbackName ファイルに name が無いときに使う名前（ファイル名など）
  */
-export function parseFormation(json: string, fallbackName?: string): ParseResult {
+export function parseFormation(json: string, fallbackName?: string): DecodeResult {
     let raw: unknown;
     try {
         raw = JSON.parse(json);
@@ -134,16 +147,16 @@ export function parseFormation(json: string, fallbackName?: string): ParseResult
     }
     const decoded = decodeFormation(raw, fallbackName);
     if (!decoded.ok) return decoded;
-    const validation = validateFormation(decoded.config);
-    return validation.valid ? decoded : { ok: false, errors: validation.errors };
+    const errors = validateFormation(decoded.config);
+    return errors.length === 0 ? decoded : { ok: false, errors };
 }
 
-/** 型が正しい設定について、値の範囲や組み合わせを検査する */
-export function validateFormation(config: FormationConfig): ValidationResult {
+/** 型が正しい設定について、値の範囲や組み合わせを検査する（エラーが無ければ空配列） */
+export function validateFormation(config: FormationConfig): string[] {
     const errors: string[] = [];
     if (config.name.trim().length === 0) errors.push('フォーメーション名が空です');
     config.layers.forEach((layer, index) => errors.push(...validateLayer(layer, index)));
-    return { valid: errors.length === 0, errors };
+    return errors;
 }
 
 function validateLayer(layer: FormationLayer, index: number): string[] {
@@ -177,7 +190,7 @@ function validateLayer(layer: FormationLayer, index: number): string[] {
         }
     }
 
-    if (!/^#[0-9a-fA-F]{6}$/.test(layer.color)) {
+    if (!isHexColor(layer.color)) {
         errors.push(`${prefix}色は16進数カラーコード（例: #ff6b6b）で指定してください`);
     }
 

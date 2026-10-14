@@ -1,9 +1,16 @@
-export interface ShortcutGroup {
-    title: string;
-    items: Array<{ keys: string[]; label: string }>;
-}
+import { useEffect } from 'react';
+import type { SimulationEngine } from '@/engine/SimulationEngine';
+import { appStore, isCsvModeWithoutFile } from '@/store/appStore';
 
-export const SHORTCUT_GROUPS: ShortcutGroup[] = [
+/**
+ * グローバルなキーボードショートカット。ヘルプの一覧（SHORTCUT_GROUPS）と処理（useKeyboardShortcuts）を
+ * 同じファイルに置いて、片方だけ変えることがないようにする。
+ */
+
+/** 矢印キー1回あたりの増速量 (m/s) */
+const ARROW_KEY_DELTA_V = 0.001;
+
+export const SHORTCUT_GROUPS: ReadonlyArray<{ title: string; items: Array<{ keys: string[]; label: string }> }> = [
     {
         title: 'シミュレーション',
         items: [
@@ -28,9 +35,9 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
         items: [
             { keys: ['T'], label: '推力付加' },
             { keys: ['P'], label: '位置変更' },
-            { keys: ['↑', '↓'], label: 'S軸方向に ±0.001 m/s' },
-            { keys: ['←', '→'], label: 'R軸方向に ±0.001 m/s' },
-            { keys: ['Shift', '↑ / ↓'], label: 'W軸方向に ±0.001 m/s' },
+            { keys: ['↑', '↓'], label: `S軸方向に ±${ARROW_KEY_DELTA_V} m/s` },
+            { keys: ['←', '→'], label: `R軸方向に ±${ARROW_KEY_DELTA_V} m/s` },
+            { keys: ['Shift', '↑ / ↓'], label: `W軸方向に ±${ARROW_KEY_DELTA_V} m/s` },
             { keys: ['Esc'], label: '選択解除' },
         ],
     },
@@ -43,3 +50,95 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
         ],
     },
 ];
+
+function isEditableTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.isContentEditable) return true;
+    return (
+        target.closest(
+            'input, textarea, select, button, a, [role="slider"], [role="combobox"], [role="switch"], [role="menuitem"]',
+        ) !== null
+    );
+}
+
+export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
+    useEffect(() => {
+        if (!engine) return;
+
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+            if (isEditableTarget(e.target)) return;
+            const store = appStore.getState();
+            // モーダル表示中はショートカットを無効化
+            if (store.ui.helpOpen) return;
+            const hasSelection = store.selected !== null;
+            const deltaV = ARROW_KEY_DELTA_V;
+
+            switch (e.key.toLowerCase()) {
+                case ' ':
+                    e.preventDefault();
+                    engine.togglePlay();
+                    break;
+                case 'r':
+                    engine.resetPositions();
+                    break;
+                case 'v':
+                    engine.resetView();
+                    break;
+                case 'g':
+                    store.setDisplay({ showGrid: !store.display.showGrid });
+                    break;
+                case 'e':
+                    store.setDisplay({ showEarth: !store.display.showEarth });
+                    break;
+                case '+':
+                case '=':
+                    engine.stepSpeed(1);
+                    break;
+                case '-':
+                case '_':
+                    engine.stepSpeed(-1);
+                    break;
+                case 'h':
+                case '?':
+                    store.setUI({ helpOpen: true });
+                    break;
+                case 'f':
+                    // CSV 再生中は衛星配置を使わないので何もしない
+                    if (store.playback.active) break;
+                    if (isCsvModeWithoutFile(store)) engine.setMode('simulation');
+                    store.setUI({ panelOpen: true, panelTab: 'formation' });
+                    break;
+                case 'escape':
+                    if (store.ui.activeDialog) store.setUI({ activeDialog: null });
+                    else engine.clearSelection();
+                    break;
+                case 't':
+                    if (hasSelection) store.setUI({ activeDialog: 'thrust' });
+                    break;
+                case 'p':
+                    if (hasSelection) store.setUI({ activeDialog: 'position' });
+                    break;
+                case 'arrowup':
+                    e.preventDefault();
+                    engine.applyDeltaV(e.shiftKey ? { w: deltaV } : { s: deltaV });
+                    break;
+                case 'arrowdown':
+                    e.preventDefault();
+                    engine.applyDeltaV(e.shiftKey ? { w: -deltaV } : { s: -deltaV });
+                    break;
+                case 'arrowleft':
+                    e.preventDefault();
+                    engine.applyDeltaV({ r: -deltaV });
+                    break;
+                case 'arrowright':
+                    e.preventDefault();
+                    engine.applyDeltaV({ r: deltaV });
+                    break;
+            }
+        };
+
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [engine]);
+}

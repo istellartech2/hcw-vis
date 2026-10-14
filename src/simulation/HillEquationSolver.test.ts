@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { HillEquationSolver } from './HillEquationSolver';
+import { EARTH_MU, EARTH_RADIUS } from './OrbitElements';
 import { OrbitInitializer } from './OrbitInitializer';
 import { Satellite } from './Satellite';
 
-const MU = 3.986004418e14;
-const R_EARTH = 6378137.0;
-const r0 = R_EARTH + 400000; // 高度 400 km
+const r0 = EARTH_RADIUS + 400000; // 高度 400 km
 const inclination = (51.6 * Math.PI) / 180;
-const n = Math.sqrt(MU / r0 ** 3);
+const n = Math.sqrt(EARTH_MU / r0 ** 3);
 const T = (2 * Math.PI) / n;
 
 function createSolver(j2: boolean): HillEquationSolver {
@@ -62,7 +61,7 @@ describe('HillEquationSolver (HCW)', () => {
 
 describe('HillEquationSolver (J2 / Schweighart-Sedwick)', () => {
     it('SS 係数 c は 1 よりわずかに大きい', () => {
-        const { c } = createSolver(true).getSSCoefficient();
+        const c = createSolver(true).getSSCoefficientC();
         expect(c).toBeGreaterThan(1);
         expect(c).toBeLessThan(1.01);
     });
@@ -71,7 +70,6 @@ describe('HillEquationSolver (J2 / Schweighart-Sedwick)', () => {
         const solver = createSolver(true);
         const x0 = 50;
         const vy0 = solver.computeStableVy0(x0);
-        expect(solver.verifyStableInitialVelocity(x0, vy0, 1e-9)).toBe(true);
         expect(Math.abs(solver.computeDriftConstant(x0, vy0))).toBeLessThan(1e-9);
     });
 
@@ -87,7 +85,7 @@ describe('HillEquationSolver (J2 / Schweighart-Sedwick)', () => {
         const initializer = new OrbitInitializer(n);
         initializer.setJ2StableArrangement(true, solver.getSSCoefficientC());
         const radius = 100;
-        const positions = initializer.generatePositions('hexagonal_disk', 7, radius, 0);
+        const positions = initializer.generatePositions('hexagonal_disk', 7, radius);
 
         for (const p of positions) {
             expect(Math.abs(solver.computeDriftConstant(p.x0, p.vy0))).toBeLessThan(1e-6);

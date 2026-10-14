@@ -1,46 +1,25 @@
 import * as THREE from 'three';
-import { Satellite } from '../simulation/Satellite.js';
+import type { Satellite } from '../simulation/Satellite.js';
 import { TrailRenderer } from './TrailRenderer.js';
-import { CelestialBodies } from './CelestialBodies.js';
 import { AXIS_COLORS, type DisplaySettings } from '@/store/settings';
 import { createAxes, createGrid } from './sceneDecor.js';
-import { ModelLoader } from './ModelLoader.js';
 import { consumeCollisionFlash, setHillPosition, setSatelliteAttitude } from './satelliteFrame.js';
 import {
+    BASE_EMISSIVE_INTENSITY,
     REFERENCE_COLOR,
-    REFERENCE_EMISSIVE_INTENSITY,
-    SATELLITE_EMISSIVE_INTENSITY,
     SELECTED_EMISSIVE_INTENSITY,
-    createSatelliteObject,
-    displayColor,
-    disposeSatelliteObject,
-    forEachEmissiveMaterial,
+    createSatelliteMesh,
+    disposeObject3D,
     resolveAppearance,
     resolveSatelliteColor,
-    type SatelliteObject,
 } from './satelliteMeshFactory.js';
+
+type SatelliteMesh = ReturnType<typeof createSatelliteMesh>;
 
 const COLLISION_COLOR = 0xff0000;
 /** 選択リングの色（UI のブランドカラー） */
 const SELECTION_COLOR = 0xf07214;
-const WHITE = new THREE.Color(0xffffff);
-
-function degToRad(deg: number): number {
-    return (deg * Math.PI) / 180;
-}
-
-/** UI で指定した R/S 軸回転（ラジアン）。UI の形状が立方体なら立方体用、3Dファイルなら3Dモデル用 */
-function uiRotation(display: DisplaySettings): [number, number] {
-    switch (display.satelliteShape as string) {
-        case 'cube':
-        case 'box':
-            return [degToRad(display.cubeRotationR), degToRad(display.cubeRotationS)];
-        case '3dfile':
-            return [degToRad(display.file3dRotationR), degToRad(display.file3dRotationS)];
-        default:
-            return [0, 0];
-    }
-}
+const { degToRad } = THREE.MathUtils;
 
 /** 半径 1 のリング。描画時に衛星の大きさへスケールし、他の物体に隠れないよう最前面に描く */
 function createSelectionRing(): THREE.Mesh {
@@ -64,16 +43,12 @@ export class RenderingSystem {
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
     private container: HTMLElement;
-    private satelliteMeshes: SatelliteObject[] = [];
+    private satelliteMeshes: SatelliteMesh[] = [];
     private gridHelper: THREE.Group;
     private axesGroup: THREE.Group;
     private trailRenderer: TrailRenderer;
-    private celestialBodies: CelestialBodies;
     private getDisplay: () => DisplaySettings;
     private onSelectionChange: (index: number) => void = () => {};
-    private animationFrameCounter: number = 0;
-    private modelLoader: ModelLoader;
-    private loadedModel: SatelliteObject | null = null;
 
     // Selection system
     private selectedSatelliteIndex: number = -1;
@@ -98,8 +73,6 @@ export class RenderingSystem {
         this.getDisplay = getDisplay;
 
         this.trailRenderer = new TrailRenderer(this.scene);
-        this.celestialBodies = new CelestialBodies(this.scene, this.renderer.capabilities.getMaxAnisotropy());
-        this.modelLoader = new ModelLoader();
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
@@ -178,11 +151,9 @@ export class RenderingSystem {
         const showReference = options.showReference ?? false;
         satellites.forEach((sat, index) => {
             const isReference = index === 0;
-            const object = createSatelliteObject(
+            const object = createSatelliteMesh(
                 resolveAppearance(sat, display),
                 isReference ? REFERENCE_COLOR : resolveSatelliteColor(sat, index, display),
-                isReference ? REFERENCE_EMISSIVE_INTENSITY : SATELLITE_EMISSIVE_INTENSITY,
-                this.loadedModel,
             );
             // 基準衛星は CSV 再生時のみ表示
             if (isReference) object.visible = showReference;
@@ -195,65 +166,58 @@ export class RenderingSystem {
     private disposeSatelliteMeshes(): void {
         this.satelliteMeshes.forEach((object) => {
             this.scene.remove(object);
-            disposeSatelliteObject(object);
+            disposeObject3D(object);
         });
         this.satelliteMeshes = [];
     }
 
-    public updateSatellitePositions(satellites: Satellite[]): void {
+    /** 毎フレーム呼ぶ。位置・姿勢・ハイライトを同期し、advanceTrails のときだけ軌跡を伸ばす */
+    public updateSatellitePositions(satellites: Satellite[], advanceTrails: boolean): void {
         const display = this.getDisplay();
-        // 既定の回転は UI の形状で決まる（衛星ごとの形状ではない）
-        const [defaultRotR, defaultRotS] = uiRotation(display);
 
         satellites.forEach((sat, index) => {
-            const object = this.satelliteMeshes[index];
+            const mesh = this.satelliteMeshes[index];
             const pos = sat.getPosition();
-            setHillPosition(object.position, pos);
+            setHillPosition(mesh.position, pos);
 
-            // 姿勢は立方体・直方体・3Dモデルのみ（球は回転させない）
+            // 姿勢は立方体・直方体のみ（球は回転させない）
             const shape = sat.metadata?.shape || display.satelliteShape;
-            if (shape === 'cube' || shape === 'box' || shape === '3dfile') {
+            if (shape === 'cube' || shape === 'box') {
                 const rotation = sat.metadata?.rotation;
                 setSatelliteAttitude(
-                    object.quaternion,
+                    mesh.quaternion,
                     sat,
-                    rotation ? degToRad(rotation.r) : defaultRotR,
-                    rotation ? degToRad(rotation.s) : defaultRotS,
+                    rotation ? degToRad(rotation.r) : 0,
+                    rotation ? degToRad(rotation.s) : 0,
                 );
             }
 
             // 選択ハイライトと衝突フィードバック（赤く発光）
+            // 変化したときだけ書き換える（一時停止中も毎フレーム通るので、色文字列の解析を繰り返さない）
             const flashing = consumeCollisionFlash(sat);
-            const baseIntensity = index === 0 ? REFERENCE_EMISSIVE_INTENSITY : SATELLITE_EMISSIVE_INTENSITY;
-            const intensity =
-                flashing || index === this.selectedSatelliteIndex ? SELECTED_EMISSIVE_INTENSITY : baseIntensity;
-            forEachEmissiveMaterial(object, (material) => {
-                material.emissiveIntensity = intensity;
-                if (flashing) {
-                    material.emissive.setHex(COLLISION_COLOR);
-                } else {
-                    material.emissive.set(sat.color);
-                }
-            });
+            const material = mesh.material;
+            material.emissiveIntensity =
+                flashing || index === this.selectedSatelliteIndex
+                    ? SELECTED_EMISSIVE_INTENSITY
+                    : BASE_EMISSIVE_INTENSITY;
+            const showingFlash = material.emissive.getHex() === COLLISION_COLOR;
+            if (flashing && !showingFlash) material.emissive.setHex(COLLISION_COLOR);
+            else if (!flashing && showingFlash) material.emissive.copy(material.color);
 
-            if (display.showTrails && index > 0) {
-                let color = WHITE;
-                forEachEmissiveMaterial(object, (material) => {
-                    color = material.color;
-                });
-                this.trailRenderer.updateTrail(sat, pos, 1, color, display.trailLength);
+            if (advanceTrails && display.showTrails && index > 0) {
+                this.trailRenderer.updateTrail(sat, pos, material.color, display.trailLength);
             }
         });
     }
 
-    public updateAllSatelliteColors(): void {
+    /** 表示設定（単色表示など）に合わせて一般衛星（index >= 1）の色を塗り直す */
+    public updateAllSatelliteColors(satellites: Satellite[]): void {
         const display = this.getDisplay();
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
-            const color = displayColor(display, i - 1);
-            forEachEmissiveMaterial(this.satelliteMeshes[i], (material) => {
-                material.color.setHex(color);
-                material.emissive.setHex(color);
-            });
+            const color = resolveSatelliteColor(satellites[i], i, display);
+            const material = this.satelliteMeshes[i].material;
+            material.color.setHex(color);
+            material.emissive.setHex(color);
         }
     }
 
@@ -264,56 +228,13 @@ export class RenderingSystem {
     }
 
     private checkSatelliteSelection(): void {
-        try {
-            this.raycaster.setFromCamera(this.mouse, this.camera);
-
-            // Groups (3D models) need recursive intersection
-            const intersects = this.raycaster.intersectObjects(this.satelliteMeshes, true);
-
-            if (intersects.length > 0) {
-                const clickedObject = intersects[0].object;
-
-                // Find which satellite mesh/group contains the clicked object
-                let index = -1;
-                for (let i = 0; i < this.satelliteMeshes.length; i++) {
-                    const satelliteMesh = this.satelliteMeshes[i];
-                    if (
-                        satelliteMesh === clickedObject ||
-                        (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))
-                    ) {
-                        index = i;
-                        break;
-                    }
-                }
-
-                if (index >= 0 && index < this.satelliteMeshes.length) {
-                    this.selectedSatelliteIndex = index;
-                    console.log(`Selected satellite ${index}`);
-                    this.updateSelectedSatelliteInfo();
-                } else {
-                    console.warn(`Invalid satellite index: ${index}`);
-                }
-            } else {
-                this.selectedSatelliteIndex = -1;
-                this.updateSelectedSatelliteInfo();
-            }
-        } catch (error) {
-            console.error('Error in satellite selection:', error);
-            this.selectedSatelliteIndex = -1;
-            this.updateSelectedSatelliteInfo();
-        }
-    }
-
-    private isChildOf(object: THREE.Object3D, parent: THREE.Object3D): boolean {
-        let current = object.parent;
-        while (current) {
-            if (current === parent) return true;
-            current = current.parent;
-        }
-        return false;
-    }
-
-    private updateSelectedSatelliteInfo(): void {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        // 非表示のメッシュ（シミュレーション中の基準衛星）は選ばない
+        const hit = this.raycaster.intersectObjects(
+            this.satelliteMeshes.filter((mesh) => mesh.visible),
+            false,
+        )[0];
+        this.selectedSatelliteIndex = hit ? this.satelliteMeshes.indexOf(hit.object as SatelliteMesh) : -1;
         this.onSelectionChange(this.selectedSatelliteIndex);
     }
 
@@ -335,37 +256,23 @@ export class RenderingSystem {
         this.renderer.render(this.scene, this.camera);
     }
 
-    public updateCelestialBodies(time: number, simulationStartTime?: Date): void {
-        this.celestialBodies.update(time, simulationStartTime);
-    }
-
-    public getCelestialBodies(): CelestialBodies {
-        return this.celestialBodies;
-    }
-
     public getSelectedSatelliteIndex(): number {
         return this.selectedSatelliteIndex;
-    }
-
-    public updateSatelliteSize(satellites: Satellite[]): void {
-        // Recreate satellite meshes with new size
-        this.createSatelliteMeshes(satellites);
     }
 
     public setSelectedSatelliteIndex(index: number): void {
         this.selectedSatelliteIndex = index;
     }
 
+    public dispose(satellites: Satellite[]): void {
+        this.clearTrails(satellites);
+        this.disposeSatelliteMeshes();
+        disposeObject3D(this.scene);
+    }
+
     public handleResize(): void {
         this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    }
-
-    /**
-     * 3Dモデルを読み込む。失敗時は例外を投げるので、呼び出し側で形状のフォールバックを行う。
-     */
-    public async loadFile3D(file: File): Promise<void> {
-        this.loadedModel = await this.modelLoader.loadModel(file);
     }
 }
