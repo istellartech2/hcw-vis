@@ -3,7 +3,13 @@
  * UI フレームワークに依存しない純粋関数として実装する。
  */
 
-import type { FormationLayer, PatternType, PlacementMode, ShapeType } from './FormationTypes';
+import {
+    isHexColor,
+    type FormationLayer,
+    type PatternType,
+    type PlacementMode,
+    type ShapeType,
+} from './FormationTypes';
 import { MAX_GENERATED_SATELLITES, layerSatelliteCount } from './formationConfig';
 
 export const PATTERN_LABELS: Record<PatternType, string> = {
@@ -254,7 +260,7 @@ export function checkLayerForm(values: LayerFormValues): string | null {
     if (visible.boxRatios && ![values.boxX, values.boxY, values.boxZ].every(positive)) {
         return '直方体の比率は正の数で入力してください';
     }
-    if (visible.color && !/^#[0-9a-fA-F]{6}$/.test(values.color)) return '色は #RRGGBB の形式で入力してください';
+    if (visible.color && !isHexColor(values.color)) return '色は #RRGGBB の形式で入力してください';
     const numericKeys: Array<keyof LayerFormValues> = [];
     if (visible.originOffset || visible.axisOffset) numericKeys.push('offsetR', 'offsetS', 'offsetW');
     if (visible.periodicParams) numericKeys.push('ratioB', 'ratioD', 'ratioE', 'ratioF', 'zAmplitude');

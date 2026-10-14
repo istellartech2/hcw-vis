@@ -47,8 +47,14 @@ function StatusMessage({ status }: { status: FileStatus }) {
 function CsvFileSection() {
     const engine = useEngine();
     const fileStatus = useAppStore((s) => s.playback.fileStatus);
-    const playback = useAppStore((s) => s.playback);
-    const active = playback.active;
+    const active = useAppStore((s) => s.playback.active);
+    // 再生中に変わる currentTime などでは再描画しないよう、表示する文字列で購読する
+    const summary = useAppStore(({ playback: p }) =>
+        p.active
+            ? `${p.satelliteCount.toLocaleString()} 機 · ${p.dataPoints.toLocaleString()} 点` +
+              (p.timeRange ? ` · ${p.timeRange.min.toFixed(1)} – ${p.timeRange.max.toFixed(1)} s` : '')
+            : null,
+    );
     const inputRef = useRef<HTMLInputElement>(null);
 
     return (
@@ -104,13 +110,7 @@ function CsvFileSection() {
                 ))}
             </div>
             {fileStatus && <StatusMessage status={fileStatus} />}
-            {active && (
-                <p className="num text-xs text-fg-muted">
-                    {playback.satelliteCount.toLocaleString()} 機 · {playback.dataPoints.toLocaleString()} 点
-                    {playback.timeRange &&
-                        ` · ${playback.timeRange.min.toFixed(1)} – ${playback.timeRange.max.toFixed(1)} s`}
-                </p>
-            )}
+            {summary && <p className="num text-xs text-fg-muted">{summary}</p>}
         </PanelSection>
     );
 }

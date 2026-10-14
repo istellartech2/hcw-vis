@@ -19,7 +19,7 @@ describe('FORMATION_SCENARIOS', () => {
 
     it.each(FORMATION_SCENARIOS.map((s) => [s.id, s] as const))('%s は有効な設定で、保存して読み直せる', (_, s) => {
         const config = s.build();
-        expect(validateFormation(config).errors).toEqual([]);
+        expect(validateFormation(config)).toEqual([]);
         expect(config.description).toBeTruthy();
         const parsed = parseFormation(serializeFormation(config));
         expect(parsed.ok).toBe(true);

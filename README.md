@@ -97,9 +97,8 @@ vp preview     # 本番ビルドのプレビュー
 
 ```
 src/
-├── simulation/     HCW ソルバ、軌道要素、座標変換、CSV パーサ
+├── simulation/     HCW ソルバ、軌道要素、座標変換、衝突、CSV パーサ
 ├── formation/      衛星配置（フォーメーション）の定義・生成・学習シナリオ
-├── collision/      衝突検出と応答
 ├── visualization/  Three.js による描画
 ├── engine/         シミュレーションエンジン（メインループ、カメラ、CSV 再生）
 ├── store/          アプリケーション状態（zustand）

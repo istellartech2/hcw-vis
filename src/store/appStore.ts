@@ -1,8 +1,8 @@
 /**
  * アプリ全体の状態ストア。
  *
- * - settings 系（display / simulation / orbit）は UI が書き込み、エンジンが購読して反映する
- * - telemetry 系（simTime, referenceInfo, selected, playback, formation）はエンジンが書き込み、UI が描画する
+ * - settings 系（display / simulation）と formation は UI が書き込み、エンジンが購読して反映する
+ * - telemetry 系（simTime, referenceInfo, selected, playback, orbit）はエンジンが書き込み、UI が描画する
  * - ui 系はパネルやダイアログの開閉状態で、React 側だけが使う
  *
  * zustand の vanilla store なので React 以外（エンジン）からも利用できる。
@@ -81,7 +81,7 @@ export interface AppState {
     referenceInfo: ReferenceSatelliteInfo | null;
     selected: SelectedSatelliteInfo | null;
     playback: PlaybackStatus;
-    /** フォーメーション設定（唯一の正）。UI は変更のたびに engine.resetPositions() で反映する */
+    /** フォーメーション設定（唯一の正）。layers が変わるとエンジンが衛星を再配置する（時刻は t = 0 に戻る） */
     formation: FormationConfig;
     /**
      * 最後に読み込んだ／保存した JSON ファイル。`config` がその時点の formation と同じ参照なら未変更。
@@ -105,8 +105,11 @@ export interface AppActions {
     setDisplay: (patch: Partial<DisplaySettings>) => void;
     setSimulation: (patch: Partial<SimulationSettings>) => void;
     setUI: (patch: Partial<AppState['ui']>) => void;
-    /** フォーメーション設定を更新する（衛星の再配置は engine.resetPositions() で行う） */
     updateFormation: (update: (config: FormationConfig) => FormationConfig) => void;
+    /** 配置（とファイル・シナリオの情報）を差し替え、差し替え前に戻す関数を返す（「元に戻す」用） */
+    replaceFormation: (
+        next: Pick<AppState, 'formation'> & Partial<Pick<AppState, 'formationFile' | 'loadedScenario' | 'paused'>>,
+    ) => () => void;
     /** エンジンからの状態反映用 */
     patch: (patch: Partial<AppState>) => void;
     patchPlayback: (patch: Partial<PlaybackStatus>) => void;
@@ -127,7 +130,7 @@ export const INITIAL_PLAYBACK: PlaybackStatus = {
     dataPoints: 0,
 };
 
-export const appStore = createStore<AppStore>()((set) => ({
+export const appStore = createStore<AppStore>()((set, get) => ({
     display: { ...DEFAULT_DISPLAY_SETTINGS },
     simulation: { ...DEFAULT_SIMULATION_SETTINGS },
     orbit: { ...DEFAULT_ORBIT_INPUTS },
@@ -154,9 +157,19 @@ export const appStore = createStore<AppStore>()((set) => ({
     setSimulation: (patch) => set((s) => ({ simulation: { ...s.simulation, ...patch } })),
     setUI: (patch) => set((s) => ({ ui: { ...s.ui, ...patch } })),
     updateFormation: (update) => set((s) => ({ formation: update(s.formation) })),
+    replaceFormation: (next) => {
+        const { formation, formationFile, loadedScenario } = get();
+        set(next);
+        return () => set({ formation, formationFile, loadedScenario });
+    },
     patch: (patch) => set(patch),
     patchPlayback: (patch) => set((s) => ({ playback: { ...s.playback, ...patch } })),
 }));
+
+/** CSV 再生モードを選んだが、まだファイルを読み込んでいない状態か */
+export function isCsvModeWithoutFile(state: AppState = appStore.getState()): boolean {
+    return !state.playback.active && state.ui.mode === 'csv';
+}
 
 /** 現在のモード。CSV 再生中なら常に csv */
 export function useAppMode(): AppMode {

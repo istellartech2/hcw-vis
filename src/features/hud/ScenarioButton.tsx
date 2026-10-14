@@ -9,18 +9,31 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { useEngine } from '@/engine/EngineContext';
-import { loadScenario } from '@/features/scenario/loadScenario';
-import { FORMATION_SCENARIOS } from '@/formation/scenarios';
-import { useAppMode, useAppStore } from '@/store/appStore';
+import { toast } from 'sonner';
+import { FORMATION_SCENARIOS, type FormationScenario } from '@/formation/scenarios';
+import { appStore, useAppMode, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
+
+/**
+ * 学習用シナリオを読み込んで再生を始める。トーストの「元に戻す」で直前の配置に戻せる。
+ * 一時停止したまま読み込むと t = 0 で止まって見えるので、再生を始めて動きを見せる。
+ */
+function loadScenario(scenario: FormationScenario): void {
+    const config = scenario.build();
+    const undo = appStore.getState().replaceFormation({
+        formation: config,
+        formationFile: null,
+        loadedScenario: { id: scenario.id, config },
+        paused: false,
+    });
+    toast(`「${scenario.title}」を読み込みました`, { action: { label: '元に戻す', onClick: undo } });
+}
 
 /**
  * 右上の学習シナリオボタン（シミュレーションモードのみ）。位置は ViewControls が決める。
  * 読み込んだシナリオを編集していない間は、その名前を表示する（狭い画面ではアイコンだけ）。
  */
 export function ScenarioButton() {
-    const engine = useEngine();
     const mode = useAppMode();
     const currentId = useAppStore((s) =>
         s.loadedScenario && s.loadedScenario.config === s.formation ? s.loadedScenario.id : null,
@@ -75,7 +88,7 @@ export function ScenarioButton() {
                                     aria-current={selected || undefined}
                                     onClick={() => {
                                         picked.current = true;
-                                        loadScenario(engine, scenario);
+                                        loadScenario(scenario);
                                         setOpen(false);
                                     }}
                                     className={cn(

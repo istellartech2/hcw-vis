@@ -122,37 +122,7 @@ export const DEFAULT_LAYER: Omit<FormationLayer, 'id' | 'name'> = {
     rswOffset: { r: 0, s: 0, w: 0 },
 };
 
-/**
- * フォーメーション設定のバリデーション結果
- */
-export interface ValidationResult {
-    valid: boolean;
-    errors: string[];
+/** 16 進カラーコード（#RRGGBB）か */
+export function isHexColor(value: string): boolean {
+    return /^#[0-9a-fA-F]{6}$/.test(value);
 }
-
-/**
- * デフォルトのフォーメーション設定
- * アプリ起動時に使用される初期フォーメーション
- */
-export const DEFAULT_FORMATION_CONFIG: FormationConfig = {
-    version: FORMATION_FILE_VERSION,
-    name: 'デフォルトフォーメーション',
-    description: '',
-    createdAt: new Date().toISOString(),
-    layers: [
-        {
-            id: crypto.randomUUID(),
-            name: 'グループ 1',
-            enabled: true,
-            pattern: 'axis',
-            placementMode: 'spacing',
-            spacing: 2.0,
-            satelliteCount: 5,
-            shape: 'sphere',
-            size: 0.5,
-            rotation: { r: 0, s: 0 },
-            colorMode: 'random',
-            color: '#4ecdc4',
-        },
-    ],
-};

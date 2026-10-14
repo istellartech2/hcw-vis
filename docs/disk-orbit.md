@@ -1,12 +1,12 @@
 # 円盤配置の生成
 
-本書では、配置パターン「円盤（六角格子）」「円盤（正方格子）」「円盤（同心リング）」で用いる初期配置の生成アルゴリズムをまとめる。実装は `src/simulation/patterns/` にある。
+本書では、配置パターン「円盤（六角格子）」「円盤（正方格子）」「円盤（同心リング）」で用いる初期配置の生成アルゴリズムをまとめる。実装は `src/simulation/diskPatterns.ts` にある。
 
 | パターン | 格子点の生成 | 実装 |
 | --- | --- | --- |
-| 円盤（六角格子） | 六角格子（ハニカム格子）を原点から近い順に抽出 | `latticePoints.ts` の `generateHexLatticePoints` |
-| 円盤（正方格子） | 正方格子を原点から近い順に抽出 | `latticePoints.ts` の `generateSquareLatticePoints` |
-| 円盤（同心リング） | 同心円上に等間隔に配置 | `diskPatterns.ts` の `generateConcentricDisk` |
+| 円盤（六角格子） | 六角格子（ハニカム格子）を原点から近い順に抽出 | `generateHexLatticePoints` |
+| 円盤（正方格子） | 正方格子を原点から近い順に抽出 | `generateSquareLatticePoints` |
+| 円盤（同心リング） | 同心円上に等間隔に配置 | `generateConcentricDisk` |
 
 ## 1. 背景と目的
 
@@ -111,31 +111,19 @@ $$
 
 ### 5.2 抽出手順
 
-上下左右の 4 近傍をたどる単純な幅優先探索ではマンハッタン距離の順になり、配置がひし形になる。そこで、$\rho$ を優先度とする優先度付きキュー（最小ヒープ）を用いて展開する。
+上下左右の 4 近傍をたどる単純な幅優先探索ではマンハッタン距離の順になり、配置がひし形になる。そこで、候補点を列挙して $(\rho, \theta)$ の昇順に並べ、先頭から $X$ 点を採用する。
 
-1. 原点 $(0, 0)$ をキューに追加する。
-2. $\rho$ が最小の点を取り出して採用する。
-3. その 4 近傍のうち未訪問の点をキューに追加する。
-4. $X$ 点を採用するまで 2–3 を繰り返す。
+候補は $|i|, |j| \le h$（$h = \lceil\sqrt{X}\,\rceil$）の正方形内の格子点とする。半径 $h$ の円内には常に $X$ 点以上の格子点があり、その円は正方形に含まれるので、原点から近い $X$ 点はすべて候補に入る。
 
 採用順はユークリッド距離の昇順になるため、外縁はほぼ円形になる。
 
 ```pseudocode
 function square_disk_points(X):
     if X <= 0: return []
-    heap = PriorityQueue(order by (rho, theta))
-    visited = {(0, 0)}
-    push(heap, (0, 0))
-    points = []
-    while |points| < X:
-        pt = pop_min(heap)
-        points.append(pt)
-        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-            nb = (pt.i + dx, pt.j + dy)
-            if nb not in visited:
-                visited.add(nb)
-                push(heap, nb)
-    return points
+    h = ceil(sqrt(X))
+    candidates = [(i, j) for i in -h..h for j in -h..h]
+    sort candidates by (rho, theta)
+    return candidates[0 : X]
 ```
 
 ## 6. 同心リング配置
@@ -170,7 +158,7 @@ $$
 
 このとき $x^2 + y^2 + z^2 = \rho^2$ が常に成り立ち、各衛星は基準衛星から距離 $\rho$ を保って周回する（[HCW 方程式の理論](theory.md) 7.3 節の円軌道解と同じ）。平面上の点 $(\rho\cos\theta, \rho\sin\theta)$ から初期位置 $(x_0, y_0, z_0)$ への写像は長さを保つため、7 章で指定した半径 $R$ と衛星間隔 $S$ は、3 次元空間での実際の円盤半径と衛星間隔にそのまま一致する。衛星群全体は、軌道面に対して傾いた円盤として回転する。
 
-J2 安定配置を有効にした場合は、$\dot{y}_0$ に Schweighart-Sedwick 係数 $c$ を掛けて $\dot{y}_0 = -\rho n c\cos\theta$ とする（[J2 安定配置](j2-stable-arrangement.md)）。実装は `diskPatterns.ts` の `circularOrbitInitialCondition` にある。
+J2 安定配置を有効にした場合は、$\dot{y}_0$ に Schweighart-Sedwick 係数 $c$ を掛けて $\dot{y}_0 = -\rho n c\cos\theta$ とする（[J2 安定配置](j2-stable-arrangement.md)）。実装は `circularOrbitInitialCondition` にある。
 
 ## 9. まとめ
 

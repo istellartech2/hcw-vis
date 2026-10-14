@@ -79,7 +79,7 @@ $$
 | SS 係数の計算 | J2 摂動が有効なとき、基準軌道の半径と軌道傾斜角から $s$ と $c$ を計算する。無効なときは $c = 1$。 | `HillEquationSolver.getSSCoefficient` |
 | 初期速度の計算 | $\dot{y}_0 = -2nc\,x_0$ を返す。 | `HillEquationSolver.computeStableVy0` |
 | 条件の検証 | ドリフト定数 $K = \dot{y} + 2nc\,x$ を計算し、許容誤差（既定 $10^{-6}$ m/s）以内かを判定する。 | `HillEquationSolver.computeDriftConstant`、`verifyStableInitialVelocity` |
-| 配置への適用 | 円盤系の配置パターン（六角格子・正方格子・同心リング）で、円軌道解の $\dot{y}_0$ に $c$ を掛ける。 | `src/simulation/patterns/diskPatterns.ts` |
+| 配置への適用 | 円盤系の配置パターン（六角格子・正方格子・同心リング）で、円軌道解の $\dot{y}_0$ に $c$ を掛ける。 | `src/simulation/diskPatterns.ts` |
 | UI | 「軌道・力学」タブの「J2 安定配置で初期化」。切り替えると衛星を再配置する。 | `src/features/scenario/OrbitTab.tsx` |
 
 $c$ は J2 摂動が有効なときだけ 1 と異なる値を取るため、J2 安定配置の効果が現れるのは「J2 摂動」と「J2 安定配置で初期化」をともに有効にした場合である。

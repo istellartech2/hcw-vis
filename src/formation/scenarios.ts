@@ -6,6 +6,7 @@
  * 観察のポイントは `description` に入れ、パネルに表示する。
  */
 
+import { AXIS_COLORS } from '@/store/settings';
 import { FORMATION_FILE_VERSION, type FormationConfig, type FormationLayer } from './FormationTypes';
 
 export interface FormationScenario {
@@ -17,9 +18,7 @@ export interface FormationScenario {
 }
 
 // 3D ビューの座標軸と同じ色（R: 赤, S: 緑, W: 青）
-const R_COLOR = '#ff6b6b';
-const S_COLOR = '#2ecc71';
-const W_COLOR = '#00bfff';
+const { r: R_COLOR, s: S_COLOR, w: W_COLOR } = AXIS_COLORS;
 const GRAY = '#b0b8c4';
 const YELLOW = '#f7b731';
 

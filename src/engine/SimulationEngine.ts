@@ -6,7 +6,7 @@ import { applyElasticCollisions, detectCollisions } from '@/simulation/collision
 import { RenderingSystem } from '@/visualization/RenderingSystem';
 import { CelestialBodies } from '@/visualization/CelestialBodies';
 import { FormationGenerator } from '@/formation/FormationGenerator';
-import { appStore, type AppStore } from '@/store/appStore';
+import { appStore, isCsvModeWithoutFile, type AppMode, type AppStore } from '@/store/appStore';
 import { SATELLITE_PALETTE, type OrbitInputs, type SatelliteShape } from '@/store/settings';
 import { CameraController } from './CameraController';
 import { CsvPlayback } from './CsvPlayback';
@@ -112,6 +112,9 @@ export class SimulationEngine {
     // ------------------------------------------------------------------
 
     private onStoreChange(next: AppStore, prev: AppStore): void {
+        // 名前や説明だけの変更では再配置しない（layers は編集のたびに新しい配列になる）
+        if (next.formation.layers !== prev.formation.layers) this.resetPositions();
+
         const d = next.display;
         const pd = prev.display;
         if (d !== pd) {
@@ -254,9 +257,28 @@ export class SimulationEngine {
     // コマンド: シミュレーション
     // ------------------------------------------------------------------
 
-    togglePause(): void {
+    /**
+     * モードを切り替える（パネルのモード切替とショートカットの共通処理）。
+     * - CSV へ: ファイルを読み込むまでシミュレーションは一時停止しておく（裏で動くと CSV 再生と紛らわしい）
+     * - シミュレーションへ: CSV 再生中なら終了し、一時停止を解除する
+     */
+    setMode(next: AppMode): void {
         const store = appStore.getState();
-        store.patch({ paused: !store.paused });
+        if (next === 'simulation') {
+            if (this.csvPlayback.isActive()) this.exitPlayback();
+            store.setUI({ mode: 'simulation', panelTab: 'formation' });
+            store.patch({ paused: false });
+        } else {
+            store.setUI({ mode: 'csv', panelTab: 'csv' });
+            store.patch({ paused: true });
+        }
+    }
+
+    /** 再生／一時停止（再生バーのボタンと Space）。CSV 再生中は CSV、ファイル未読み込みなら何もしない */
+    togglePlay(): void {
+        const store = appStore.getState();
+        if (this.csvPlayback.isActive()) this.csvPlayback.togglePlayPause();
+        else if (!isCsvModeWithoutFile(store)) store.patch({ paused: !store.paused });
     }
 
     /** ストアのフォーメーション設定から衛星を再生成し、時刻を 0 に戻す（CSV 再生中は先頭へ戻す） */
@@ -368,10 +390,6 @@ export class SimulationEngine {
         return this.csvPlayback.loadSample(path);
     }
 
-    togglePlaybackPlay(): void {
-        this.csvPlayback.togglePlayPause();
-    }
-
     stopPlayback(): void {
         this.csvPlayback.stop();
     }
@@ -389,7 +407,7 @@ export class SimulationEngine {
     }
 
     /** CSV 再生モードを終了してシミュレーションに戻る */
-    exitPlayback(): void {
+    private exitPlayback(): void {
         this.csvPlayback.deactivate();
         if (this.shapeBeforePlayback) {
             appStore.getState().setDisplay({ satelliteShape: this.shapeBeforePlayback });

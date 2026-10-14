@@ -42,4 +42,4 @@
 
 ## 実装
 
-ヘルプに表示する一覧は `src/features/help/shortcuts.ts`、キー入力の処理は `src/hooks/useKeyboardShortcuts.ts` で定義しています。ショートカットを追加・変更するときは両方を更新してください。
+ヘルプに表示する一覧（`SHORTCUT_GROUPS`）とキー入力の処理（`useKeyboardShortcuts`）は、どちらも `src/features/help/shortcuts.ts` で定義しています。ショートカットを追加・変更するときは両方を更新してください。

@@ -9,14 +9,15 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { FormationConfig, FormationLayer } from '@/formation/FormationTypes';
-import { useEngine } from '@/engine/EngineContext';
+import type { FormationLayer } from '@/formation/FormationTypes';
 import { layerSatelliteCount, moveLayer, removeLayer, toggleLayer } from '@/formation/formationConfig';
 import { CIRCULAR_RADIUS_FACTOR, PATTERN_LABELS, SHAPE_LABELS } from '@/formation/layerForm';
 import { appStore, useAppStore } from '@/store/appStore';
+import { SATELLITE_PALETTE } from '@/store/settings';
 import { cn } from '@/lib/utils';
 
-const RANDOM_COLOR_SWATCH = 'conic-gradient(#ff6b6b, #f7b731, #4ecdc4, #54a0ff, #5f27cd, #ff6b6b)';
+/** 「ランダム」色のグループに表示する、パレットを一周するスウォッチ */
+const RANDOM_COLOR_SWATCH = `conic-gradient(${[...SATELLITE_PALETTE, SATELLITE_PALETTE[0]].join(', ')})`;
 
 interface LayerCardProps {
     layer: FormationLayer;
@@ -27,12 +28,7 @@ interface LayerCardProps {
 
 /** 衛星グループ（FormationLayer）1 つ分のカード。クリックで編集画面を開く。操作はすぐ 3D に反映する */
 export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
-    const engine = useEngine();
-    const storeUpdate = useAppStore((s) => s.updateFormation);
-    const updateFormation = (update: (config: FormationConfig) => FormationConfig) => {
-        storeUpdate(update);
-        engine.resetPositions();
-    };
+    const updateFormation = useAppStore((s) => s.updateFormation);
     const placement =
         layer.pattern === 'origin'
             ? null
@@ -42,11 +38,9 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
                   : `大きさ ${layer.radius} m`
               : `間隔 ${layer.spacing} m`;
     const remove = () => {
-        const before = appStore.getState().formation;
-        updateFormation((c) => removeLayer(c, layer.id));
-        toast(`「${layer.name}」を削除しました`, {
-            action: { label: '元に戻す', onClick: () => updateFormation(() => before) },
-        });
+        const { formation, replaceFormation } = appStore.getState();
+        const undo = replaceFormation({ formation: removeLayer(formation, layer.id) });
+        toast(`「${layer.name}」を削除しました`, { action: { label: '元に戻す', onClick: undo } });
     };
     const details = [placement, `${SHAPE_LABELS[layer.shape]} ${layer.size} m`].filter(Boolean);
 

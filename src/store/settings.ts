@@ -86,6 +86,13 @@ export const TIME_SCALE_OPTIONS: ReadonlyArray<{ value: number; label: string }>
     { value: 7200, label: '7200x (2時間/秒)' },
 ];
 
+/** 時間倍率の選択肢を direction 段進めた値（端で止まる。選択肢にない値は最小値から数える） */
+export function stepTimeScale(current: number, direction: number): number {
+    const values = TIME_SCALE_OPTIONS.map((o) => o.value);
+    const index = Math.max(0, values.indexOf(current)) + direction;
+    return values[Math.min(values.length - 1, Math.max(0, index))];
+}
+
 export const EARTH_TEXTURE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
     { value: 'earth00.webp', label: 'シンプル' },
     { value: 'earth01.webp', label: '標準' },

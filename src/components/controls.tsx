@@ -3,8 +3,9 @@
  * 長い説明は常時表示せず HelpTip（ⓘ）に寄せて、狭いパネルでも縦に伸びないようにする。
  */
 
-import { useId, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ComponentProps, type ReactNode } from 'react';
 import { Info } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -143,5 +144,40 @@ export function WithUnit({ unit, children }: { unit: string; children: ReactNode
                 {unit}
             </span>
         </span>
+    );
+}
+
+type NumberFieldProps = Omit<ComponentProps<typeof Input>, 'value' | 'onChange' | 'type'> & {
+    value: number;
+    onValueChange: (value: number) => void;
+};
+
+/**
+ * 数値入力。編集中の文字列（"-" や "0." など）を保持しつつ、
+ * 有限な数値になったときだけ onValueChange を呼ぶ。
+ */
+export function NumberField({ value, onValueChange, onBlur, ...props }: NumberFieldProps) {
+    const [text, setText] = useState(String(value));
+
+    useEffect(() => {
+        setText((current) => (parseFloat(current) === value ? current : String(value)));
+    }, [value]);
+
+    return (
+        <Input
+            type="number"
+            inputMode="decimal"
+            value={text}
+            onChange={(e) => {
+                setText(e.target.value);
+                const parsed = parseFloat(e.target.value);
+                if (Number.isFinite(parsed)) onValueChange(parsed);
+            }}
+            onBlur={(e) => {
+                setText(String(value));
+                onBlur?.(e);
+            }}
+            {...props}
+        />
     );
 }

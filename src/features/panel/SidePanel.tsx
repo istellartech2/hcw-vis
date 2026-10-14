@@ -9,7 +9,6 @@ import { FormationSection } from '@/features/scenario/FormationSection';
 import { OrbitTab } from '@/features/scenario/OrbitTab';
 import { appStore, useAppMode, useAppStore, type AppMode, type PanelTab } from '@/store/appStore';
 import { cn } from '@/lib/utils';
-import { switchMode } from '@/store/appMode';
 import { useSheetDrag } from './useSheetDrag';
 
 const PANEL_WIDTH_PX = 360;
@@ -42,7 +41,7 @@ function ModeSwitch({ mode }: { mode: AppMode }) {
     const engine = useEngine();
 
     const change = (next: AppMode) => {
-        if (next !== mode) switchMode(engine, next);
+        if (next !== mode) engine.setMode(next);
     };
 
     return (
