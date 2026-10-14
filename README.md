@@ -1,82 +1,114 @@
-# 🛰️ HCW(Hill-Clohessy-Wiltshire) Equations Visualizer
+# HCW Visualizer
 
-円軌道上で近接距離（軌道半径の1%以内）にある複数の人工衛星の相対運動を3自由度で可視化するWebアプリケーション。
+Hill-Clohessy-Wiltshire（HCW）方程式にもとづいて、円軌道上で近接する複数衛星の相対運動を 3D で可視化する Web アプリケーションです。
+
+**デモ:** <https://hcw-vis.vercel.app>
 
 ## 概要
 
-HCW(Hill-Clohessy-Wiltshire) Equations Visualizerは、HCW方程式（Hill's Equations / Clohessy-Wiltshire方程式とも呼ばれる）を用いて、複数の衛星の相対運動をシミュレーションし、3D可視化するWebアプリケーションです。
-HCW方程式自体が非線形の運動方程式からテイラー展開の1次近似（線形化）されたものであり、近似モデルとして使える範囲と、3自由度（姿勢は考慮しない位置のみ）の計算であること、外乱には対応していないことに留意が必要。
+HCW 方程式（Hill 方程式、Clohessy-Wiltshire 方程式とも呼ばれます）は、円軌道を周回する基準衛星のまわりにある衛星の相対運動を、基準衛星に固定した回転座標系（Hill 座標系 / LVLH 座標系）で記述する線形微分方程式です。本アプリケーションでは、任意の初期配置から相対運動を数値積分し、その軌跡をブラウザ上でインタラクティブに確認できます。
 
-## 主な特徴
+本アプリケーションのモデルには次の前提があります。
 
-- **シミュレーションモード**: 衛星グループ（軸上・格子・円軌道・円盤軌道など 13 種類の配置パターン）を組み合わせて初期配置を作り、HCW 方程式で相対運動を計算。変更はすぐ 3D に反映
-- **CSV 再生モード**: 外部で計算した位置・姿勢（6DOF）の時系列を読み込んで再生（[形式](docs/csv-playback-format.md)）
-- J2 摂動（Schweighart-Sedwick 方程式）、J2 安定配置、推力付加・外乱・衝突
-- 基準軌道（高度・軌道傾斜角など）の変更と地球表示
-- [キーボードショートカット](docs/keyboard-shortcuts.md)・スマホ表示に対応
+- 非線形の運動方程式を 1 次近似（線形化）したモデルであり、相対距離が軌道半径のおおむね 1% 以内の範囲で有効です。
+- 基準軌道は円軌道を仮定しています。
+- 位置のみを扱う 3 自由度の計算です（姿勢は計算しません）。
+- 大気抵抗や太陽輻射圧などの外乱力はモデル化していません。J2 摂動は Schweighart-Sedwick モデルによる拡張として選択できます。
 
-## 画面の使い方
+## 主な機能
 
-- 左上のメニューから設定パネルを開き、最上部で **シミュレーション / CSV 再生** を切り替える
-  - シミュレーション: 「衛星配置」「軌道・力学」「表示」タブ
-  - CSV 再生: 「CSV データ」「表示」タブ
-- 下中央の再生バー: 再生 / 一時停止、時間倍率、⏮ で t = 0 に戻す
-- 右上: 視点リセット、ヘルプ（ショートカット一覧）
-- 衛星をクリックすると選択され、推力付加や位置変更ができる
+| 機能 | 内容 |
+| --- | --- |
+| シミュレーション | 13 種類の配置パターン（軸上・格子・周期軌道・円軌道・円盤・V-bar / R-bar 接近など）を「衛星グループ」として組み合わせて初期配置を作成し、HCW 方程式で相対運動を計算します。設定の変更は即座に 3D 表示へ反映されます。 |
+| 学習シナリオ | 「ドリフトしない条件」「面外の振動」など、相対運動の基本的な性質を確認できるプリセットを用意しています。 |
+| 力学モデル | J2 摂動（Schweighart-Sedwick 方程式）、J2 摂動下でドリフトしない初期配置、全衛星へのランダムな速度摂動の付加、衛星間の衝突検出（弾性衝突）に対応しています。 |
+| 操作 | 選択した衛星への推力（Δv）付加と位置変更ができます。 |
+| 基準軌道 | 高度・軌道傾斜角などの基準軌道を変更でき、地球を合わせて表示できます。 |
+| CSV 再生 | 外部ツールで計算した位置・姿勢（6 自由度）の時系列データを読み込んで再生します。形式は [CSV 再生フォーマット](docs/csv-playback-format.md) を参照してください。 |
+
+キーボードショートカット（[一覧](docs/keyboard-shortcuts.md)）とスマートフォン表示にも対応しています。
+
+## 使い方
+
+1. 左上のメニューから設定パネルを開き、パネル上部でモード（**シミュレーション** / **CSV 再生**）を選択します。
+   - シミュレーション: 「衛星配置」「軌道・力学」「表示」タブ
+   - CSV 再生: 「CSV データ」「表示」タブ
+2. 画面下部の再生バーで、再生 / 一時停止、時間倍率の変更、t = 0 への巻き戻しを行います。
+3. 右上の「学習シナリオ」からプリセットを読み込めます。視点のリセットとヘルプ（ショートカット一覧）も右上にあります。
+4. 衛星をクリックして選択すると、推力付加や位置変更を行えます。
+
+## ドキュメント
+
+| ドキュメント | 内容 |
+| --- | --- |
+| [HCW 方程式の理論](docs/theory.md) | 運動方程式の導出、解析解、相対運動の性質、適用範囲 |
+| [周期解と積分定数](docs/periodic-solution.md) | 一般解の積分定数と初期状態の対応、ドリフトしない条件 |
+| [座標系と座標変換](docs/coordinate.md) | ECI・ECEF・RSW（LVLH）・Three.js 座標系の定義と変換 |
+| [円盤配置の生成](docs/disk-orbit.md) | 六角格子・正方格子を用いた円盤状の初期配置アルゴリズム |
+| [J2 摂動モデル](docs/j2-perturbation.md) | Schweighart-Sedwick 方程式による J2 摂動の取り込み |
+| [J2 安定配置](docs/j2-stable-arrangement.md) | J2 摂動下でドリフトしない初期条件 |
+| [CSV 再生フォーマット](docs/csv-playback-format.md) | CSV 再生モードで読み込むファイルの仕様 |
+| [キーボードショートカット](docs/keyboard-shortcuts.md) | 操作方法とショートカット一覧 |
+| [satellite.js の利用](docs/satellitejs-guide.md) | 本プロジェクトでの satellite.js の使い方 |
 
 ## 開発
 
-ツールチェーンは [Vite+](https://viteplus.dev/)（CLI は `vp`）、パッケージマネージャは [Bun](https://bun.sh/) です。
-Vite+ のグローバル CLI が未導入なら先にインストールしてください（macOS / Linux）。
+### 必要環境
+
+- Node.js `^22.18.0 || ^24.11.0 || >=26`
+- [Vite+](https://viteplus.dev/)（CLI: `vp`）
+- [Bun](https://bun.sh/)（パッケージマネージャ）
+
+Vite+ のグローバル CLI は次のコマンドでインストールできます（macOS / Linux）。
 
 ```bash
 curl -fsSL https://vite.plus | bash
 ```
 
+### セットアップと開発サーバー
+
 ```bash
 vp install     # 依存関係のインストール
-vp dev         # 開発サーバー → http://localhost:3000
+vp dev         # 開発サーバーの起動（http://localhost:3000）
 ```
+
+### 検証とビルド
 
 ```bash
 vp check       # フォーマット・lint・型チェック（--fix で自動修正）
 vp test        # テスト（Vitest）
-vp run build   # 型チェック + 本番ビルド（dist/）
-vp preview     # ビルド結果のプレビュー
+vp run build   # 型チェックと本番ビルド（dist/）
+vp preview     # 本番ビルドのプレビュー
 ```
 
-グローバルの `vp` を入れない場合は `bun install` のあと `bunx vp dev` のようにプロジェクト内の `vp` を使えます。
+グローバルの `vp` を導入しない場合は、`bun install` の後に `bunx vp dev` のようにプロジェクト内の CLI を使用できます。
 
 ### 技術スタック
 
-Vite+ 1.2（Vite 8 / Vitest 5 / Oxlint / Oxfmt）/ React 19 / TypeScript / Tailwind CSS v4 / shadcn/ui / zustand / Three.js / satellite.js
+- Vite+ 1.2（Vite 8 / Vitest 5 / Oxlint / Oxfmt）
+- React 19 / TypeScript
+- Tailwind CSS v4 / shadcn/ui / lucide-react
+- zustand（状態管理）
+- Three.js / satellite.js
 
-UI とシミュレーションエンジンの分離方針などの設計は [AGENTS.md](AGENTS.md) を参照してください（`CLAUDE.md` は同じファイルへのリンクです）。
+アーキテクチャ（UI とシミュレーションエンジンの分離方針など）は [AGENTS.md](AGENTS.md) にまとめています。
+
+### ディレクトリ構成
+
+```
+src/
+├── simulation/     HCW ソルバ、軌道要素、座標変換、CSV パーサ
+├── formation/      衛星配置（フォーメーション）の定義・生成・学習シナリオ
+├── collision/      衝突検出と応答
+├── visualization/  Three.js による描画
+├── engine/         シミュレーションエンジン（メインループ、カメラ、CSV 再生）
+├── store/          アプリケーション状態（zustand）
+└── features/       React UI（パネル、HUD、ヘルプ）
+docs/               理論・仕様ドキュメント
+public/samples/     CSV 再生用サンプルデータ
+script/             補助スクリプト（MAT ファイルから CSV への変換）
+```
 
 ### デプロイ
 
-Vercel（Interstellar Technologies チーム）の Git 連携でデプロイされます。`main` への push で本番、Pull Request ごとにプレビュー環境が作成されます。ビルド設定は `vercel.json`。
-
-## 📚 ドキュメント
-
-### 理論的背景
-
-HCW方程式（Hill-Clohessy-Wiltshire equations）は、円軌道上の主衛星に対する近傍衛星の相対運動を記述します：
-
-$$
-\begin{aligned}
-\ddot{x} - 2n\dot{y} - 3n^2x &= 0 \quad \text{(Radial方向)}\\
-\ddot{y} + 2n\dot{x} &= 0 \quad \text{(Along-track方向)}\\
-\ddot{z} + n^2z &= 0 \quad \text{(Cross-track方向)}
-\end{aligned}
-$$
-
-### 詳細ドキュメント
-
-- **[理論的背景](docs/theory.md)** - HCW方程式の詳細な理論、導出過程、物理的意味、実際の宇宙ミッションでの応用例
-- **[座標系変換](docs/coordinate.md)** - ECI、ECEF、LVLH座標系間の変換公式と実装例
-- **[周期解と解析解](docs/periodicSolution.md)** - HCW方程式の解析解、周期軌道の条件、初期値から積分定数への変換公式
-- **[円盤軌道の初期配置](docs/diskOrbit.md)** - 正六角形タイル張りを用いた衛星群の初期配置アルゴリズム
-- **[J2 摂動の影響](docs/impact-of-J2.md)** / **[J2 安定配置](docs/j2-stable-arrangement.md)** - Schweighart-Sedwick 方程式と J2 下でドリフトしない初期条件
-- **[CSV 再生フォーマット](docs/csv-playback-format.md)** - CSV 再生モードで読み込むファイルの形式
-- **[キーボードショートカット](docs/keyboard-shortcuts.md)** - アプリケーションの操作方法と便利なショートカット一覧
+Vercel の Git 連携でデプロイしています。`main` ブランチへの push で本番環境が、Pull Request ごとにプレビュー環境が更新されます。ビルド設定は `vercel.json` にあります。

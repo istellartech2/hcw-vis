@@ -1,87 +1,105 @@
-# CSV Playback Format Specification
+# CSV 再生フォーマット
 
-This document describes the CSV file format for 6DOF (6 Degrees of Freedom) satellite trajectory playback in the HCW visualization system.
+本書は、CSV 再生モードで読み込む CSV ファイルの仕様を定めます。CSV 再生モードでは、外部ツールで事前に計算した衛星の位置と姿勢（6 自由度）の時系列を読み込み、3D 表示で再生します。
 
-## Overview
+実装は `src/simulation/CSVParser.ts`（読み込みと検証）と `src/simulation/PlaybackEngine.ts`（補間と再生）にあります。
 
-The CSV playback feature allows users to visualize pre-computed satellite trajectories that include both position and attitude data. Each satellite's state is defined by its position in the RSW coordinate frame and its attitude as a quaternion representing the rotation from the satellite body frame to the RSW frame.
+## 1. 座標系
 
-## Coordinate System
+位置は RSW 座標系（Hill 座標系）で表します。原点は基準衛星です。
 
-- **RSW Frame**: Radial-Along-track-Cross-track coordinate system
-  - **R (Radial)**: Points from Earth's center towards the reference satellite
-  - **S (Along-track)**: Points in the direction of orbital motion
-  - **W (Cross-track)**: Completes the right-handed coordinate system (normal to the orbital plane)
+| 軸 | 名称 | 向き |
+| --- | --- | --- |
+| R | Radial | 地球中心から基準衛星へ向かう方向 |
+| S | Along-track | 軌道の進行方向 |
+| W | Cross-track | 軌道面の法線方向（右手系を構成する方向） |
 
-## CSV File Format
+CSV の `X`・`Y`・`Z` 列は、それぞれ R・S・W 成分に対応します。
 
-### Header Row
-The first row must contain column headers that describe the data structure:
+## 2. ファイル構成
 
-```
-Time (s),Sat1_X (m),Sat1_Y (m),Sat1_Z (m),Sat1_Qw,Sat1_Qx,Sat1_Qy,Sat1_Qz,Sat2_X (m),Sat2_Y (m),Sat2_Z (m),Sat2_Qw,Sat2_Qx,Sat2_Qy,Sat2_Qz,...
-```
+### 2.1 列構成
 
-### Column Structure
+1 列目が時刻、2 列目以降が衛星ごとのデータです。衛星 1 機あたり 7 列（位置 3 列とクォータニオン 4 列）を使用し、衛星数に応じて繰り返します。列数は `1 + 7 × 衛星数` になります。
 
-1. **Time Column**: 
-   - Column 1: `Time (s)` - Simulation time in seconds from start
-   - Type: Floating-point number
-   - Units: Seconds
-   - Must be monotonically increasing
+| 列 | 内容 | 単位 |
+| --- | --- | --- |
+| `Time (s)` | 再生開始からの時刻 | s |
+| `SatN_X (m)` | 衛星 N の R 成分 | m |
+| `SatN_Y (m)` | 衛星 N の S 成分 | m |
+| `SatN_Z (m)` | 衛星 N の W 成分 | m |
+| `SatN_Qw` | 衛星 N の姿勢クォータニオンのスカラー部 | ― |
+| `SatN_Qx` | 衛星 N の姿勢クォータニオンのベクトル部 x | ― |
+| `SatN_Qy` | 衛星 N の姿勢クォータニオンのベクトル部 y | ― |
+| `SatN_Qz` | 衛星 N の姿勢クォータニオンのベクトル部 z | ― |
 
-2. **Satellite Data** (7 columns per satellite):
-   - **Position (3 columns)**:
-     - `SatN_X (m)`: X position in RSW frame (Radial direction)
-     - `SatN_Y (m)`: Y position in RSW frame (Along-track direction) 
-     - `SatN_Z (m)`: Z position in RSW frame (Cross-track direction)
-     - Type: Floating-point number
-     - Units: Meters
-   
-   - **Quaternion (4 columns)**:
-     - `SatN_Qw`: Quaternion W component (scalar part)
-     - `SatN_Qx`: Quaternion X component 
-     - `SatN_Qy`: Quaternion Y component
-     - `SatN_Qz`: Quaternion Z component
-     - Type: Floating-point number
-     - Units: Dimensionless
-     - Represents rotation from satellite body frame to RSW frame
-     - Must be normalized (|q| = 1)
+`N` は 1 から始まる衛星番号です。
 
-### Multiple Satellites
+### 2.2 ヘッダー行
 
-For multiple satellites, simply add additional column groups. Each satellite requires 7 columns (3 position + 4 quaternion). The pattern repeats for as many satellites as needed:
+1 行目はヘッダー行です。例として 2 機の場合は次のようになります。
 
 ```
-Time (s),Sat1_X (m),Sat1_Y (m),Sat1_Z (m),Sat1_Qw,Sat1_Qx,Sat1_Qy,Sat1_Qz,Sat2_X (m),Sat2_Y (m),Sat2_Z (m),Sat2_Qw,Sat2_Qx,Sat2_Qy,Sat2_Qz,Sat3_X (m),Sat3_Y (m),Sat3_Z (m),Sat3_Qw,Sat3_Qx,Sat3_Qy,Sat3_Qz,...
+Time (s),Sat1_X (m),Sat1_Y (m),Sat1_Z (m),Sat1_Qw,Sat1_Qx,Sat1_Qy,Sat1_Qz,Sat2_X (m),Sat2_Y (m),Sat2_Z (m),Sat2_Qw,Sat2_Qx,Sat2_Qy,Sat2_Qz
 ```
 
-## Format Requirements
+- 1 列目の名前には `time` を含める必要があります（大文字・小文字は区別しません）。
+- 衛星の列は位置によって解釈されます。列名が上表のパターンと異なる場合は警告になりますが、読み込みは継続します。
 
-### Data Validation
-- All rows must have the same number of columns
-- Time values must be strictly increasing
-- Quaternions should be normalized (within tolerance)
-- No missing values allowed
-- Number of data columns must be: `1 + (7 × number_of_satellites)`
+### 2.3 データ行
 
-### File Requirements
-- File extension: `.csv`
-- Character encoding: UTF-8
-- Line endings: Any standard format (LF, CRLF)
-- Decimal separator: Period (`.`)
-- Field separator: Comma (`,`)
-- No quotes around numeric values
+2 行目以降がデータ行です。1 行が 1 時刻に対応します。
 
-### Recommended Practices
-- Time steps should be reasonably uniform for smooth playback
-- Typical time step: 0.1 to 5.0 seconds
-- Position accuracy: Millimeter precision is usually sufficient
-- Quaternion precision: At least 6 decimal places recommended
+## 3. 姿勢クォータニオン
 
-## Sample Files
+クォータニオンは、衛星の機体座標系から RSW 座標系への回転を表します。
 
-### Single Satellite Example
+$$
+q = q_w + q_x\,i + q_y\,j + q_z\,k,\qquad q_w^2 + q_x^2 + q_y^2 + q_z^2 = 1
+$$
+
+- $q_w$ はスカラー部、$(q_x, q_y, q_z)$ はベクトル部です。ベクトル部の成分は RSW 座標系の R・S・W 軸に対応します。
+- ノルムが 1 から 0.01 を超えてずれている場合は警告を出し、正規化してから使用します。
+
+## 4. 検証規則
+
+読み込み時に次の項目を検証します。エラーがある場合は読み込みを中止し、パネルにエラー内容を表示します。
+
+| 項目 | 規則 | 違反時 |
+| --- | --- | --- |
+| 行数 | ヘッダー行とデータ行 1 行以上 | エラー |
+| 1 列目の名前 | `time` を含む | エラー |
+| 列数 | `1 + 7 × 衛星数`（衛星 1 機以上） | エラー |
+| 各行の列数 | すべての行でヘッダーと同じ | エラー |
+| 数値 | 時刻・位置・クォータニオンがすべて数値として解釈できる | エラー |
+| 時刻 | 狭義単調増加（同じ時刻の重複も不可） | エラー |
+| 衛星の列名 | `SatN_X` などのパターンに沿う | 警告 |
+| クォータニオンのノルム | 1 からのずれが 0.01 以内 | 警告（自動で正規化） |
+
+警告はブラウザの開発者コンソールに出力されます。
+
+## 5. ファイル形式
+
+| 項目 | 仕様 |
+| --- | --- |
+| 拡張子 | `.csv` |
+| 文字コード | UTF-8 |
+| 改行コード | LF または CRLF |
+| 区切り文字 | カンマ（`,`） |
+| 小数点 | ピリオド（`.`） |
+| 引用符 | 使用しない（引用符で囲んだフィールドには対応していません） |
+| 空行 | データの途中に空行を含めない（先頭と末尾の空白・空行は無視されます） |
+
+## 6. 推奨事項
+
+- 滑らかに再生するため、時刻の刻みはできるだけ一定にしてください。目安は 0.1–5.0 s です。
+- 位置の精度は通常 mm 単位で十分です。クォータニオンは小数点以下 6 桁以上を推奨します。
+- ファイル全体をメモリ上で処理するため、非常に大きなファイルは読み込みに時間がかかります。時刻の点数は 10,000 点程度までを目安とし、長い軌跡はリサンプリングしてください。
+
+## 7. サンプル
+
+### 7.1 衛星 1 機
+
 ```csv
 Time (s),Sat1_X (m),Sat1_Y (m),Sat1_Z (m),Sat1_Qw,Sat1_Qx,Sat1_Qy,Sat1_Qz
 0.0,10.0,0.0,0.0,1.0,0.0,0.0,0.0
@@ -89,59 +107,48 @@ Time (s),Sat1_X (m),Sat1_Y (m),Sat1_Z (m),Sat1_Qw,Sat1_Qx,Sat1_Qy,Sat1_Qz
 10.0,8.09,5.88,0.0,0.985,0.174,0.0,0.0
 ```
 
-### Multiple Satellites Example
+### 7.2 衛星 2 機
+
 ```csv
 Time (s),Sat1_X (m),Sat1_Y (m),Sat1_Z (m),Sat1_Qw,Sat1_Qx,Sat1_Qy,Sat1_Qz,Sat2_X (m),Sat2_Y (m),Sat2_Z (m),Sat2_Qw,Sat2_Qx,Sat2_Qy,Sat2_Qz
 0.0,5.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,5.0,0.0,0.866,0.0,0.0,0.5
 5.0,4.76,1.55,0.0,0.996,0.087,0.0,0.0,-1.55,4.76,0.0,0.819,0.0,0.0,0.574
 ```
 
-## Sample Files Location
+### 7.3 同梱のサンプルファイル
 
-Pre-made sample files are available in the `/public/samples/` directory:
-- `single_satellite_6dof.csv`: Demonstrates single satellite trajectory
-- `three_satellite_6dof.csv`: Demonstrates formation flight with 3 satellites
+`public/samples/` に次のファイルを同梱しています。アプリケーションの「CSV データ」タブからも読み込めます。
 
-## Usage in Application
+| ファイル | 内容 |
+| --- | --- |
+| `single_satellite_6dof.csv` | 衛星 1 機の軌跡と姿勢 |
+| `three_satellite_6dof.csv` | 衛星 3 機の編隊飛行 |
 
-1. Open the settings panel from the menu button (top left) and switch the mode at the top to **CSV 再生**
-2. Click **CSV ファイルを開く** and select your formatted CSV file (or try one of the samples)
-3. The system will validate the format and display any errors
-4. If valid, use the playback bar at the bottom (play / stop, seek, loop, speed) to visualize the trajectory
-5. Time scaling and interpolation are handled automatically
-6. Switch the mode back to **シミュレーション** to leave CSV playback
+## 8. アプリケーションでの使い方
 
-## Quaternion Convention
+1. 左上のメニューから設定パネルを開き、パネル上部でモードを **CSV 再生** に切り替えます。
+2. 「CSV ファイルを開く」から CSV ファイルを選択します（同梱のサンプルも選択できます）。
+3. 読み込みに成功すると、衛星数・データ点数・時刻範囲が表示されます。エラーがある場合はその内容が表示されます。
+4. 画面下部の再生バーで、再生 / 停止、シーク、ループ再生、再生速度を操作します。
+5. CSV には形状の情報が含まれないため、衛星の形状（球 / 立方体）と大きさは「CSV データ」タブで指定します。姿勢を確認するには立方体を選択してください。
+6. モードを **シミュレーション** に戻すと CSV 再生を終了します。
 
-The quaternion represents the rotation from the satellite body frame to the RSW frame:
+## 9. 補間
 
+再生時刻がデータの時刻の間にある場合は、前後のデータから次のように補間します。
+
+| 量 | 方法 |
+| --- | --- |
+| 位置 | 線形補間 |
+| 姿勢 | 球面線形補間（SLERP）。最短経路となるよう符号を調整します。 |
+| 速度 | 前後のデータ点の位置の差分から計算 |
+
+再生時刻は CSV の時刻範囲（最小値から最大値）に対応づけられます。
+
+## 10. 変換スクリプト
+
+`script/mat_to_csv.py` は、MATLAB の MAT ファイルに含まれる衛星の位置データを本形式の CSV に変換する補助スクリプトです。姿勢はすべて単位クォータニオン（$q_w = 1$）として出力します。実行には SciPy・pandas・NumPy が必要で、結果は作業ディレクトリに `merged_satellite_data.csv` として保存されます。入力として想定する変数の構成はスクリプトを参照してください。
+
+```bash
+python script/mat_to_csv.py results.mat
 ```
-q = [qw, qx, qy, qz]
-```
-
-Where:
-- `qw` is the scalar (real) part
-- `[qx, qy, qz]` is the vector (imaginary) part
-- The quaternion is in the form: `q = qw + qx*i + qy*j + qz*k`
-- Normalization: `qw² + qx² + qy² + qz² = 1`
-
-## Common Issues and Troubleshooting
-
-### Validation Errors
-- **"Inconsistent number of columns"**: Ensure all rows have the same number of fields
-- **"Time values not increasing"**: Check that time column is monotonically increasing
-- **"Invalid quaternion norm"**: Verify quaternions are normalized
-- **"Missing header row"**: First row must contain column descriptions
-
-### Performance Considerations
-- Large files (>100MB) may take time to load
-- Recommended maximum: 10,000 time steps for smooth playback
-- For very long trajectories, consider resampling to reduce file size
-
-## Technical Implementation Notes
-
-The CSV parser uses the following algorithms:
-- **Interpolation**: Linear interpolation for position, SLERP for quaternions
-- **Time synchronization**: Playback time is mapped to CSV time range
-- **Memory management**: Large datasets are processed in chunks
-- **Validation**: Real-time validation during file parsing
