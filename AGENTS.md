@@ -4,13 +4,20 @@ This file provides guidance to AI coding agents when working with code in this r
 
 ## Commands
 
+ツールチェーンは [Vite+](https://viteplus.dev/)（`vite-plus`、CLI は `vp`）。パッケージマネージャは bun。
+
 ```bash
 bun install          # 依存関係のインストール
-bun run dev          # 開発サーバー (http://localhost:3000)
-bun run type-check   # TypeScript 型チェック
-bun run build        # 型チェック + 本番ビルド (dist/)
+bun run dev          # 開発サーバー (http://localhost:3000) = vp dev
+bun run check        # フォーマット + lint + 型チェック = vp check（--fix で自動修正）
+bun run test         # テスト (Vitest) = vp test
+bun run build        # 型チェック + 本番ビルド (dist/) = vp check --no-fmt && vp build
 bun run preview      # 本番ビルドのプレビュー
 ```
+
+- 設定は `vite.config.ts` に集約（Vite / Vitest `test` / Oxlint `lint` / Oxfmt `fmt`）。`vite` は `@voidzero-dev/vite-plus-core` へエイリアスされている
+- フォーマット規約: 4 スペース・シングルクォート・120 桁（JSON/HTML/CSS は 2 スペース）。`src/components/ui/` は shadcn 生成コードなので対象外
+- Node は `^22.18.0 || ^24.11.0 || >=26` が必要
 
 shadcn/ui コンポーネントの追加: `bunx shadcn@latest add <component>`（`src/components/ui/` に生成される）
 
@@ -60,7 +67,7 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
    - `src/components/ui/` は shadcn/ui の生成コード。テーマは `src/index.css` の CSS 変数
 
 ### Technology Stack
-- Vite 8 / React 19 / TypeScript
+- Vite+ 1.2 (Vite 8 / Vitest 5 / Oxlint / Oxfmt) / React 19 / TypeScript
 - Tailwind CSS v4 / shadcn/ui (Radix, nova preset) / lucide-react
 - zustand（状態管理）
 - Three.js 0.160 / satellite.js 6
