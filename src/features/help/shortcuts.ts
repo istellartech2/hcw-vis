@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import type { SimulationEngine } from '@/engine/SimulationEngine';
 import { appStore, isCsvModeWithoutFile } from '@/store/appStore';
-import { stepTimeScale } from '@/store/settings';
 
 /**
  * グローバルなキーボードショートカット。ヘルプの一覧（SHORTCUT_GROUPS）と処理（useKeyboardShortcuts）を
@@ -94,11 +93,11 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
                     break;
                 case '+':
                 case '=':
-                    store.setSimulation({ timeScale: stepTimeScale(store.simulation.timeScale, 1) });
+                    engine.stepSpeed(1);
                     break;
                 case '-':
                 case '_':
-                    store.setSimulation({ timeScale: stepTimeScale(store.simulation.timeScale, -1) });
+                    engine.stepSpeed(-1);
                     break;
                 case 'h':
                 case '?':

@@ -2,9 +2,6 @@ import * as THREE from 'three';
 import type { CSVPlaybackData, SatelliteCSVData } from './CSVParser.js';
 import type { Satellite } from './Satellite.js';
 
-/** 再生速度の上限（倍） */
-const MAX_PLAYBACK_SPEED = 960;
-
 const qa = new THREE.Quaternion();
 const qb = new THREE.Quaternion();
 
@@ -65,8 +62,9 @@ export class PlaybackEngine {
         return this.data?.timeRange ?? null;
     }
 
+    /** 再生速度（倍）。1 倍未満にはしない */
     setPlaybackSpeed(speed: number): void {
-        this.playbackSpeed = THREE.MathUtils.clamp(speed, 1, MAX_PLAYBACK_SPEED);
+        this.playbackSpeed = Math.max(1, speed);
     }
 
     togglePlayPause(): void {

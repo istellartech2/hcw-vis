@@ -37,10 +37,10 @@ export function resolveAppearance(sat: Satellite, display: DisplaySettings): Sat
     };
 }
 
-/** 一般衛星（index >= 1）の色: メタデータ → 統一色 → パレット */
+/** 一般衛星（index >= 1）の色: 単色表示なら指定色、そうでなければグループの色 → パレット */
 export function resolveSatelliteColor(sat: Satellite, index: number, display: DisplaySettings): number {
-    if (sat.metadata?.color) return parseHexColor(sat.metadata.color);
     if (display.uniformSatelliteColor) return parseHexColor(display.satelliteColor);
+    if (sat.metadata?.color) return parseHexColor(sat.metadata.color);
     return parseHexColor(SATELLITE_PALETTE[(index - 1) % SATELLITE_PALETTE.length]);
 }
 

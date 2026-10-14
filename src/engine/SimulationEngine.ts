@@ -7,7 +7,7 @@ import { RenderingSystem } from '@/visualization/RenderingSystem';
 import { CelestialBodies } from '@/visualization/CelestialBodies';
 import { FormationGenerator } from '@/formation/FormationGenerator';
 import { appStore, isCsvModeWithoutFile, type AppMode, type AppStore } from '@/store/appStore';
-import { SATELLITE_PALETTE, type OrbitInputs, type SatelliteShape } from '@/store/settings';
+import { SATELLITE_PALETTE, stepTimeScale, type OrbitInputs, type SatelliteShape } from '@/store/settings';
 import { CameraController } from './CameraController';
 import { CsvPlayback } from './CsvPlayback';
 
@@ -41,6 +41,8 @@ export class SimulationEngine {
 
     private satellites: Satellite[] = [];
     private time = 0;
+    /** 間引いたフレームでまだ積分していない時間 (s)。次に積分するフレームでまとめて進める */
+    private unintegratedTime = 0;
     private simulationStartTime = new Date();
     private frameCounter = 0;
     private orbitElements!: OrbitalElements;
@@ -124,10 +126,11 @@ export class SimulationEngine {
             if (d.earthTexture !== pd.earthTexture) this.earth.setTexture(d.earthTexture);
             if (!d.showTrails && pd.showTrails) this.renderingSystem.clearTrails(this.satellites);
             if (d.uniformSatelliteColor !== pd.uniformSatelliteColor || d.satelliteColor !== pd.satelliteColor) {
-                this.updateAllSatelliteColors();
+                this.renderingSystem.updateAllSatelliteColors(this.satellites);
             }
             if (d.satelliteShape !== pd.satelliteShape) {
-                if (d.satelliteShape !== 'sphere' && next.simulation.collisionEnabled) {
+                // 衝突検出は球体のときだけ。CSV 再生に入るときの自動切り替え（球体 → 立方体）では設定を変えない
+                if (d.satelliteShape !== 'sphere' && next.simulation.collisionEnabled && !this.csvPlayback.isActive()) {
                     next.setSimulation({ collisionEnabled: false });
                 }
                 this.rebuildSatelliteMeshes();
@@ -183,18 +186,21 @@ export class SimulationEngine {
 
         // 位置・姿勢と地球の向きは毎フレーム同期する（一時停止中のシークや再配置もそのまま反映される）。軌跡は進んだときだけ伸ばす
         if (playingCsv) this.csvPlayback.applyTo(this.satellites);
-        this.earth.update(new Date(this.simulationStartTime.getTime() + this.currentTime() * 1000), this.orbitElements);
+        this.earth.update(this.currentDate(), this.orbitElements);
         this.renderingSystem.updateSatellitePositions(this.satellites, advancing);
         this.renderingSystem.render();
     };
 
     private stepPhysics(timeScale: number): void {
-        const scaledDeltaTime = FRAME_DELTA_SECONDS * timeScale;
-        this.time += scaledDeltaTime;
+        const frameTime = FRAME_DELTA_SECONDS * timeScale;
+        this.time += frameTime;
+        this.unintegratedTime += frameTime;
 
-        // 衛星数が多い場合は1フレームおきに積分して負荷を下げる
+        // 衛星数が多い場合は1フレームおきに積分して負荷を下げる（間引いた分は次のフレームでまとめて積分する）
         if (this.satellites.length - 1 > 20 && this.frameCounter % 2 !== 0) return;
 
+        const scaledDeltaTime = this.unintegratedTime;
+        this.unintegratedTime = 0;
         const adaptiveDt = Math.min(BASE_DT * Math.max(1, timeScale / 10), scaledDeltaTime);
         const integrationSteps = Math.max(1, Math.ceil(scaledDeltaTime / adaptiveDt));
         const stepDt = scaledDeltaTime / integrationSteps;
@@ -214,15 +220,17 @@ export class SimulationEngine {
         return this.csvPlayback.isActive() ? this.csvPlayback.getCurrentTime() : this.time;
     }
 
+    /** シミュレーション時刻に対応する日時（地球の向きと基準衛星の緯度経度で共通の基準） */
+    private currentDate(): Date {
+        return new Date(this.simulationStartTime.getTime() + this.currentTime() * 1000);
+    }
+
     // ------------------------------------------------------------------
     // テレメトリ（UI 表示用の状態をストアへ書き出す）
     // ------------------------------------------------------------------
 
     private publishReferenceInfo(): void {
-        const eci = OrbitElementsCalculator.getECIPosition(
-            this.orbitElements,
-            new Date(Date.now() + this.currentTime() * 1000),
-        );
+        const eci = OrbitElementsCalculator.getECIPosition(this.orbitElements, this.currentDate());
         appStore.getState().patch({
             referenceInfo: eci ? { latitude: eci.geodetic.latitude, longitude: eci.geodetic.longitude } : null,
         });
@@ -268,6 +276,16 @@ export class SimulationEngine {
         } else {
             store.setUI({ mode: 'csv', panelTab: 'csv' });
             store.patch({ paused: true });
+        }
+    }
+
+    /** 時間倍率を 1 段上げる／下げる（+ / - キー）。CSV 再生中は CSV の再生速度を変える */
+    stepSpeed(direction: 1 | -1): void {
+        const store = appStore.getState();
+        if (this.csvPlayback.isActive()) {
+            this.csvPlayback.setSpeed(stepTimeScale(store.playback.speed, direction));
+        } else {
+            store.setSimulation({ timeScale: stepTimeScale(store.simulation.timeScale, direction) });
         }
     }
 
@@ -434,14 +452,6 @@ export class SimulationEngine {
     // 表示
     // ------------------------------------------------------------------
 
-    private updateAllSatelliteColors(): void {
-        const { uniformSatelliteColor, satelliteColor } = appStore.getState().display;
-        this.satellites.forEach((sat, i) => {
-            if (i > 0) sat.color = uniformSatelliteColor ? satelliteColor : paletteColor(i);
-        });
-        this.renderingSystem.updateAllSatelliteColors(this.satellites);
-    }
-
     private rebuildSatelliteMeshes(): void {
         this.renderingSystem.createSatelliteMeshes(this.satellites, { showReference: this.csvPlayback.isActive() });
     }
@@ -454,6 +464,7 @@ export class SimulationEngine {
         this.renderingSystem.clearTrails(this.satellites);
         this.satellites = satellites;
         this.time = 0;
+        this.unintegratedTime = 0;
 
         const mass = appStore.getState().simulation.satelliteMass;
         let maxSize = 0;

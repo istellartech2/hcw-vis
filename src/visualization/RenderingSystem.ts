@@ -210,12 +210,14 @@ export class RenderingSystem {
         });
     }
 
-    /** 一般衛星（index >= 1）のメッシュの色を sat.color に合わせる */
+    /** 表示設定（単色表示など）に合わせて一般衛星（index >= 1）の色を塗り直す */
     public updateAllSatelliteColors(satellites: Satellite[]): void {
+        const display = this.getDisplay();
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
+            const color = resolveSatelliteColor(satellites[i], i, display);
             const material = this.satelliteMeshes[i].material;
-            material.color.set(satellites[i].color);
-            material.emissive.set(satellites[i].color);
+            material.color.setHex(color);
+            material.emissive.setHex(color);
         }
     }
 
@@ -227,7 +229,11 @@ export class RenderingSystem {
 
     private checkSatelliteSelection(): void {
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        const hit = this.raycaster.intersectObjects(this.satelliteMeshes, false)[0];
+        // 非表示のメッシュ（シミュレーション中の基準衛星）は選ばない
+        const hit = this.raycaster.intersectObjects(
+            this.satelliteMeshes.filter((mesh) => mesh.visible),
+            false,
+        )[0];
         this.selectedSatelliteIndex = hit ? this.satelliteMeshes.indexOf(hit.object as SatelliteMesh) : -1;
         this.onSelectionChange(this.selectedSatelliteIndex);
     }

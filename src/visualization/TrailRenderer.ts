@@ -31,7 +31,8 @@ export class TrailRenderer {
         if (trail.frame++ % TRAIL_INTERVAL_FRAMES !== 0) return;
 
         trail.points.push(setHillPosition(new THREE.Vector3(), position));
-        if (trail.points.length > max) trail.points.shift();
+        // 長さの設定を短くしたときも、すぐ新しい長さに縮める
+        if (trail.points.length > max) trail.points.splice(0, trail.points.length - max);
         if (trail.points.length < 2) return;
 
         if (!trail.line) {

@@ -72,4 +72,11 @@ describe('appearance and color resolution', () => {
         const uniform = { ...DEFAULT_DISPLAY_SETTINGS, uniformSatelliteColor: true, satelliteColor: '#abcdef' };
         expect(resolveSatelliteColor(sat, 3, uniform)).toBe(0xabcdef);
     });
+
+    it('uses the uniform color over the group color while uniform display is on', () => {
+        const sat = new Satellite(0, 0, 0, 0, 0, 0, '#ffffff');
+        sat.metadata = { shape: 'sphere', size: 1, color: '#123456' };
+        const uniform = { ...DEFAULT_DISPLAY_SETTINGS, uniformSatelliteColor: true, satelliteColor: '#abcdef' };
+        expect(resolveSatelliteColor(sat, 1, uniform)).toBe(0xabcdef);
+    });
 });
