@@ -1,19 +1,21 @@
 import { useRef, useState } from 'react';
-import { Download, EllipsisVertical, Plus, Satellite, Undo2, Upload } from 'lucide-react';
+import { Download, FileJson, FolderOpen, Plus, RotateCcw, Satellite } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
 import type { FormationConfig } from '@/formation/FormationTypes';
-import { addLayer, countSatellites, parseFormation, serializeFormation } from '@/formation/formationConfig';
-import { appStore, useAppStore } from '@/store/appStore';
+import {
+    addLayer,
+    countSatellites,
+    createDefaultFormation,
+    formationFileName,
+    parseFormation,
+    serializeFormation,
+} from '@/formation/formationConfig';
+import { appStore, useAppStore, type AppState } from '@/store/appStore';
+import { cn } from '@/lib/utils';
 import { LayerCard } from './LayerCard';
 import { LayerEditor } from './LayerEditor';
 
@@ -23,7 +25,8 @@ function downloadText(fileName: string, text: string): void {
     a.href = url;
     a.download = fileName;
     a.click();
-    URL.revokeObjectURL(url);
+    // 直後に revoke すると Safari / Firefox でダウンロードが失敗することがある
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /**
@@ -34,6 +37,7 @@ function downloadText(fileName: string, text: string): void {
 export function FormationSection() {
     const engine = useEngine();
     const config = useAppStore((s) => s.formation);
+    const formationFile = useAppStore((s) => s.formationFile);
     const updateFormation = useAppStore((s) => s.updateFormation);
     const [editing, setEditing] = useState<{ layerId: string; before?: FormationConfig } | null>(null);
     const importRef = useRef<HTMLInputElement>(null);
@@ -50,75 +54,121 @@ export function FormationSection() {
         );
     }
 
-    const importJSON = async (file: File) => {
-        const result = parseFormation(await file.text());
-        if (result.ok) {
-            updateFormation(() => result.config);
-            engine.resetPositions();
-            toast.success(`「${result.config.name}」を読み込みました`);
-        } else {
-            toast.error('読み込みに失敗しました', { description: result.errors.join('\n') });
-        }
+    /** 配置とファイル情報をまとめて差し替え、「元に戻す」用に直前の状態を返す */
+    const replaceFormation = (next: FormationConfig, file: AppState['formationFile']) => {
+        const { formation: prevFormation, formationFile: prevFile } = appStore.getState();
+        updateFormation(() => next);
+        appStore.getState().patch({ formationFile: file });
+        engine.resetPositions();
+        return () => replaceFormation(prevFormation, prevFile);
     };
+
+    const openFile = async (file: File) => {
+        const result = parseFormation(await file.text(), file.name.replace(/\.json$/i, ''));
+        if (!result.ok) {
+            toast.error(`${file.name} を読み込めませんでした`, {
+                description: (
+                    <ul className="list-disc space-y-0.5 pl-4">
+                        {result.errors.slice(0, 5).map((e) => (
+                            <li key={e}>{e}</li>
+                        ))}
+                        {result.errors.length > 5 && <li>ほか {result.errors.length - 5} 件</li>}
+                    </ul>
+                ),
+            });
+            return;
+        }
+        const undo = replaceFormation(result.config, { name: file.name, config: result.config });
+        toast.success(`${file.name} を読み込みました`, { action: { label: '元に戻す', onClick: undo } });
+    };
+
+    const saveFile = () => {
+        const fileName = formationFile?.name ?? formationFileName(config);
+        downloadText(fileName, serializeFormation(config));
+        appStore.getState().patch({ formationFile: { name: fileName, config } });
+        toast.success(`${fileName} を保存しました`, { description: 'ブラウザのダウンロード先に保存されます' });
+    };
+
+    const resetToDefault = () => {
+        const undo = replaceFormation(createDefaultFormation(), null);
+        toast('既定の配置に戻しました', { action: { label: '元に戻す', onClick: undo } });
+    };
+
+    const modified = formationFile !== null && formationFile.config !== config;
 
     return (
         <PanelSection
             title="衛星配置"
             icon={<Satellite />}
             action={
-                <>
-                    <input
-                        ref={importRef}
-                        type="file"
-                        accept=".json,application/json"
-                        className="hidden"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void importJSON(file);
-                            e.target.value = '';
-                        }}
-                    />
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon-sm" className="text-fg-muted" aria-label="ファイル操作">
-                                <EllipsisVertical />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52">
-                            <DropdownMenuItem
-                                onSelect={() =>
-                                    downloadText(`${config.name}_formation.json`, serializeFormation(config))
-                                }
-                            >
-                                <Download />
-                                配置を JSON に保存
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => importRef.current?.click()}>
-                                <Upload />
-                                JSON から読み込む
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem variant="destructive" onSelect={() => engine.resetFormation()}>
-                                <Undo2 />
-                                既定の配置に戻す
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-fg-muted"
+                            aria-label="既定の配置に戻す"
+                            onClick={resetToDefault}
+                        >
+                            <RotateCcw />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>既定の配置に戻す</TooltipContent>
+                </Tooltip>
             }
         >
+            <div className="rounded-lg border border-line bg-sunken p-2">
+                <div className="flex items-center gap-2 px-0.5">
+                    <FileJson className="size-4 shrink-0 text-fg-subtle" />
+                    <div className="min-w-0 flex-1">
+                        <div
+                            className="truncate text-[13px] font-medium text-fg"
+                            title={formationFile?.name ?? formationFileName(config)}
+                        >
+                            {formationFile?.name ?? formationFileName(config)}
+                        </div>
+                        <div className={cn('text-[11px]', modified ? 'text-warning' : 'text-fg-subtle')}>
+                            {formationFile === null
+                                ? 'まだファイルに保存していません'
+                                : modified
+                                  ? '● 変更あり（未保存）'
+                                  : 'ファイルと同じ内容です'}
+                        </div>
+                    </div>
+                </div>
+                <input
+                    ref={importRef}
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void openFile(file);
+                        e.target.value = '';
+                    }}
+                />
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                    <Button variant="outline" size="sm" onClick={() => importRef.current?.click()}>
+                        <FolderOpen />
+                        JSON を開く
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={saveFile}>
+                        <Download />
+                        JSON に保存
+                    </Button>
+                </div>
+            </div>
+
             <p className="text-xs leading-relaxed text-fg-muted">
                 原点の基準衛星のまわりに、衛星を<span className="text-fg">グループ</span>
                 ごとに配置します。グループをクリックすると配置パターンや数を変更できます。
             </p>
 
-            <div className="flex items-baseline justify-between gap-2 text-xs text-fg-muted">
-                <span className="truncate">{config.name}</span>
-                <span className="shrink-0">
-                    合計{' '}
-                    <span className="num font-medium text-fg">{(countSatellites(config) + 1).toLocaleString()}</span>{' '}
-                    機（基準衛星を含む）
-                </span>
+            <div className="text-right text-xs text-fg-muted">
+                合計 <span className="num font-medium text-fg">
+                    {(countSatellites(config) + 1).toLocaleString()}
+                </span>{' '}
+                機（基準衛星を含む）
             </div>
 
             <div className="space-y-1.5">

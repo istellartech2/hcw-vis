@@ -90,6 +90,9 @@ export interface FormationLayer {
     rswOffset?: RSWOffset; // 軸上パターン用のRSWオフセット
 }
 
+/** 保存する JSON のファイル形式バージョン。読み込みは同じメジャーバージョンだけ受け付ける */
+export const FORMATION_FILE_VERSION = '1.0';
+
 /**
  * フォーメーション全体の設定
  */
@@ -132,7 +135,7 @@ export interface ValidationResult {
  * アプリ起動時に使用される初期フォーメーション
  */
 export const DEFAULT_FORMATION_CONFIG: FormationConfig = {
-    version: '1.0',
+    version: FORMATION_FILE_VERSION,
     name: 'デフォルトフォーメーション',
     description: '',
     createdAt: new Date().toISOString(),
