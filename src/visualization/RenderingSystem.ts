@@ -512,7 +512,7 @@ export class RenderingSystem {
                 this.satelliteMeshes[index].rotation.set(0, 0, 0);
 
                 // Check if satellite has CSV quaternion data
-                const satelliteQuaternion = (sat as any).quaternion;
+                const satelliteQuaternion = sat.quaternion;
                 if (satelliteQuaternion) {
                     // Apply quaternion from CSV data (body2RSW rotation)
                     // CSV quaternion: body frame to RSW frame rotation
@@ -555,8 +555,8 @@ export class RenderingSystem {
             let emissiveColor: THREE.Color | null = null;
 
             // Check if satellite has collided
-            const collided = (sat as any).collided;
-            const collisionTime = (sat as any).collisionTime;
+            const collided = sat.collided;
+            const collisionTime = sat.collisionTime;
             if (collided && collisionTime) {
                 const elapsed = Date.now() - collisionTime;
                 if (elapsed < 500) {
@@ -565,7 +565,7 @@ export class RenderingSystem {
                     emissiveColor = new THREE.Color(0xff0000); // Red
                 } else {
                     // Reset collision flag after feedback duration
-                    (sat as any).collided = false;
+                    sat.collided = false;
                 }
             }
 

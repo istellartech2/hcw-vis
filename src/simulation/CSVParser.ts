@@ -25,23 +25,7 @@ export class CSVParser {
     private static readonly TIME_COLUMN = 1;
 
     public static async parseCSVFile(file: File): Promise<CSVPlaybackData> {
-        const content = await this.readFileContent(file);
-        return this.parseCSVContent(content);
-    }
-
-    private static async readFileContent(file: File): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                if (e.target?.result) {
-                    resolve(e.target.result as string);
-                } else {
-                    reject(new Error('Failed to read file content'));
-                }
-            };
-            reader.onerror = () => reject(new Error('File reading error'));
-            reader.readAsText(file);
-        });
+        return this.parseCSVContent(await file.text());
     }
 
     public static parseCSVContent(content: string): CSVPlaybackData {

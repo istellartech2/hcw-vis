@@ -182,7 +182,7 @@ export class InstancedSatelliteRenderer {
 
             // 回転設定
             // CSV quaternionがあればそれを使用、なければUI制御の回転を適用
-            const satelliteQuaternion = (sat as any).quaternion;
+            const satelliteQuaternion = sat.quaternion;
             if (satelliteQuaternion) {
                 // CSV quaternion: RSW座標系 → Three.js座標系への変換
                 // RSW(x,y,z) -> Three.js(z,x,y)
@@ -216,8 +216,8 @@ export class InstancedSatelliteRenderer {
             const originalColor = this.originalColors[colorIndex];
 
             // Check if satellite has collided
-            const collided = (sat as any).collided;
-            const collisionTime = (sat as any).collisionTime;
+            const collided = sat.collided;
+            const collisionTime = sat.collisionTime;
 
             if (collided && collisionTime) {
                 const elapsed = Date.now() - collisionTime;
@@ -229,7 +229,7 @@ export class InstancedSatelliteRenderer {
                     this.instancedMesh.setColorAt(i, this.tempColor);
                 } else {
                     // Reset collision flag after feedback duration
-                    (sat as any).collided = false;
+                    sat.collided = false;
                     // Use original color
                     if (selectedIndex === i + 1) {
                         this.tempColor.setHex(originalColor);

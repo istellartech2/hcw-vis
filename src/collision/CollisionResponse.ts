@@ -17,10 +17,10 @@ export class CollisionResponse {
             this.applyElasticCollision(satellites[pair.i], satellites[pair.j], pair.normal);
 
             // Mark satellites as collided for visual feedback
-            (satellites[pair.i] as any).collided = true;
-            (satellites[pair.j] as any).collided = true;
-            (satellites[pair.i] as any).collisionTime = Date.now();
-            (satellites[pair.j] as any).collisionTime = Date.now();
+            satellites[pair.i].collided = true;
+            satellites[pair.j].collided = true;
+            satellites[pair.i].collisionTime = Date.now();
+            satellites[pair.j].collisionTime = Date.now();
         }
     }
 

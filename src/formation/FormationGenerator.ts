@@ -2,20 +2,11 @@
  * フォーメーション設計から衛星配列を生成するクラス
  */
 
-import { Satellite } from '../simulation/Satellite.js';
+import { Satellite, type SatelliteMetadata } from '../simulation/Satellite.js';
 import { OrbitInitializer } from '../simulation/OrbitInitializer.js';
 import type { FormationConfig, FormationLayer } from './FormationTypes.js';
 
-export interface SatelliteMetadata {
-    layerId: string;
-    layerName: string;
-    shape: string;
-    size: number;
-    color: string;
-    boxRatios?: { x: number; y: number; z: number };
-    rotation?: { r: number; s: number };
-    model3dFile?: string;
-}
+export type { SatelliteMetadata };
 
 export class FormationGenerator {
     private orbitInitializer: OrbitInitializer;
@@ -109,7 +100,7 @@ export class FormationGenerator {
             const satellite = new Satellite(ic.x0, ic.y0, ic.z0, ic.vx0, ic.vy0, ic.vz0, satelliteColor);
 
             // メタデータを衛星に付加（拡張プロパティとして）
-            (satellite as any).metadata = {
+            satellite.metadata = {
                 layerId: layer.id,
                 layerName: layer.name,
                 shape: layer.shape,
@@ -118,7 +109,7 @@ export class FormationGenerator {
                 boxRatios: layer.boxRatios,
                 rotation: layer.rotation,
                 model3dFile: layer.model3dFile,
-            } as SatelliteMetadata;
+            };
 
             satellites.push(satellite);
         }
@@ -130,7 +121,7 @@ export class FormationGenerator {
      * 衛星のメタデータを取得
      */
     static getSatelliteMetadata(satellite: Satellite): SatelliteMetadata | undefined {
-        return (satellite as any).metadata;
+        return satellite.metadata ?? undefined;
     }
 
     /**

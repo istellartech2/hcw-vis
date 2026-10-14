@@ -32,7 +32,7 @@ export class PlaybackEngine {
     public loadCSVData(data: CSVPlaybackData): void {
         this.data = data;
         this.state.currentTime = data.timeRange.min;
-        this.interpolatedStates = new Array(data.satelliteCount);
+        this.interpolatedStates = [];
         this.updateInterpolatedStates();
     }
 
@@ -318,9 +318,7 @@ export class PlaybackEngine {
             satellite.vy = state.velocity.y;
             satellite.vz = state.velocity.z;
 
-            // Store quaternion for rendering system
-            // Note: We'll need to modify the satellite class to support quaternions
-            (satellite as any).quaternion = state.quaternion;
+            satellite.quaternion = state.quaternion;
         }
     }
 

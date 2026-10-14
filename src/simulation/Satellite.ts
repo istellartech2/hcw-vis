@@ -13,6 +13,26 @@ export interface SatelliteData {
     trailLine: THREE.Line | null;
 }
 
+/** フォーメーション生成時に付与される見た目の情報 */
+export interface SatelliteMetadata {
+    layerId: string;
+    layerName: string;
+    shape: string;
+    size: number;
+    color: string;
+    boxRatios?: { x: number; y: number; z: number };
+    rotation?: { r: number; s: number };
+    model3dFile?: string;
+}
+
+/** 機体座標系 → RSW 座標系の回転（CSV 再生の 6DOF データ） */
+export interface AttitudeQuaternion {
+    w: number;
+    x: number;
+    y: number;
+    z: number;
+}
+
 export class Satellite {
     // 初期位置・速度 (m, m/s)
     x0: number;
@@ -39,6 +59,14 @@ export class Satellite {
     trailGeometry: THREE.BufferGeometry | null;
     trailMaterial: THREE.LineBasicMaterial | null;
     frameCounter: number; // 軌跡更新の間引き用
+
+    /** フォーメーション由来の衛星のみ持つ */
+    metadata: SatelliteMetadata | null = null;
+    /** CSV 再生時の姿勢 */
+    quaternion: AttitudeQuaternion | null = null;
+    /** 衝突の視覚フィードバック用 */
+    collided = false;
+    collisionTime: number | null = null;
 
     // 基準衛星の軌道要素（ECI座標計算用）
     static referenceOrbit: OrbitalElements;
@@ -99,8 +127,8 @@ export class Satellite {
         this.frameCounter = 0;
 
         // Clear collision flags
-        (this as any).collided = false;
-        delete (this as any).collisionTime;
+        this.collided = false;
+        this.collisionTime = null;
 
         // THREE.jsオブジェクトの適切な解放
         if (this.trailGeometry) {

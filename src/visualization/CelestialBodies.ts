@@ -84,7 +84,7 @@ export class CelestialBodies {
                     }
                 },
                 // エラー時 - 次のパスを試行
-                (error) => {
+                () => {
                     console.warn(`Failed to load texture from ${currentPath}, trying next path...`);
                     tryLoadTexture(paths, index + 1);
                 },

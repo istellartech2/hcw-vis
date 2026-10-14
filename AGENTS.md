@@ -45,7 +45,7 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
 
 1. **Domain / 3D（フレームワーク非依存、DOM に触れない）**
    - `src/simulation/` HCW ソルバ、軌道要素、座標変換、CSV パーサ、再生エンジン
-   - `src/formation/` フォーメーション定義・生成（`layerForm.ts` はレイヤー編集フォームの純粋関数）
+   - `src/formation/` フォーメーション定義・生成（`formationConfig.ts` は設定操作・検証・JSON 入出力、`layerForm.ts` はレイヤー編集フォームの純粋関数）
    - `src/collision/` 衝突検出・応答
    - `src/visualization/` Three.js の描画（`RenderingSystem` は表示設定を `getDisplay()` 経由で受け取る）
 
@@ -57,7 +57,8 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
 3. **State** `src/store/`
    - `appStore.ts` zustand の vanilla store。React では `useAppStore(selector)`、エンジンでは `appStore.getState()`
      - `display` / `simulation`: UI が書き、エンジンが購読
-     - `simTime` / `referenceInfo` / `selected` / `playback` / `formation` / `loading`: エンジンが書き、UI が表示
+     - `formation`: UI が `updateFormation` で書く。エンジンは `resetPositions()` 時に読んで衛星を再生成
+     - `simTime` / `referenceInfo` / `selected` / `playback` / `loading`: エンジンが書き、UI が表示
      - `ui`: パネル・ダイアログの開閉状態
    - `settings.ts` 設定の型・既定値・選択肢
 
@@ -73,6 +74,7 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
 - Three.js 0.160 / satellite.js 6
 
 ### Key Concepts
+- テストは `src/**/*.test.ts`（Vitest、`import { describe, it, expect } from 'vite-plus/test'`）
 - HCW equations model relative motion between satellites in close proximity (within 1% of orbital radius)
 - The simulation operates in 3DOF (position only, no attitude); CSV playback supports 6DOF (position + quaternion)
 - Hill 座標 (R, S, W) → Three.js 座標は X=W, Y=R, Z=S

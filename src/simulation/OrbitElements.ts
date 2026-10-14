@@ -203,14 +203,14 @@ export class OrbitElementsCalculator {
 
                 return {
                     position: {
-                        x: (result.position as any).x * 1000, // km to m
-                        y: (result.position as any).y * 1000, // km to m
-                        z: (result.position as any).z * 1000, // km to m
+                        x: result.position.x * 1000, // km to m
+                        y: result.position.y * 1000, // km to m
+                        z: result.position.z * 1000, // km to m
                     },
                     velocity: {
-                        x: (result.velocity as any).x * 1000, // km/s to m/s
-                        y: (result.velocity as any).y * 1000, // km/s to m/s
-                        z: (result.velocity as any).z * 1000, // km/s to m/s
+                        x: result.velocity.x * 1000, // km/s to m/s
+                        y: result.velocity.y * 1000, // km/s to m/s
+                        z: result.velocity.z * 1000, // km/s to m/s
                     },
                     geodetic: {
                         latitude: satellite.degreesLat(positionGd.latitude),

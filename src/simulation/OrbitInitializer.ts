@@ -65,8 +65,6 @@ export class OrbitInitializer {
         spacing?: number, // m - satellite spacing (alternative to radius for disk patterns)
         rswOffset?: { r: number; s: number; w: number }, // RSWオフセット（軸上パターン用）
     ): InitialCondition[] {
-        const positions: InitialCondition[] = [];
-
         switch (pattern) {
             case 'origin':
                 return this.generateOriginPosition(rswOffset);
@@ -420,10 +418,6 @@ export class OrbitInitializer {
             const x0 = 0; // 径方向は中央
             const y0 = -approachDistance; // 後方から接近
             const z0 = 0; // 軌道面内
-
-            // ヒルの方程式の解析解を考慮した初期速度
-            // V-bar軌道では、適切な接近速度が必要
-            const approachTime = Math.PI / this.n; // 半周期での接近を想定
 
             // ターゲットに向かう初期速度を計算
             // ヒルの方程式の線形解を使用

@@ -12,7 +12,8 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useEngine } from '@/engine/EngineContext';
+import { useAppStore } from '@/store/appStore';
+import { moveLayer, removeLayer, toggleLayer } from '@/formation/formationConfig';
 import type { FormationLayer } from '@/formation/FormationTypes';
 import { PATTERN_LABELS, SHAPE_LABELS } from '@/formation/layerForm';
 import { cn } from '@/lib/utils';
@@ -25,7 +26,7 @@ interface LayerCardProps {
 }
 
 export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
-    const manager = useEngine().formation;
+    const updateFormation = useAppStore((s) => s.updateFormation);
     const placement = layer.placementMode === 'radius' ? `範囲 ${layer.radius} m` : `間隔 ${layer.spacing} m`;
     const details = [
         PATTERN_LABELS[layer.pattern],
@@ -46,7 +47,7 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
         >
             <Switch
                 checked={layer.enabled}
-                onCheckedChange={() => manager.toggleLayerEnabled(layer.id)}
+                onCheckedChange={() => updateFormation((c) => toggleLayer(c, layer.id))}
                 aria-label={`${layer.name} を有効化`}
             />
             <button type="button" className="min-w-0 flex-1 text-left" onClick={onEdit}>
@@ -70,7 +71,7 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
                     size="icon-sm"
                     aria-label="上へ"
                     disabled={isFirst}
-                    onClick={() => manager.moveLayerUp(layer.id)}
+                    onClick={() => updateFormation((c) => moveLayer(c, layer.id, -1))}
                 >
                     <ChevronUp />
                 </Button>
@@ -79,7 +80,7 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
                     size="icon-sm"
                     aria-label="下へ"
                     disabled={isLast}
-                    onClick={() => manager.moveLayerDown(layer.id)}
+                    onClick={() => updateFormation((c) => moveLayer(c, layer.id, 1))}
                 >
                     <ChevronDown />
                 </Button>
@@ -98,7 +99,10 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                            <AlertDialogAction variant="destructive" onClick={() => manager.removeLayer(layer.id)}>
+                            <AlertDialogAction
+                                variant="destructive"
+                                onClick={() => updateFormation((c) => removeLayer(c, layer.id))}
+                            >
                                 削除
                             </AlertDialogAction>
                         </AlertDialogFooter>

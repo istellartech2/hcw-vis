@@ -21,6 +21,13 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useEngine } from '@/engine/EngineContext';
 import { appStore, useAppStore } from '@/store/appStore';
+import {
+    addLayer,
+    countSatellites,
+    parseFormation,
+    serializeFormation,
+    updateLayer,
+} from '@/formation/formationConfig';
 import { LayerCard } from './LayerCard';
 import { LayerEditorDialog } from './LayerEditorDialog';
 
@@ -35,7 +42,7 @@ function downloadText(fileName: string, text: string): void {
 
 export function FormationDesigner() {
     const engine = useEngine();
-    const manager = engine.formation;
+    const updateFormation = useAppStore((s) => s.updateFormation);
     const open = useAppStore((s) => s.ui.formationOpen);
     const config = useAppStore((s) => s.formation);
     const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
@@ -43,13 +50,17 @@ export function FormationDesigner() {
 
     const setOpen = (formationOpen: boolean) => appStore.getState().setUI({ formationOpen });
     // +1 は基準衛星
-    const total = config.layers.filter((l) => l.enabled).reduce((sum, l) => sum + l.satelliteCount, 0) + 1;
+    const total = countSatellites(config) + 1;
     const editingLayer = config.layers.find((l) => l.id === editingLayerId) ?? null;
 
     const importJSON = async (file: File) => {
-        const result = manager.importFromJSON(await file.text());
-        if (result.valid) toast.success('フォーメーションを読み込みました');
-        else toast.error('読み込みに失敗しました', { description: result.errors.join('\n') });
+        const result = parseFormation(await file.text());
+        if (result.ok) {
+            updateFormation(() => result.config);
+            toast.success('フォーメーションを読み込みました');
+        } else {
+            toast.error('読み込みに失敗しました', { description: result.errors.join('\n') });
+        }
     };
 
     return (
@@ -72,7 +83,7 @@ export function FormationDesigner() {
                             <Input
                                 id="formation-name"
                                 value={config.name}
-                                onChange={(e) => manager.setName(e.target.value)}
+                                onChange={(e) => updateFormation((c) => ({ ...c, name: e.target.value }))}
                             />
                         </Field>
                         <Field>
@@ -81,7 +92,7 @@ export function FormationDesigner() {
                                 id="formation-description"
                                 placeholder="任意"
                                 value={config.description ?? ''}
-                                onChange={(e) => manager.setDescription(e.target.value)}
+                                onChange={(e) => updateFormation((c) => ({ ...c, description: e.target.value }))}
                             />
                         </Field>
                     </div>
@@ -106,7 +117,7 @@ export function FormationDesigner() {
                             <Button
                                 variant="outline"
                                 className="w-full border-dashed"
-                                onClick={() => manager.addLayer()}
+                                onClick={() => updateFormation((c) => addLayer(c))}
                             >
                                 <Plus />
                                 レイヤーを追加
@@ -136,7 +147,7 @@ export function FormationDesigner() {
                             <DropdownMenuContent align="start" side="top">
                                 <DropdownMenuItem
                                     onSelect={() =>
-                                        downloadText(`${config.name}_formation.json`, manager.exportToJSON())
+                                        downloadText(`${config.name}_formation.json`, serializeFormation(config))
                                     }
                                 >
                                     <Download />
@@ -154,7 +165,7 @@ export function FormationDesigner() {
                             </Button>
                             <Button
                                 onClick={() => {
-                                    engine.applyFormationConfig();
+                                    engine.resetPositions();
                                     setOpen(false);
                                 }}
                             >
@@ -171,8 +182,8 @@ export function FormationDesigner() {
                 onClose={() => setEditingLayerId(null)}
                 onSave={(updates) => {
                     if (!editingLayerId) return;
-                    manager.updateLayer(editingLayerId, updates);
-                    engine.applyFormationConfig();
+                    updateFormation((c) => updateLayer(c, editingLayerId, updates));
+                    engine.resetPositions();
                     setEditingLayerId(null);
                 }}
             />
