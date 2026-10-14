@@ -104,11 +104,12 @@ Pre-made sample files are available in the `/public/samples/` directory:
 
 ## Usage in Application
 
-1. Navigate to the CSV Playback mode in the sidebar
-2. Click "Load CSV File" and select your formatted CSV file
+1. Open the settings panel from the menu button (top left) and switch the mode at the top to **CSV 再生**
+2. Click **CSV ファイルを開く** and select your formatted CSV file (or try one of the samples)
 3. The system will validate the format and display any errors
-4. If valid, use the playback controls to visualize the trajectory
+4. If valid, use the playback bar at the bottom (play / stop, seek, loop, speed) to visualize the trajectory
 5. Time scaling and interpolation are handled automatically
+6. Switch the mode back to **シミュレーション** to leave CSV playback
 
 ## Quaternion Convention
 

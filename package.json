@@ -8,10 +8,7 @@
     "build": "vp check --no-fmt && vp build",
     "preview": "vp preview",
     "check": "vp check",
-    "fmt": "vp fmt",
-    "lint": "vp lint",
-    "test": "vp test",
-    "type-check": "tsc --noEmit"
+    "test": "vp test"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
