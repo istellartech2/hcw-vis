@@ -193,17 +193,16 @@ export class RenderingSystem {
             }
 
             // 選択ハイライトと衝突フィードバック（赤く発光）
+            // 変化したときだけ書き換える（一時停止中も毎フレーム通るので、色文字列の解析を繰り返さない）
             const flashing = consumeCollisionFlash(sat);
             const material = mesh.material;
             material.emissiveIntensity =
                 flashing || index === this.selectedSatelliteIndex
                     ? SELECTED_EMISSIVE_INTENSITY
                     : BASE_EMISSIVE_INTENSITY;
-            if (flashing) {
-                material.emissive.setHex(COLLISION_COLOR);
-            } else {
-                material.emissive.set(sat.color);
-            }
+            const showingFlash = material.emissive.getHex() === COLLISION_COLOR;
+            if (flashing && !showingFlash) material.emissive.setHex(COLLISION_COLOR);
+            else if (!flashing && showingFlash) material.emissive.copy(material.color);
 
             if (advanceTrails && display.showTrails && index > 0) {
                 this.trailRenderer.updateTrail(sat, pos, material.color, display.trailLength);

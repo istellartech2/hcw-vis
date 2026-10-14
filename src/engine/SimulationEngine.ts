@@ -179,14 +179,11 @@ export class SimulationEngine {
                 this.publishReferenceInfo();
                 if (this.renderingSystem.getSelectedSatelliteIndex() >= 0) this.publishSelectedSatellite();
             }
-            this.earth.update(
-                new Date(this.simulationStartTime.getTime() + this.currentTime() * 1000),
-                this.orbitElements,
-            );
         }
 
-        // 位置と見た目は毎フレーム同期する（一時停止中のシークや再配置もそのまま反映される）。軌跡は進んだときだけ伸ばす
+        // 位置・姿勢と地球の向きは毎フレーム同期する（一時停止中のシークや再配置もそのまま反映される）。軌跡は進んだときだけ伸ばす
         if (playingCsv) this.csvPlayback.applyTo(this.satellites);
+        this.earth.update(new Date(this.simulationStartTime.getTime() + this.currentTime() * 1000), this.orbitElements);
         this.renderingSystem.updateSatellitePositions(this.satellites, advancing);
         this.renderingSystem.render();
     };
