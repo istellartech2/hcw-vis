@@ -4,7 +4,6 @@ import { Satellite } from '../simulation/Satellite.js';
 import { DEFAULT_DISPLAY_SETTINGS } from '@/store/settings';
 import {
     createSatelliteMesh,
-    displayColor,
     resolveAppearance,
     resolveSatelliteColor,
     type SatelliteAppearance,
@@ -66,8 +65,9 @@ describe('appearance and color resolution', () => {
     it('uses the palette or the uniform color without metadata', () => {
         const sat = new Satellite(0, 0, 0, 0, 0, 0, '#ffffff');
         const palette = { ...DEFAULT_DISPLAY_SETTINGS, uniformSatelliteColor: false };
-        expect(resolveSatelliteColor(sat, 1, palette)).toBe(displayColor(palette, 0));
-        expect(resolveSatelliteColor(sat, 9, palette)).toBe(displayColor(palette, 0));
+        // パレットは 8 色で循環する（index 1 と 9 は同じ色）
+        expect(resolveSatelliteColor(sat, 1, palette)).toBe(0xff6b6b);
+        expect(resolveSatelliteColor(sat, 9, palette)).toBe(0xff6b6b);
 
         const uniform = { ...DEFAULT_DISPLAY_SETTINGS, uniformSatelliteColor: true, satelliteColor: '#abcdef' };
         expect(resolveSatelliteColor(sat, 3, uniform)).toBe(0xabcdef);

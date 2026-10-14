@@ -9,7 +9,6 @@ import {
     REFERENCE_COLOR,
     SELECTED_EMISSIVE_INTENSITY,
     createSatelliteMesh,
-    displayColor,
     disposeObject3D,
     resolveAppearance,
     resolveSatelliteColor,
@@ -212,13 +211,12 @@ export class RenderingSystem {
         });
     }
 
-    public updateAllSatelliteColors(): void {
-        const display = this.getDisplay();
+    /** 一般衛星（index >= 1）のメッシュの色を sat.color に合わせる */
+    public updateAllSatelliteColors(satellites: Satellite[]): void {
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
-            const color = displayColor(display, i - 1);
             const material = this.satelliteMeshes[i].material;
-            material.color.setHex(color);
-            material.emissive.setHex(color);
+            material.color.set(satellites[i].color);
+            material.emissive.set(satellites[i].color);
         }
     }
 

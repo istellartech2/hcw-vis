@@ -442,7 +442,7 @@ export class SimulationEngine {
         this.satellites.forEach((sat, i) => {
             if (i > 0) sat.color = uniformSatelliteColor ? satelliteColor : paletteColor(i);
         });
-        this.renderingSystem.updateAllSatelliteColors();
+        this.renderingSystem.updateAllSatelliteColors(this.satellites);
     }
 
     private rebuildSatelliteMeshes(): void {

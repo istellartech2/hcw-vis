@@ -28,13 +28,6 @@ function parseHexColor(color: string): number {
     return parseInt(color.replace('#', ''), 16);
 }
 
-/** 統一色モードなら指定色、そうでなければパレットの k 番目（循環） */
-export function displayColor(display: DisplaySettings, k: number): number {
-    return parseHexColor(
-        display.uniformSatelliteColor ? display.satelliteColor : SATELLITE_PALETTE[k % SATELLITE_PALETTE.length],
-    );
-}
-
 export function resolveAppearance(sat: Satellite, display: DisplaySettings): SatelliteAppearance {
     const metadata = sat.metadata;
     return {
@@ -47,7 +40,8 @@ export function resolveAppearance(sat: Satellite, display: DisplaySettings): Sat
 /** 一般衛星（index >= 1）の色: メタデータ → 統一色 → パレット */
 export function resolveSatelliteColor(sat: Satellite, index: number, display: DisplaySettings): number {
     if (sat.metadata?.color) return parseHexColor(sat.metadata.color);
-    return displayColor(display, index - 1);
+    if (display.uniformSatelliteColor) return parseHexColor(display.satelliteColor);
+    return parseHexColor(SATELLITE_PALETTE[(index - 1) % SATELLITE_PALETTE.length]);
 }
 
 /**
