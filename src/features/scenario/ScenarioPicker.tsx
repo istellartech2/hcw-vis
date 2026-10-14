@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChevronRight, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +14,7 @@ import { FORMATION_SCENARIOS, type FormationScenario } from '@/formation/scenari
 /** 学習用シナリオの一覧。選ぶと現在の配置をそのシナリオに置き換える */
 export function ScenarioPicker({ onSelect }: { onSelect: (scenario: FormationScenario) => void }) {
     const [open, setOpen] = useState(false);
+    const picked = useRef(false);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -23,7 +24,14 @@ export function ScenarioPicker({ onSelect }: { onSelect: (scenario: FormationSce
                     学習用シナリオから選ぶ
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent
+                className="sm:max-w-lg"
+                // 選んで閉じたときはトリガーにフォーカスを戻さない。戻すと Space（再生／一時停止）がボタン操作に取られる
+                onCloseAutoFocus={(e) => {
+                    if (picked.current) e.preventDefault();
+                    picked.current = false;
+                }}
+            >
                 <DialogHeader>
                     <DialogTitle>学習用シナリオ</DialogTitle>
                     <DialogDescription>
@@ -36,6 +44,7 @@ export function ScenarioPicker({ onSelect }: { onSelect: (scenario: FormationSce
                             <button
                                 type="button"
                                 onClick={() => {
+                                    picked.current = true;
                                     onSelect(scenario);
                                     setOpen(false);
                                 }}

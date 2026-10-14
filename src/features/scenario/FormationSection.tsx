@@ -167,6 +167,8 @@ export function FormationSection() {
 
     const loadScenario = (scenario: FormationScenario) => {
         const undo = replaceFormation(scenario.build(), null);
+        // 一時停止したまま読み込むと t = 0 で止まって見えるので、再生を始めて動きを見せる
+        appStore.getState().patch({ paused: false });
         toast(`「${scenario.title}」を読み込みました`, { action: { label: '元に戻す', onClick: undo } });
     };
 
