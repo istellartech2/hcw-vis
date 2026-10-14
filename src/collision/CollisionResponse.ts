@@ -14,11 +14,7 @@ export class CollisionResponse {
      */
     applyResponse(satellites: Satellite[], pairs: CollisionPair[]): void {
         for (const pair of pairs) {
-            this.applyElasticCollision(
-                satellites[pair.i],
-                satellites[pair.j],
-                pair.normal
-            );
+            this.applyElasticCollision(satellites[pair.i], satellites[pair.j], pair.normal);
 
             // Mark satellites as collided for visual feedback
             (satellites[pair.i] as any).collided = true;
@@ -40,11 +36,7 @@ export class CollisionResponse {
      * @param sj 衛星2
      * @param normal 衝突方向の単位法線ベクトル (i -> j 方向)
      */
-    private applyElasticCollision(
-        si: Satellite,
-        sj: Satellite,
-        normal: { x: number; y: number; z: number }
-    ): void {
+    private applyElasticCollision(si: Satellite, sj: Satellite, normal: { x: number; y: number; z: number }): void {
         const m1 = si.mass;
         const m2 = sj.mass;
 
@@ -64,7 +56,7 @@ export class CollisionResponse {
         // 完全弾性衝突のインパルス (反発係数 e = 1.0)
         // j = -(1 + e) * vn / (1/m1 + 1/m2)
         const restitution = 1.0; // 完全弾性
-        const impulse = -(1 + restitution) * vn / (1 / m1 + 1 / m2);
+        const impulse = (-(1 + restitution) * vn) / (1 / m1 + 1 / m2);
 
         // 速度更新
         // v1' = v1 + (j * n) / m1

@@ -22,7 +22,9 @@ export function ShortcutsDialog() {
                                     <li key={item.label} className="flex items-center justify-between gap-4 text-sm">
                                         <span>{item.label}</span>
                                         <KbdGroup>
-                                            {item.keys.map((key) => <Kbd key={key}>{key}</Kbd>)}
+                                            {item.keys.map((key) => (
+                                                <Kbd key={key}>{key}</Kbd>
+                                            ))}
                                         </KbdGroup>
                                     </li>
                                 ))}

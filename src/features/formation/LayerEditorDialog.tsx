@@ -8,7 +8,15 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet } from '@/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSeparator,
+    FieldSet,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -49,7 +57,9 @@ export function LayerEditorDialog({ layer, onClose, onSave }: LayerEditorDialogP
             <DialogContent className="flex max-h-[min(44rem,calc(100dvh-2rem))] flex-col gap-0 p-0 sm:max-w-xl">
                 <DialogHeader className="border-b p-4">
                     <DialogTitle>レイヤー編集</DialogTitle>
-                    <DialogDescription className="sr-only">配置パターン・衛星の形状・色を設定します。</DialogDescription>
+                    <DialogDescription className="sr-only">
+                        配置パターン・衛星の形状・色を設定します。
+                    </DialogDescription>
                 </DialogHeader>
                 {values && (
                     <form
@@ -60,10 +70,15 @@ export function LayerEditorDialog({ layer, onClose, onSave }: LayerEditorDialogP
                         }}
                     >
                         <div className="min-h-0 flex-1 overflow-y-auto">
-                            <LayerFormFields values={values} onChange={(patch) => setValues((v) => (v ? { ...v, ...patch } : v))} />
+                            <LayerFormFields
+                                values={values}
+                                onChange={(patch) => setValues((v) => (v ? { ...v, ...patch } : v))}
+                            />
                         </div>
                         <DialogFooter className="m-0 border-t p-4">
-                            <Button type="button" variant="ghost" onClick={onClose}>キャンセル</Button>
+                            <Button type="button" variant="ghost" onClick={onClose}>
+                                キャンセル
+                            </Button>
                             <Button type="submit">保存して適用</Button>
                         </DialogFooter>
                     </form>
@@ -73,7 +88,13 @@ export function LayerEditorDialog({ layer, onClose, onSave }: LayerEditorDialogP
     );
 }
 
-function LayerFormFields({ values, onChange }: { values: LayerFormValues; onChange: (patch: Partial<LayerFormValues>) => void }) {
+function LayerFormFields({
+    values,
+    onChange,
+}: {
+    values: LayerFormValues;
+    onChange: (patch: Partial<LayerFormValues>) => void;
+}) {
     const visible = getLayerFieldVisibility(values);
 
     const text = (key: TextKey, label: ReactNode, props: React.ComponentProps<typeof Input> = {}) => (
@@ -102,29 +123,52 @@ function LayerFormFields({ values, onChange }: { values: LayerFormValues; onChan
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field className={visible.placementMode ? undefined : 'sm:col-span-2'}>
                         <FieldLabel htmlFor="layer-pattern">配置パターン</FieldLabel>
-                        <Select value={values.pattern} onValueChange={(pattern) => onChange({ pattern: pattern as LayerFormValues['pattern'] })}>
-                            <SelectTrigger id="layer-pattern" className="w-full"><SelectValue /></SelectTrigger>
+                        <Select
+                            value={values.pattern}
+                            onValueChange={(pattern) => onChange({ pattern: pattern as LayerFormValues['pattern'] })}
+                        >
+                            <SelectTrigger id="layer-pattern" className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
-                                {ALL_PATTERNS.map((p) => <SelectItem key={p} value={p}>{PATTERN_LABELS[p]}</SelectItem>)}
+                                {ALL_PATTERNS.map((p) => (
+                                    <SelectItem key={p} value={p}>
+                                        {PATTERN_LABELS[p]}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </Field>
                     {visible.placementMode && (
                         <Field>
                             <FieldLabel htmlFor="layer-placement">配置方式</FieldLabel>
-                            <Select value={values.placementMode} onValueChange={(mode) => onChange({ placementMode: mode as PlacementMode })}>
-                                <SelectTrigger id="layer-placement" className="w-full"><SelectValue /></SelectTrigger>
+                            <Select
+                                value={values.placementMode}
+                                onValueChange={(mode) => onChange({ placementMode: mode as PlacementMode })}
+                            >
+                                <SelectTrigger id="layer-placement" className="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
                                 <SelectContent>
                                     {(Object.keys(PLACEMENT_MODE_LABELS) as PlacementMode[]).map((m) => (
-                                        <SelectItem key={m} value={m}>{PLACEMENT_MODE_LABELS[m]}</SelectItem>
+                                        <SelectItem key={m} value={m}>
+                                            {PLACEMENT_MODE_LABELS[m]}
+                                        </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </Field>
                     )}
-                    {visible.radius && text('radius', <UnitLabel unit="m">範囲</UnitLabel>, { min: 0.1, max: 10000, step: 0.1 })}
-                    {visible.spacing && text('spacing', <UnitLabel unit="m">衛星間距離</UnitLabel>, { min: 0.01, max: 1000, step: 0.01 })}
-                    {visible.satelliteCount && text('satelliteCount', '衛星数', { min: 1, max: 100000, step: 1, inputMode: 'numeric' })}
+                    {visible.radius &&
+                        text('radius', <UnitLabel unit="m">範囲</UnitLabel>, { min: 0.1, max: 10000, step: 0.1 })}
+                    {visible.spacing &&
+                        text('spacing', <UnitLabel unit="m">衛星間距離</UnitLabel>, {
+                            min: 0.01,
+                            max: 1000,
+                            step: 0.01,
+                        })}
+                    {visible.satelliteCount &&
+                        text('satelliteCount', '衛星数', { min: 1, max: 100000, step: 1, inputMode: 'numeric' })}
                 </div>
 
                 {(visible.originOffset || visible.axisOffset) && (
@@ -147,7 +191,10 @@ function LayerFormFields({ values, onChange }: { values: LayerFormValues; onChan
                         <div className="flex items-baseline justify-between">
                             <FieldDescription>楕円軌道パラメータ（A = 範囲 に対する比）</FieldDescription>
                             <span className="text-xs text-muted-foreground">
-                                離心率 <span className="font-mono text-foreground tabular-nums">{computeEccentricity(values).toFixed(4)}</span>
+                                離心率{' '}
+                                <span className="font-mono text-foreground tabular-nums">
+                                    {computeEccentricity(values).toFixed(4)}
+                                </span>
                             </span>
                         </div>
                         <div className="grid grid-cols-4 gap-2">
@@ -162,7 +209,11 @@ function LayerFormFields({ values, onChange }: { values: LayerFormValues; onChan
                 {visible.positiveZ && (
                     <Field orientation="horizontal">
                         <FieldLabel htmlFor="layer-positivez">+Z方向に回転</FieldLabel>
-                        <Switch id="layer-positivez" checked={values.positiveZ} onCheckedChange={(positiveZ) => onChange({ positiveZ })} />
+                        <Switch
+                            id="layer-positivez"
+                            checked={values.positiveZ}
+                            onCheckedChange={(positiveZ) => onChange({ positiveZ })}
+                        />
                     </Field>
                 )}
             </FieldSet>
@@ -175,13 +226,26 @@ function LayerFormFields({ values, onChange }: { values: LayerFormValues; onChan
                     <Field>
                         <FieldLabel htmlFor="layer-shape">形状</FieldLabel>
                         <Select value={values.shape} onValueChange={(shape) => onChange({ shape: shape as ShapeType })}>
-                            <SelectTrigger id="layer-shape" className="w-full"><SelectValue /></SelectTrigger>
+                            <SelectTrigger id="layer-shape" className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
-                                {(EDITABLE_SHAPES.includes(values.shape) ? EDITABLE_SHAPES : [...EDITABLE_SHAPES, values.shape]).map((s) => <SelectItem key={s} value={s}>{SHAPE_LABELS[s]}</SelectItem>)}
+                                {(EDITABLE_SHAPES.includes(values.shape)
+                                    ? EDITABLE_SHAPES
+                                    : [...EDITABLE_SHAPES, values.shape]
+                                ).map((s) => (
+                                    <SelectItem key={s} value={s}>
+                                        {SHAPE_LABELS[s]}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </Field>
-                    {text('size', <UnitLabel unit="m">{getSizeLabel(values.shape)}</UnitLabel>, { min: 0.01, max: 100, step: 0.01 })}
+                    {text('size', <UnitLabel unit="m">{getSizeLabel(values.shape)}</UnitLabel>, {
+                        min: 0.01,
+                        max: 100,
+                        step: 0.01,
+                    })}
                 </div>
 
                 {visible.boxRatios && (
@@ -197,16 +261,31 @@ function LayerFormFields({ values, onChange }: { values: LayerFormValues; onChan
 
                 {visible.rotation && (
                     <div className="grid grid-cols-2 gap-2">
-                        {text('rotationR', <UnitLabel unit="°">R軸まわり回転</UnitLabel>, { min: -180, max: 180, step: 5 })}
-                        {text('rotationS', <UnitLabel unit="°">S軸まわり回転</UnitLabel>, { min: -180, max: 180, step: 5 })}
+                        {text('rotationR', <UnitLabel unit="°">R軸まわり回転</UnitLabel>, {
+                            min: -180,
+                            max: 180,
+                            step: 5,
+                        })}
+                        {text('rotationS', <UnitLabel unit="°">S軸まわり回転</UnitLabel>, {
+                            min: -180,
+                            max: 180,
+                            step: 5,
+                        })}
                     </div>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field>
                         <FieldLabel htmlFor="layer-color-mode">色</FieldLabel>
-                        <Select value={values.colorMode} onValueChange={(colorMode) => onChange({ colorMode: colorMode as LayerFormValues['colorMode'] })}>
-                            <SelectTrigger id="layer-color-mode" className="w-full"><SelectValue /></SelectTrigger>
+                        <Select
+                            value={values.colorMode}
+                            onValueChange={(colorMode) =>
+                                onChange({ colorMode: colorMode as LayerFormValues['colorMode'] })
+                            }
+                        >
+                            <SelectTrigger id="layer-color-mode" className="w-full">
+                                <SelectValue />
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="uniform">統一色</SelectItem>
                                 <SelectItem value="random">ランダム</SelectItem>

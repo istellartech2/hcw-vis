@@ -76,7 +76,7 @@ export class SimulationEngine {
             this.renderer,
             viewport,
             () => appStore.getState().display,
-            signal
+            signal,
         );
         this.renderingSystem.setOnSelectionChange((index) => this.publishSelectedSatellite(index));
         this.cameraController.resetView();
@@ -157,7 +157,9 @@ export class SimulationEngine {
             }
             if (sim.collisionEnabled !== ps.collisionEnabled) this.collisionDetector.setEnabled(sim.collisionEnabled);
             if (sim.satelliteMass !== ps.satelliteMass) {
-                this.satellites.forEach((sat) => { sat.mass = sim.satelliteMass; });
+                this.satellites.forEach((sat) => {
+                    sat.mass = sim.satelliteMass;
+                });
             }
         }
     }
@@ -237,16 +239,20 @@ export class SimulationEngine {
         const eci = OrbitElementsCalculator.getECIPosition(elements, currentDate);
         appStore.getState().patch({
             referenceInfo: {
-                geodetic: eci ? {
-                    latitude: eci.geodetic.latitude,
-                    longitude: eci.geodetic.longitude,
-                    altitudeKm: eci.geodetic.altitude / 1000,
-                } : null,
-                eciKm: eci ? {
-                    x: eci.position.x / 1000,
-                    y: eci.position.y / 1000,
-                    z: eci.position.z / 1000,
-                } : null,
+                geodetic: eci
+                    ? {
+                          latitude: eci.geodetic.latitude,
+                          longitude: eci.geodetic.longitude,
+                          altitudeKm: eci.geodetic.altitude / 1000,
+                      }
+                    : null,
+                eciKm: eci
+                    ? {
+                          x: eci.position.x / 1000,
+                          y: eci.position.y / 1000,
+                          z: eci.position.z / 1000,
+                      }
+                    : null,
                 orbit: {
                     altitudeKm: elements.altitude / 1000,
                     periodMinutes: elements.period,
@@ -375,7 +381,9 @@ export class SimulationEngine {
         if (errors.length > 0) return errors;
 
         this.setOrbit(inputs);
-        this.renderingSystem.getCelestialBodies().createEarth(this.orbitRadius, appStore.getState().display.earthTexture);
+        this.renderingSystem
+            .getCelestialBodies()
+            .createEarth(this.orbitRadius, appStore.getState().display.earthTexture);
         this.renderingSystem.getCelestialBodies().setLatLongGridVisibility(appStore.getState().display.showLatLongGrid);
         appStore.getState().patch({ orbit: { ...inputs } });
         this.publishReferenceInfo();
@@ -390,7 +398,7 @@ export class SimulationEngine {
             0,
             inputs.argOfPerigee,
             inputs.meanAnomaly,
-            inputs.altitudeKm * 1000
+            inputs.altitudeKm * 1000,
         );
         Satellite.setReferenceOrbit(this.orbitElements);
         this.updateOrbitParameters();
@@ -400,7 +408,7 @@ export class SimulationEngine {
         this.orbitRadius = this.orbitElements.semiMajorAxis;
         this.n = this.orbitElements.meanMotion;
         this.hillSolver.updateMeanMotion(this.n);
-        this.hillSolver.setOrbitParameters(this.orbitRadius, this.orbitElements.inclination * Math.PI / 180);
+        this.hillSolver.setOrbitParameters(this.orbitRadius, (this.orbitElements.inclination * Math.PI) / 180);
         this.hillSolver.setJ2Perturbation(appStore.getState().simulation.j2Perturbation);
         this.syncFormationGenerator();
     }
@@ -409,7 +417,7 @@ export class SimulationEngine {
         this.formationGenerator.updateMeanMotion(this.n);
         this.formationGenerator.setJ2StableArrangement(
             appStore.getState().simulation.j2StableArrangement,
-            this.hillSolver.getSSCoefficientC()
+            this.hillSolver.getSSCoefficientC(),
         );
     }
 
@@ -468,8 +476,18 @@ export class SimulationEngine {
             store.setDisplay({ satelliteShape: 'cube' });
         }
         const count = this.csvPlayback.getEngine().getSatelliteCount();
-        this.satellites = Array.from({ length: count }, (_, i) =>
-            new Satellite(0, 0, 0, 0, 0, 0, i === 0 ? '#ffffff' : SATELLITE_PALETTE[(i - 1) % SATELLITE_PALETTE.length])
+        this.satellites = Array.from(
+            { length: count },
+            (_, i) =>
+                new Satellite(
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    i === 0 ? '#ffffff' : SATELLITE_PALETTE[(i - 1) % SATELLITE_PALETTE.length],
+                ),
         );
         this.updateSatellitesFromPlayback();
         this.rebuildSatelliteMeshes();

@@ -80,21 +80,24 @@ export class CollisionDetector {
                     const dist = Math.sqrt(distSquared);
 
                     // 完全に重なっている場合の処理（ゼロ除算回避）
-                    const normal = dist > 1e-6 ? {
-                        x: dx / dist,
-                        y: dy / dist,
-                        z: dz / dist
-                    } : {
-                        x: 1,
-                        y: 0,
-                        z: 0
-                    };
+                    const normal =
+                        dist > 1e-6
+                            ? {
+                                  x: dx / dist,
+                                  y: dy / dist,
+                                  z: dz / dist,
+                              }
+                            : {
+                                  x: 1,
+                                  y: 0,
+                                  z: 0,
+                              };
 
                     pairs.push({
                         i,
                         j,
                         distance: dist,
-                        normal
+                        normal,
                     });
                 }
             }

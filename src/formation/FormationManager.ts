@@ -2,12 +2,7 @@
  * フォーメーション設計システムのレイヤー管理クラス
  */
 
-import type {
-    FormationConfig,
-    FormationLayer,
-    ValidationResult,
-    DEFAULT_LAYER
-} from './FormationTypes.js';
+import type { FormationConfig, FormationLayer, ValidationResult, DEFAULT_LAYER } from './FormationTypes.js';
 import { DEFAULT_LAYER as defaultLayerConfig, DEFAULT_FORMATION_CONFIG, ALL_PATTERNS } from './FormationTypes.js';
 
 export class FormationManager {
@@ -83,7 +78,7 @@ export class FormationManager {
         const newLayer: FormationLayer = {
             ...defaultLayerConfig,
             id: layerId,
-            name: layerName
+            name: layerName,
         };
 
         this.config.layers.push(newLayer);
@@ -96,7 +91,7 @@ export class FormationManager {
      * レイヤーを削除
      */
     removeLayer(layerId: string): boolean {
-        const index = this.config.layers.findIndex(l => l.id === layerId);
+        const index = this.config.layers.findIndex((l) => l.id === layerId);
         if (index === -1) return false;
 
         this.config.layers.splice(index, 1);
@@ -108,7 +103,7 @@ export class FormationManager {
      * レイヤーを更新
      */
     updateLayer(layerId: string, updates: Partial<FormationLayer>): boolean {
-        const layer = this.config.layers.find(l => l.id === layerId);
+        const layer = this.config.layers.find((l) => l.id === layerId);
         if (!layer) return false;
 
         Object.assign(layer, updates);
@@ -120,11 +115,13 @@ export class FormationManager {
      * レイヤーの順序を変更（上に移動）
      */
     moveLayerUp(layerId: string): boolean {
-        const index = this.config.layers.findIndex(l => l.id === layerId);
+        const index = this.config.layers.findIndex((l) => l.id === layerId);
         if (index <= 0) return false;
 
-        [this.config.layers[index - 1], this.config.layers[index]] =
-        [this.config.layers[index], this.config.layers[index - 1]];
+        [this.config.layers[index - 1], this.config.layers[index]] = [
+            this.config.layers[index],
+            this.config.layers[index - 1],
+        ];
 
         this.notifyChange();
         return true;
@@ -134,11 +131,13 @@ export class FormationManager {
      * レイヤーの順序を変更（下に移動）
      */
     moveLayerDown(layerId: string): boolean {
-        const index = this.config.layers.findIndex(l => l.id === layerId);
+        const index = this.config.layers.findIndex((l) => l.id === layerId);
         if (index === -1 || index >= this.config.layers.length - 1) return false;
 
-        [this.config.layers[index], this.config.layers[index + 1]] =
-        [this.config.layers[index + 1], this.config.layers[index]];
+        [this.config.layers[index], this.config.layers[index + 1]] = [
+            this.config.layers[index + 1],
+            this.config.layers[index],
+        ];
 
         this.notifyChange();
         return true;
@@ -148,7 +147,7 @@ export class FormationManager {
      * レイヤーの有効/無効を切り替え
      */
     toggleLayerEnabled(layerId: string): boolean {
-        const layer = this.config.layers.find(l => l.id === layerId);
+        const layer = this.config.layers.find((l) => l.id === layerId);
         if (!layer) return false;
 
         layer.enabled = !layer.enabled;
@@ -161,7 +160,7 @@ export class FormationManager {
      */
     getTotalSatelliteCount(): number {
         return this.config.layers
-            .filter(layer => layer.enabled)
+            .filter((layer) => layer.enabled)
             .reduce((sum, layer) => sum + layer.satelliteCount, 0);
     }
 
@@ -201,7 +200,7 @@ export class FormationManager {
         } catch (error) {
             return {
                 valid: false,
-                errors: [`JSON解析エラー: ${error instanceof Error ? error.message : String(error)}`]
+                errors: [`JSON解析エラー: ${error instanceof Error ? error.message : String(error)}`],
             };
         }
     }
@@ -236,7 +235,7 @@ export class FormationManager {
 
         return {
             valid: errors.length === 0,
-            errors
+            errors,
         };
     }
 
@@ -308,7 +307,7 @@ export class FormationManager {
      */
     private notifyChange(): void {
         const config = this.getConfig();
-        this.changeCallbacks.forEach(callback => callback(config));
+        this.changeCallbacks.forEach((callback) => callback(config));
     }
 
     /**

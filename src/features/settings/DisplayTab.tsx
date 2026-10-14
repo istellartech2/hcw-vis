@@ -61,7 +61,9 @@ export function DisplayTab() {
                         </SelectTrigger>
                         <SelectContent>
                             {EARTH_TEXTURE_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

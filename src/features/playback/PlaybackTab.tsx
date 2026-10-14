@@ -17,7 +17,7 @@ function StatusMessage({ status }: { status: FileStatus }) {
                 'flex items-start gap-2 rounded-lg border px-3 py-2 text-sm',
                 status.kind === 'loading' && 'border-sky-500/30 bg-sky-500/10 text-sky-300',
                 status.kind === 'success' && 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
-                status.kind === 'error' && 'border-destructive/40 bg-destructive/10 text-destructive'
+                status.kind === 'error' && 'border-destructive/40 bg-destructive/10 text-destructive',
             )}
         >
             <Icon className={cn('mt-0.5 size-4 shrink-0', status.kind === 'loading' && 'animate-spin')} />
@@ -37,8 +37,14 @@ export function PlaybackTab() {
                 <FieldLegend>CSVファイル</FieldLegend>
                 <FieldDescription>
                     事前計算した位置・姿勢（6DOF）の時系列を再生します。{' '}
-                    <a href={FORMAT_DOC_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5">
-                        ファイル形式<ExternalLink className="size-3" />
+                    <a
+                        href={FORMAT_DOC_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-0.5"
+                    >
+                        ファイル形式
+                        <ExternalLink className="size-3" />
                     </a>
                 </FieldDescription>
                 <input
@@ -59,7 +65,13 @@ export function PlaybackTab() {
                 <div className="flex flex-wrap gap-2">
                     <span className="text-xs text-muted-foreground">サンプル:</span>
                     {CSV_SAMPLES.map((sample) => (
-                        <Button key={sample.path} variant="link" size="xs" className="h-auto p-0" onClick={() => void engine.loadCsvSample(sample.path)}>
+                        <Button
+                            key={sample.path}
+                            variant="link"
+                            size="xs"
+                            className="h-auto p-0"
+                            onClick={() => void engine.loadCsvSample(sample.path)}
+                        >
                             {sample.label}
                         </Button>
                     ))}
@@ -78,7 +90,9 @@ export function PlaybackTab() {
                             <dt className="text-muted-foreground">データ点数</dt>
                             <dd className="tabular-nums">{playback.dataPoints}</dd>
                             <dt className="text-muted-foreground">時間範囲</dt>
-                            <dd className="tabular-nums">{playback.timeRange.min.toFixed(1)} – {playback.timeRange.max.toFixed(1)} s</dd>
+                            <dd className="tabular-nums">
+                                {playback.timeRange.min.toFixed(1)} – {playback.timeRange.max.toFixed(1)} s
+                            </dd>
                         </dl>
                         <FieldDescription>再生操作は画面下部のコントロールから行えます。</FieldDescription>
                         <Button variant="outline" onClick={() => engine.exitPlayback()}>

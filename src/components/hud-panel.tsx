@@ -7,7 +7,7 @@ export function HudPanel({ className, ...props }: ComponentProps<'div'>) {
         <div
             className={cn(
                 'pointer-events-auto rounded-xl border border-border/60 bg-background/70 text-foreground shadow-lg backdrop-blur-md',
-                className
+                className,
             )}
             {...props}
         />

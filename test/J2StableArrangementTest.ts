@@ -10,19 +10,18 @@ import { OrbitInitializer } from '../src/simulation/OrbitInitializer.js';
 import { Satellite } from '../src/simulation/Satellite.js';
 
 export class J2StableArrangementTest {
-
     /**
      * テスト1: SS係数の計算が正しいことを確認
      */
     static test1_SSCoefficientCalculation() {
-        console.log("=== テスト1: SS係数の計算 ===");
+        console.log('=== テスト1: SS係数の計算 ===');
 
         // LEO軌道のパラメータ（高度400km）
         const altitude = 400000; // m
         const R_EARTH = 6378137.0; // m
         const r0 = R_EARTH + altitude;
-        const inclination = 51.6 * Math.PI / 180; // ISS軌道傾斜角
-        const n = Math.sqrt(3.986004418e14 / (r0 ** 3)); // 平均運動
+        const inclination = (51.6 * Math.PI) / 180; // ISS軌道傾斜角
+        const n = Math.sqrt(3.986004418e14 / r0 ** 3); // 平均運動
 
         const solver = new HillEquationSolver(n);
         solver.setOrbitParameters(r0, inclination);
@@ -30,14 +29,14 @@ export class J2StableArrangementTest {
 
         const coeff = solver.getSSCoefficient();
         console.log(`基準軌道半径: ${r0.toFixed(0)} m`);
-        console.log(`軌道傾斜角: ${(inclination * 180 / Math.PI).toFixed(2)}°`);
+        console.log(`軌道傾斜角: ${((inclination * 180) / Math.PI).toFixed(2)}°`);
         console.log(`平均運動 n: ${n.toFixed(8)} rad/s`);
         console.log(`SS係数 s: ${coeff.s.toFixed(8)}`);
         console.log(`SS係数 c: ${coeff.c.toFixed(8)}`);
 
         // 検証: c > 1 であること（J2摂動による補正）
         if (coeff.c > 1.0 && coeff.c < 1.01) {
-            console.log("✓ SS係数が妥当な範囲内（1.0 < c < 1.01）");
+            console.log('✓ SS係数が妥当な範囲内（1.0 < c < 1.01）');
             return true;
         } else {
             console.error(`✗ SS係数が範囲外: c = ${coeff.c}`);
@@ -49,13 +48,13 @@ export class J2StableArrangementTest {
      * テスト2: 初期速度検証関数が正しく動作することを確認
      */
     static test2_InitialVelocityVerification() {
-        console.log("\n=== テスト2: 初期速度検証関数 ===");
+        console.log('\n=== テスト2: 初期速度検証関数 ===');
 
         const altitude = 400000;
         const R_EARTH = 6378137.0;
         const r0 = R_EARTH + altitude;
-        const inclination = 51.6 * Math.PI / 180;
-        const n = Math.sqrt(3.986004418e14 / (r0 ** 3));
+        const inclination = (51.6 * Math.PI) / 180;
+        const n = Math.sqrt(3.986004418e14 / r0 ** 3);
 
         const solver = new HillEquationSolver(n);
         solver.setOrbitParameters(r0, inclination);
@@ -71,10 +70,10 @@ export class J2StableArrangementTest {
         // 検証
         const isValid = solver.verifyStableInitialVelocity(x0, vy0_stable, 1e-9);
         if (isValid) {
-            console.log("✓ 初期速度検証関数が正しく動作");
+            console.log('✓ 初期速度検証関数が正しく動作');
             return true;
         } else {
-            console.error("✗ 初期速度検証関数が失敗");
+            console.error('✗ 初期速度検証関数が失敗');
             return false;
         }
     }
@@ -83,13 +82,13 @@ export class J2StableArrangementTest {
      * テスト3: ドリフト定数が0になることを確認
      */
     static test3_DriftConstantZero() {
-        console.log("\n=== テスト3: ドリフト定数 K = 0 ===");
+        console.log('\n=== テスト3: ドリフト定数 K = 0 ===');
 
         const altitude = 400000;
         const R_EARTH = 6378137.0;
         const r0 = R_EARTH + altitude;
-        const inclination = 51.6 * Math.PI / 180;
-        const n = Math.sqrt(3.986004418e14 / (r0 ** 3));
+        const inclination = (51.6 * Math.PI) / 180;
+        const n = Math.sqrt(3.986004418e14 / r0 ** 3);
 
         const solver = new HillEquationSolver(n);
         solver.setOrbitParameters(r0, inclination);
@@ -102,7 +101,7 @@ export class J2StableArrangementTest {
         console.log(`ドリフト定数 K = ${K.toFixed(12)} m/s`);
 
         if (Math.abs(K) < 1e-9) {
-            console.log("✓ ドリフト定数が十分小さい（< 1e-9）");
+            console.log('✓ ドリフト定数が十分小さい（< 1e-9）');
             return true;
         } else {
             console.error(`✗ ドリフト定数が大きすぎる: ${K}`);
@@ -114,14 +113,14 @@ export class J2StableArrangementTest {
      * テスト4: J2安定配置の円盤配置で複数軌道周期のドリフトを検証
      */
     static test4_MultiOrbitDriftVerification() {
-        console.log("\n=== テスト4: 複数軌道周期のドリフト検証 ===");
+        console.log('\n=== テスト4: 複数軌道周期のドリフト検証 ===');
 
         const altitude = 400000;
         const R_EARTH = 6378137.0;
         const r0 = R_EARTH + altitude;
-        const inclination = 51.6 * Math.PI / 180;
-        const n = Math.sqrt(3.986004418e14 / (r0 ** 3));
-        const T = 2 * Math.PI / n; // 軌道周期
+        const inclination = (51.6 * Math.PI) / 180;
+        const n = Math.sqrt(3.986004418e14 / r0 ** 3);
+        const T = (2 * Math.PI) / n; // 軌道周期
 
         console.log(`軌道周期: ${(T / 60).toFixed(2)} 分`);
 
@@ -148,25 +147,29 @@ export class J2StableArrangementTest {
         });
 
         if (!allValid) {
-            console.error("✗ 一部の衛星でドリフト定数が閾値を超えています");
+            console.error('✗ 一部の衛星でドリフト定数が閾値を超えています');
             return false;
         }
 
-        console.log("✓ すべての衛星の初期ドリフト定数が十分小さい");
+        console.log('✓ すべての衛星の初期ドリフト定数が十分小さい');
 
         // 数値積分で5周期シミュレーション
         const numOrbits = 5;
         const dt = T / 100; // 1周期を100ステップで分割
-        const totalSteps = Math.floor(numOrbits * T / dt);
+        const totalSteps = Math.floor((numOrbits * T) / dt);
 
         console.log(`シミュレーション: ${numOrbits}周期、${totalSteps}ステップ`);
 
         // 中心以外の衛星でテスト（1番目の衛星）
         const testPos = positions[1];
         const satellite = new Satellite(
-            testPos.x0, testPos.y0, testPos.z0,
-            testPos.vx0, testPos.vy0, testPos.vz0,
-            '#ffffff'
+            testPos.x0,
+            testPos.y0,
+            testPos.z0,
+            testPos.vx0,
+            testPos.vy0,
+            testPos.vz0,
+            '#ffffff',
         );
 
         const initialX = satellite.x;
@@ -205,14 +208,14 @@ export class J2StableArrangementTest {
      * テスト5: J2摂動なしとの比較
      */
     static test5_CompareWithoutJ2() {
-        console.log("\n=== テスト5: J2摂動なしとの比較 ===");
+        console.log('\n=== テスト5: J2摂動なしとの比較 ===');
 
         const altitude = 400000;
         const R_EARTH = 6378137.0;
         const r0 = R_EARTH + altitude;
-        const inclination = 51.6 * Math.PI / 180;
-        const n = Math.sqrt(3.986004418e14 / (r0 ** 3));
-        const T = 2 * Math.PI / n;
+        const inclination = (51.6 * Math.PI) / 180;
+        const n = Math.sqrt(3.986004418e14 / r0 ** 3);
+        const T = (2 * Math.PI) / n;
 
         // J2摂動なしのソルバー
         const solverNoJ2 = new HillEquationSolver(n);
@@ -238,10 +241,10 @@ export class J2StableArrangementTest {
         console.log(`理論的な速度比 = ${c.toFixed(8)}`);
 
         if (Math.abs(vy0_withJ2 / vy0_noJ2 - c) < 1e-6) {
-            console.log("✓ 速度比がSS係数と一致");
+            console.log('✓ 速度比がSS係数と一致');
             return true;
         } else {
-            console.error("✗ 速度比がSS係数と一致しない");
+            console.error('✗ 速度比がSS係数と一致しない');
             return false;
         }
     }
@@ -250,29 +253,29 @@ export class J2StableArrangementTest {
      * すべてのテストを実行
      */
     static runAllTests() {
-        console.log("╔════════════════════════════════════════════════════╗");
-        console.log("║  J2安定配置 数値検証テスト                        ║");
-        console.log("╚════════════════════════════════════════════════════╝\n");
+        console.log('╔════════════════════════════════════════════════════╗');
+        console.log('║  J2安定配置 数値検証テスト                        ║');
+        console.log('╚════════════════════════════════════════════════════╝\n');
 
         const results = [
             this.test1_SSCoefficientCalculation(),
             this.test2_InitialVelocityVerification(),
             this.test3_DriftConstantZero(),
             this.test4_MultiOrbitDriftVerification(),
-            this.test5_CompareWithoutJ2()
+            this.test5_CompareWithoutJ2(),
         ];
 
-        console.log("\n╔════════════════════════════════════════════════════╗");
-        console.log("║  テスト結果サマリー                                ║");
-        console.log("╚════════════════════════════════════════════════════╝");
+        console.log('\n╔════════════════════════════════════════════════════╗');
+        console.log('║  テスト結果サマリー                                ║');
+        console.log('╚════════════════════════════════════════════════════╝');
 
-        const passed = results.filter(r => r).length;
+        const passed = results.filter((r) => r).length;
         const total = results.length;
 
         console.log(`\n合格: ${passed}/${total}`);
 
         if (passed === total) {
-            console.log("\n🎉 すべてのテストが合格しました！");
+            console.log('\n🎉 すべてのテストが合格しました！');
         } else {
             console.warn(`\n⚠️  ${total - passed}個のテストが失敗しました`);
         }

@@ -1,6 +1,14 @@
 import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet } from '@/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSeparator,
+    FieldSet,
+} from '@/components/ui/field';
 import { NumberField } from '@/components/number-field';
 import { useEngine } from '@/engine/EngineContext';
 import { appStore, useAppStore } from '@/store/appStore';
@@ -48,7 +56,9 @@ export function SimulationTab() {
                 <FieldLegend>外力</FieldLegend>
                 <div className="flex items-end gap-2">
                     <Field className="flex-1">
-                        <FieldLabel htmlFor="perturbation"><UnitLabel unit="m/s">摂動量</UnitLabel></FieldLabel>
+                        <FieldLabel htmlFor="perturbation">
+                            <UnitLabel unit="m/s">摂動量</UnitLabel>
+                        </FieldLabel>
                         <NumberField
                             id="perturbation"
                             min={0.001}
@@ -79,7 +89,9 @@ export function SimulationTab() {
                         onCheckedChange={(collisionEnabled) => setSimulation({ collisionEnabled })}
                     />
                     <Field>
-                        <FieldLabel htmlFor="satellite-mass"><UnitLabel unit="kg">衛星質量</UnitLabel></FieldLabel>
+                        <FieldLabel htmlFor="satellite-mass">
+                            <UnitLabel unit="kg">衛星質量</UnitLabel>
+                        </FieldLabel>
                         <NumberField
                             id="satellite-mass"
                             min={0.1}

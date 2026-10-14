@@ -16,7 +16,11 @@ import { appStore } from '@/store/appStore';
 
 const README_URL = 'https://github.com/istellartech2/hcw-vis/blob/main/README.md';
 
-function ToolbarButton({ label, children, ...props }: { label: string; children: ReactNode } & React.ComponentProps<typeof Button>) {
+function ToolbarButton({
+    label,
+    children,
+    ...props
+}: { label: string; children: ReactNode } & React.ComponentProps<typeof Button>) {
     return (
         <Tooltip>
             <TooltipTrigger asChild>
@@ -38,7 +42,12 @@ export function TopToolbar() {
             <ToolbarButton label="設定" onClick={() => setUI({ settingsOpen: true })}>
                 <Settings2 />
             </ToolbarButton>
-            <Button variant="ghost" className="gap-1.5" aria-label="フォーメーション設計" onClick={() => setUI({ formationOpen: true })}>
+            <Button
+                variant="ghost"
+                className="gap-1.5"
+                aria-label="フォーメーション設計"
+                onClick={() => setUI({ formationOpen: true })}
+            >
                 <Satellite />
                 <span className="hidden sm:inline">フォーメーション</span>
             </Button>

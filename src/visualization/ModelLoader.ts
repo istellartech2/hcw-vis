@@ -58,20 +58,20 @@ export class ModelLoader {
                 url,
                 (gltf) => {
                     this.loadingIndicator.setMessage(`${fileName}を処理しています...`);
-                    
+
                     const model = gltf.scene;
-                    
+
                     // Center the model
                     const box = new THREE.Box3().setFromObject(model);
                     const center = box.getCenter(new THREE.Vector3());
                     model.position.sub(center);
-                    
+
                     // Scale to unit size
                     const size = box.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
                     const scale = 1 / maxDim;
                     model.scale.setScalar(scale);
-                    
+
                     resolve(model);
                 },
                 (progress) => {
@@ -83,7 +83,7 @@ export class ModelLoader {
                 (error) => {
                     console.error('Error loading GLTF model:', error);
                     reject(new Error('Failed to load GLTF model'));
-                }
+                },
             );
         });
     }
@@ -94,27 +94,27 @@ export class ModelLoader {
                 url,
                 (geometry) => {
                     this.loadingIndicator.setMessage(`${fileName}を処理しています...`);
-                    
+
                     // Create material for STL
                     const material = new THREE.MeshPhongMaterial({
                         color: 0xcccccc,
                         specular: 0x111111,
-                        shininess: 200
+                        shininess: 200,
                     });
 
                     const mesh = new THREE.Mesh(geometry, material);
-                    
+
                     // Center the geometry
                     geometry.computeBoundingBox();
                     const center = geometry.boundingBox!.getCenter(new THREE.Vector3());
                     geometry.translate(-center.x, -center.y, -center.z);
-                    
+
                     // Scale to unit size
                     const size = geometry.boundingBox!.getSize(new THREE.Vector3());
                     const maxDim = Math.max(size.x, size.y, size.z);
                     const scale = 1 / maxDim;
                     mesh.scale.setScalar(scale);
-                    
+
                     resolve(mesh);
                 },
                 (progress) => {
@@ -126,7 +126,7 @@ export class ModelLoader {
                 (error) => {
                     console.error('Error loading STL model:', error);
                     reject(new Error('Failed to load STL model'));
-                }
+                },
             );
         });
     }

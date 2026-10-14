@@ -36,7 +36,9 @@ function RswInputForm({ kind, onClose }: { kind: 'thrust' | 'position'; onClose:
                 apply();
             }}
         >
-            <p className="text-xs text-muted-foreground">{config.description} ({config.unit})</p>
+            <p className="text-xs text-muted-foreground">
+                {config.description} ({config.unit})
+            </p>
             <div className="grid grid-cols-3 gap-2">
                 {AXES.map((axis, i) => (
                     <label key={axis} className="space-y-1">
@@ -57,14 +59,28 @@ function RswInputForm({ kind, onClose }: { kind: 'thrust' | 'position'; onClose:
                 ))}
             </div>
             <div className="flex justify-end gap-2">
-                <Button type="button" size="sm" variant="ghost" onClick={onClose}>キャンセル</Button>
-                <Button type="submit" size="sm">適用</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+                    キャンセル
+                </Button>
+                <Button type="submit" size="sm">
+                    適用
+                </Button>
             </div>
         </form>
     );
 }
 
-function VectorRow({ label, vector, unit, digits }: { label: string; vector: RswVector; unit: string; digits: number }) {
+function VectorRow({
+    label,
+    vector,
+    unit,
+    digits,
+}: {
+    label: string;
+    vector: RswVector;
+    unit: string;
+    digits: number;
+}) {
     return (
         <div className="grid grid-cols-[3rem_repeat(3,minmax(0,1fr))] items-baseline gap-x-2">
             <span className="text-muted-foreground">{label}</span>
@@ -104,8 +120,14 @@ export function SelectedSatellitePanel() {
                 <VectorRow label="位置" vector={selected.position} unit="m" digits={1} />
                 <VectorRow label="速度" vector={selected.velocity} unit="m/s" digits={3} />
                 <div className="flex justify-between text-muted-foreground">
-                    <span>距離 <span className="font-mono text-foreground tabular-nums">{selected.distance.toFixed(1)}</span> m</span>
-                    <span>速さ <span className="font-mono text-foreground tabular-nums">{selected.speed.toFixed(3)}</span> m/s</span>
+                    <span>
+                        距離{' '}
+                        <span className="font-mono text-foreground tabular-nums">{selected.distance.toFixed(1)}</span> m
+                    </span>
+                    <span>
+                        速さ <span className="font-mono text-foreground tabular-nums">{selected.speed.toFixed(3)}</span>{' '}
+                        m/s
+                    </span>
                 </div>
             </div>
 
@@ -118,15 +140,21 @@ export function SelectedSatellitePanel() {
                 onValueChange={(value) => setDialog((value || null) as ActiveDialog)}
             >
                 <ToggleGroupItem value="thrust" className="flex-1">
-                    <Rocket />推力 <Kbd>T</Kbd>
+                    <Rocket />
+                    推力 <Kbd>T</Kbd>
                 </ToggleGroupItem>
                 <ToggleGroupItem value="position" className="flex-1">
-                    <Move3d />位置 <Kbd>P</Kbd>
+                    <Move3d />
+                    位置 <Kbd>P</Kbd>
                 </ToggleGroupItem>
             </ToggleGroup>
 
             {activeDialog && (
-                <RswInputForm key={`${activeDialog}-${selected.index}`} kind={activeDialog} onClose={() => setDialog(null)} />
+                <RswInputForm
+                    key={`${activeDialog}-${selected.index}`}
+                    kind={activeDialog}
+                    onClose={() => setDialog(null)}
+                />
             )}
         </HudPanel>
     );

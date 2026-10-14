@@ -19,7 +19,9 @@ function SpeedSelect({ value, onChange }: { value: number; onChange: (value: num
             </SelectTrigger>
             <SelectContent side="top">
                 {TIME_SCALE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={String(option.value)}>{option.label}</SelectItem>
+                    <SelectItem key={option.value} value={String(option.value)}>
+                        {option.label}
+                    </SelectItem>
                 ))}
             </SelectContent>
         </Select>
@@ -36,13 +38,21 @@ function SimulationTimeControls() {
         <HudPanel className="flex items-center gap-1 p-1">
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label={paused ? '再開' : '一時停止'} onClick={() => engine.togglePause()}>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={paused ? '再開' : '一時停止'}
+                        onClick={() => engine.togglePause()}
+                    >
                         {paused ? <Play /> : <Pause />}
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent>{paused ? '再開' : '一時停止'} (Space)</TooltipContent>
             </Tooltip>
-            <span className="min-w-28 px-1 text-center font-mono text-sm tabular-nums data-paused:text-muted-foreground" data-paused={paused || undefined}>
+            <span
+                className="min-w-28 px-1 text-center font-mono text-sm tabular-nums data-paused:text-muted-foreground"
+                data-paused={paused || undefined}
+            >
                 {formatSimTime(simTime)}
             </span>
             <SpeedSelect value={timeScale} onChange={(v) => appStore.getState().setSimulation({ timeScale: v })} />
@@ -57,8 +67,15 @@ function CsvTransportControls() {
 
     return (
         <HudPanel className="flex w-[min(36rem,calc(100vw-1.5rem))] items-center gap-2 p-1.5">
-            <Badge variant="secondary" className="hidden sm:inline-flex">CSV</Badge>
-            <Button variant="ghost" size="icon" aria-label={playback.isPlaying ? '一時停止' : '再生'} onClick={() => engine.togglePlaybackPlay()}>
+            <Badge variant="secondary" className="hidden sm:inline-flex">
+                CSV
+            </Badge>
+            <Button
+                variant="ghost"
+                size="icon"
+                aria-label={playback.isPlaying ? '一時停止' : '再生'}
+                onClick={() => engine.togglePlaybackPlay()}
+            >
                 {playback.isPlaying ? <Pause /> : <Play />}
             </Button>
             <Button variant="ghost" size="icon" aria-label="停止" onClick={() => engine.stopPlayback()}>
@@ -76,7 +93,12 @@ function CsvTransportControls() {
             <span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">
                 {Math.round(playback.currentTime)} / {Math.round(playback.timeRange?.max ?? 0)} s
             </span>
-            <Toggle size="sm" pressed={playback.loop} onPressedChange={(loop) => engine.setPlaybackLoop(loop)} aria-label="ループ再生">
+            <Toggle
+                size="sm"
+                pressed={playback.loop}
+                onPressedChange={(loop) => engine.setPlaybackLoop(loop)}
+                aria-label="ループ再生"
+            >
                 <Repeat />
             </Toggle>
             <SpeedSelect value={playback.speed} onChange={(v) => engine.setPlaybackSpeed(v)} />

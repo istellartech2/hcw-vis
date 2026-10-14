@@ -19,16 +19,31 @@ export function SettingsSheet() {
                 <Tabs defaultValue="simulation" className="min-h-0 flex-1 gap-0">
                     <div className="border-b px-4 py-3">
                         <TabsList className="w-full">
-                            <TabsTrigger value="simulation"><Zap />シミュレーション</TabsTrigger>
-                            <TabsTrigger value="display"><Eye />表示</TabsTrigger>
-                            <TabsTrigger value="playback"><Clapperboard />CSV再生</TabsTrigger>
+                            <TabsTrigger value="simulation">
+                                <Zap />
+                                シミュレーション
+                            </TabsTrigger>
+                            <TabsTrigger value="display">
+                                <Eye />
+                                表示
+                            </TabsTrigger>
+                            <TabsTrigger value="playback">
+                                <Clapperboard />
+                                CSV再生
+                            </TabsTrigger>
                         </TabsList>
                     </div>
                     <div className="min-h-0 flex-1 overflow-y-auto">
                         <div className="p-4">
-                            <TabsContent value="simulation"><SimulationTab /></TabsContent>
-                            <TabsContent value="display"><DisplayTab /></TabsContent>
-                            <TabsContent value="playback"><PlaybackTab /></TabsContent>
+                            <TabsContent value="simulation">
+                                <SimulationTab />
+                            </TabsContent>
+                            <TabsContent value="display">
+                                <DisplayTab />
+                            </TabsContent>
+                            <TabsContent value="playback">
+                                <PlaybackTab />
+                            </TabsContent>
                         </div>
                     </div>
                 </Tabs>

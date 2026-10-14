@@ -59,7 +59,9 @@ export function FormationDesigner() {
                     <DialogHeader className="border-b p-4 pr-12">
                         <div className="flex items-center gap-2">
                             <DialogTitle>フォーメーション設計</DialogTitle>
-                            <Badge variant="secondary" className="tabular-nums">合計 {total} 機</Badge>
+                            <Badge variant="secondary" className="tabular-nums">
+                                合計 {total} 機
+                            </Badge>
                         </div>
                         <DialogDescription>衛星配置をレイヤー単位で追加・編集します。</DialogDescription>
                     </DialogHeader>
@@ -67,7 +69,11 @@ export function FormationDesigner() {
                     <div className="grid gap-3 border-b p-4 sm:grid-cols-[1fr_2fr]">
                         <Field>
                             <FieldLabel htmlFor="formation-name">名前</FieldLabel>
-                            <Input id="formation-name" value={config.name} onChange={(e) => manager.setName(e.target.value)} />
+                            <Input
+                                id="formation-name"
+                                value={config.name}
+                                onChange={(e) => manager.setName(e.target.value)}
+                            />
                         </Field>
                         <Field>
                             <FieldLabel htmlFor="formation-description">説明</FieldLabel>
@@ -83,7 +89,9 @@ export function FormationDesigner() {
                     <div className="min-h-0 flex-1 overflow-y-auto">
                         <div className="space-y-2 p-4">
                             {config.layers.length === 0 ? (
-                                <p className="py-8 text-center text-sm text-muted-foreground">レイヤーを追加してください</p>
+                                <p className="py-8 text-center text-sm text-muted-foreground">
+                                    レイヤーを追加してください
+                                </p>
                             ) : (
                                 config.layers.map((layer, index) => (
                                     <LayerCard
@@ -95,7 +103,11 @@ export function FormationDesigner() {
                                     />
                                 ))
                             )}
-                            <Button variant="outline" className="w-full border-dashed" onClick={() => manager.addLayer()}>
+                            <Button
+                                variant="outline"
+                                className="w-full border-dashed"
+                                onClick={() => manager.addLayer()}
+                            >
                                 <Plus />
                                 レイヤーを追加
                             </Button>
@@ -122,7 +134,11 @@ export function FormationDesigner() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" side="top">
-                                <DropdownMenuItem onSelect={() => downloadText(`${config.name}_formation.json`, manager.exportToJSON())}>
+                                <DropdownMenuItem
+                                    onSelect={() =>
+                                        downloadText(`${config.name}_formation.json`, manager.exportToJSON())
+                                    }
+                                >
                                     <Download />
                                     JSONに保存
                                 </DropdownMenuItem>
@@ -133,7 +149,9 @@ export function FormationDesigner() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                         <div className="flex gap-2">
-                            <Button variant="ghost" onClick={() => setOpen(false)}>閉じる</Button>
+                            <Button variant="ghost" onClick={() => setOpen(false)}>
+                                閉じる
+                            </Button>
                             <Button
                                 onClick={() => {
                                     engine.applyFormationConfig();

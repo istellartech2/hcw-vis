@@ -38,7 +38,7 @@ export class RenderingSystem {
         renderer: THREE.WebGLRenderer,
         container: HTMLElement,
         getDisplay: () => DisplaySettings,
-        signal?: AbortSignal
+        signal?: AbortSignal,
     ) {
         this.scene = scene;
         this.camera = camera;
@@ -96,34 +96,34 @@ export class RenderingSystem {
 
     private createAxes(): THREE.Group {
         const axesGroup = new THREE.Group();
-        
+
         // X-axis (Along-track)
         const xGeometry = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(15, 0, 0)  // 15m axis for 10m range
+            new THREE.Vector3(15, 0, 0), // 15m axis for 10m range
         ]);
-        const xMaterial = new THREE.LineBasicMaterial({ color: 0x00BFFF });
+        const xMaterial = new THREE.LineBasicMaterial({ color: 0x00bfff });
         const xAxis = new THREE.Line(xGeometry, xMaterial);
         axesGroup.add(xAxis);
-        
+
         // Y-axis (Radial)
         const yGeometry = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 15, 0)  // 15m axis for 10m range
+            new THREE.Vector3(0, 15, 0), // 15m axis for 10m range
         ]);
-        const yMaterial = new THREE.LineBasicMaterial({ color: 0xFF6B6B });
+        const yMaterial = new THREE.LineBasicMaterial({ color: 0xff6b6b });
         const yAxis = new THREE.Line(yGeometry, yMaterial);
         axesGroup.add(yAxis);
-        
+
         // Z-axis (Cross-track)
         const zGeometry = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 0, 15)  // 15m axis for 10m range
+            new THREE.Vector3(0, 0, 15), // 15m axis for 10m range
         ]);
-        const zMaterial = new THREE.LineBasicMaterial({ color: 0x2ECC71 });
+        const zMaterial = new THREE.LineBasicMaterial({ color: 0x2ecc71 });
         const zAxis = new THREE.Line(zGeometry, zMaterial);
         axesGroup.add(zAxis);
-        
+
         this.scene.add(axesGroup);
         axesGroup.visible = this.getDisplay().showAxes;
         return axesGroup;
@@ -134,19 +134,23 @@ export class RenderingSystem {
         // Size: 30 units = 30m total, Divisions: 30 = 1m per division
         // Subtle colors for background reference
         const gridHelper = new THREE.GridHelper(30, 30, 0x777777);
-        gridHelper.position.y = -10;  // Just below origin level
+        gridHelper.position.y = -10; // Just below origin level
         this.scene.add(gridHelper);
         return gridHelper;
     }
 
     private setupSatelliteSelection(signal?: AbortSignal): void {
-        this.container.addEventListener('click', (e) => {
-            const rect = this.container.getBoundingClientRect();
-            this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-            
-            this.checkSatelliteSelection();
-        }, { signal });
+        this.container.addEventListener(
+            'click',
+            (e) => {
+                const rect = this.container.getBoundingClientRect();
+                this.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                this.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+                this.checkSatelliteSelection();
+            },
+            { signal },
+        );
     }
 
     public setOnSelectionChange(callback: (index: number) => void): void {
@@ -163,7 +167,7 @@ export class RenderingSystem {
         }
 
         // Clean up existing meshes
-        this.satelliteMeshes.forEach(meshOrGroup => {
+        this.satelliteMeshes.forEach((meshOrGroup) => {
             this.scene.remove(meshOrGroup);
 
             // If it's a group (3D model), traverse and dispose all children
@@ -174,7 +178,7 @@ export class RenderingSystem {
                         if (mesh.geometry) mesh.geometry.dispose();
                         if (mesh.material) {
                             if (Array.isArray(mesh.material)) {
-                                mesh.material.forEach(mat => mat.dispose());
+                                mesh.material.forEach((mat) => mat.dispose());
                             } else {
                                 mesh.material.dispose();
                             }
@@ -187,7 +191,7 @@ export class RenderingSystem {
                 if (mesh.geometry) mesh.geometry.dispose();
                 if (mesh.material) {
                     if (Array.isArray(mesh.material)) {
-                        mesh.material.forEach(mat => mat.dispose());
+                        mesh.material.forEach((mat) => mat.dispose());
                     } else {
                         mesh.material.dispose();
                     }
@@ -198,7 +202,7 @@ export class RenderingSystem {
         this.satelliteMeshes = [];
 
         // Check if any satellite has metadata (formation mode)
-        const hasMetadata = satellites.some(sat => FormationGenerator.getSatelliteMetadata(sat) !== undefined);
+        const hasMetadata = satellites.some((sat) => FormationGenerator.getSatelliteMetadata(sat) !== undefined);
 
         // Get satellite size and shape from UI controls (for non-formation mode)
         const satelliteSize = this.getDisplay().satelliteSize;
@@ -206,14 +210,23 @@ export class RenderingSystem {
 
         // Determine rendering mode: InstancedMesh only for non-formation mode with sphere/cube
         // CSV再生ではクォータニオン姿勢を反映するため個別メッシュを使う
-        this.useInstancedRendering = !options.showReference && !hasMetadata && (satelliteShape === 'sphere' || satelliteShape === 'cube') && satellites.length > 1;
+        this.useInstancedRendering =
+            !options.showReference &&
+            !hasMetadata &&
+            (satelliteShape === 'sphere' || satelliteShape === 'cube') &&
+            satellites.length > 1;
 
         if (this.useInstancedRendering) {
             // Use InstancedMesh for sphere/cube shapes
             this.createSatelliteMeshesInstanced(satellites, satelliteSize, satelliteShape);
         } else {
             // Fallback to traditional individual meshes for formation mode, 3D files, or single satellite
-            this.createSatelliteMeshesTraditional(satellites, satelliteSize, satelliteShape, options.showReference ?? false);
+            this.createSatelliteMeshesTraditional(
+                satellites,
+                satelliteSize,
+                satelliteShape,
+                options.showReference ?? false,
+            );
         }
     }
 
@@ -223,7 +236,7 @@ export class RenderingSystem {
     private createSatelliteMeshesInstanced(
         satellites: Satellite[],
         satelliteSize: number,
-        satelliteShape: string
+        satelliteShape: string,
     ): void {
         const useUniformColor = this.getDisplay().uniformSatelliteColor;
         const uniformColor = this.getDisplay().satelliteColor;
@@ -254,7 +267,7 @@ export class RenderingSystem {
                 satellites.length - 1, // 基準衛星を除く
                 satelliteSize,
                 satelliteShape as 'sphere' | 'cube',
-                colorArray
+                colorArray,
             );
         }
     }
@@ -266,7 +279,7 @@ export class RenderingSystem {
         satellites: Satellite[],
         satelliteSize: number,
         satelliteShape: string,
-        showReference: boolean
+        showReference: boolean,
     ): void {
         // Create center satellite
         let centerMesh: THREE.Mesh | THREE.Group;
@@ -288,7 +301,7 @@ export class RenderingSystem {
                     mesh.material = new THREE.MeshPhongMaterial({
                         color: 0xffffff,
                         emissive: 0xffffff,
-                        emissiveIntensity: 0.3
+                        emissiveIntensity: 0.3,
                     });
                 }
             });
@@ -305,7 +318,7 @@ export class RenderingSystem {
                 centerGeometry = new THREE.BoxGeometry(
                     centerSize * 2 * centerBoxRatios.x,
                     centerSize * 2 * centerBoxRatios.y,
-                    centerSize * 2 * centerBoxRatios.z
+                    centerSize * 2 * centerBoxRatios.z,
                 );
             } else {
                 // centerSize is diameter, SphereGeometry expects radius
@@ -314,7 +327,7 @@ export class RenderingSystem {
             const centerMaterial = new THREE.MeshPhongMaterial({
                 color: 0xffffff,
                 emissive: 0xffffff,
-                emissiveIntensity: 0.3
+                emissiveIntensity: 0.3,
             });
             centerMesh = new THREE.Mesh(centerGeometry, centerMaterial);
         }
@@ -324,12 +337,12 @@ export class RenderingSystem {
 
         this.scene.add(centerMesh);
         this.satelliteMeshes.push(centerMesh);
-        
+
         // Create other satellites
         const useUniformColor = this.getDisplay().uniformSatelliteColor;
         const uniformColor = this.getDisplay().satelliteColor;
         const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
-        
+
         for (let i = 1; i < satellites.length; i++) {
             let satMesh: THREE.Mesh | THREE.Group;
 
@@ -362,7 +375,7 @@ export class RenderingSystem {
                         mesh.material = new THREE.MeshPhongMaterial({
                             color: materialColor,
                             emissive: materialColor,
-                            emissiveIntensity: 0.2
+                            emissiveIntensity: 0.2,
                         });
                     }
                 });
@@ -379,7 +392,7 @@ export class RenderingSystem {
                     satGeometry = new THREE.BoxGeometry(
                         satSize * 2 * boxRatios.x,
                         satSize * 2 * boxRatios.y,
-                        satSize * 2 * boxRatios.z
+                        satSize * 2 * boxRatios.z,
                     );
                 } else {
                     // satSize is diameter, SphereGeometry expects radius
@@ -389,7 +402,7 @@ export class RenderingSystem {
                 const satMaterial = new THREE.MeshPhongMaterial({
                     color: materialColor,
                     emissive: materialColor,
-                    emissiveIntensity: 0.2
+                    emissiveIntensity: 0.2,
                 });
                 satMesh = new THREE.Mesh(satGeometry, satMaterial);
             }
@@ -421,8 +434,8 @@ export class RenderingSystem {
         let rotationS = 0;
 
         if (isCube) {
-            rotationR = this.getDisplay().cubeRotationR * Math.PI / 180;
-            rotationS = this.getDisplay().cubeRotationS * Math.PI / 180;
+            rotationR = (this.getDisplay().cubeRotationR * Math.PI) / 180;
+            rotationS = (this.getDisplay().cubeRotationS * Math.PI) / 180;
         }
 
         if (this.instancedRenderer) {
@@ -430,7 +443,7 @@ export class RenderingSystem {
                 satellites,
                 rotationR,
                 rotationS,
-                this.selectedSatelliteIndex
+                this.selectedSatelliteIndex,
             );
         }
 
@@ -470,11 +483,11 @@ export class RenderingSystem {
         let defaultRotationS = 0;
 
         if (satelliteShape === 'cube' || satelliteShape === 'box') {
-            defaultRotationR = this.getDisplay().cubeRotationR * Math.PI / 180;
-            defaultRotationS = this.getDisplay().cubeRotationS * Math.PI / 180;
+            defaultRotationR = (this.getDisplay().cubeRotationR * Math.PI) / 180;
+            defaultRotationS = (this.getDisplay().cubeRotationS * Math.PI) / 180;
         } else if (satelliteShape === '3dfile') {
-            defaultRotationR = this.getDisplay().file3dRotationR * Math.PI / 180;
-            defaultRotationS = this.getDisplay().file3dRotationS * Math.PI / 180;
+            defaultRotationR = (this.getDisplay().file3dRotationR * Math.PI) / 180;
+            defaultRotationS = (this.getDisplay().file3dRotationS * Math.PI) / 180;
         }
 
         satellites.forEach((sat, index) => {
@@ -509,10 +522,10 @@ export class RenderingSystem {
                     // Transform quaternion from RSW to Three.js coordinate system
                     // Mapping: RSW(x,y,z) -> Three.js(z,x,y)
                     const transformedQuat = new THREE.Quaternion(
-                        satelliteQuaternion.z,  // RSW Z -> Three.js X
-                        satelliteQuaternion.x,  // RSW X -> Three.js Y
-                        satelliteQuaternion.y,  // RSW Y -> Three.js Z
-                        satelliteQuaternion.w   // W component stays the same
+                        satelliteQuaternion.z, // RSW Z -> Three.js X
+                        satelliteQuaternion.x, // RSW X -> Three.js Y
+                        satelliteQuaternion.y, // RSW Y -> Three.js Z
+                        satelliteQuaternion.w, // W component stays the same
                     );
 
                     this.satelliteMeshes[index].quaternion.copy(transformedQuat);
@@ -522,8 +535,8 @@ export class RenderingSystem {
                     let rotS = defaultRotationS;
 
                     if (metadata?.rotation) {
-                        rotR = metadata.rotation.r * Math.PI / 180;
-                        rotS = metadata.rotation.s * Math.PI / 180;
+                        rotR = (metadata.rotation.r * Math.PI) / 180;
+                        rotS = (metadata.rotation.s * Math.PI) / 180;
                     }
 
                     // Apply rotations in Hill coordinate frame
@@ -535,7 +548,7 @@ export class RenderingSystem {
                     this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 0, 1), rotS);
                 }
             }
-            
+
             // Highlight selected satellite and collision feedback
             const mesh = this.satelliteMeshes[index];
             let intensity = index === this.selectedSatelliteIndex ? 0.8 : 0.2;
@@ -546,7 +559,8 @@ export class RenderingSystem {
             const collisionTime = (sat as any).collisionTime;
             if (collided && collisionTime) {
                 const elapsed = Date.now() - collisionTime;
-                if (elapsed < 500) { // Show collision feedback for 500ms
+                if (elapsed < 500) {
+                    // Show collision feedback for 500ms
                     intensity = 0.8;
                     emissiveColor = new THREE.Color(0xff0000); // Red
                 } else {
@@ -560,7 +574,10 @@ export class RenderingSystem {
                 mesh.traverse((child) => {
                     if ((child as THREE.Mesh).isMesh) {
                         const meshChild = child as THREE.Mesh;
-                        if (meshChild.material && (meshChild.material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined) {
+                        if (
+                            meshChild.material &&
+                            (meshChild.material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined
+                        ) {
                             const material = meshChild.material as THREE.MeshPhongMaterial;
                             material.emissiveIntensity = intensity;
                             if (emissiveColor) {
@@ -574,7 +591,10 @@ export class RenderingSystem {
                 });
             } else {
                 // For standard geometries
-                if ((mesh as THREE.Mesh).material && ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined) {
+                if (
+                    (mesh as THREE.Mesh).material &&
+                    ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined
+                ) {
                     const material = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
                     material.emissiveIntensity = intensity;
                     if (emissiveColor) {
@@ -585,12 +605,12 @@ export class RenderingSystem {
                     }
                 }
             }
-            
+
             // Update trails
             if (this.getDisplay().showTrails && index > 0) {
                 const trailMax = this.getDisplay().trailLength;
                 let color: THREE.Color = new THREE.Color(0xffffff); // Initialize with default
-                
+
                 if (is3DFile && this.loadedModel) {
                     // For 3D models, get color from the first mesh child
                     mesh.traverse((child) => {
@@ -606,7 +626,7 @@ export class RenderingSystem {
                     // For standard geometries
                     color = ((this.satelliteMeshes[index] as THREE.Mesh).material as THREE.MeshPhongMaterial).color;
                 }
-                
+
                 this.trailRenderer.updateTrail(sat, pos, scale, color, trailMax);
             }
         });
@@ -647,7 +667,7 @@ export class RenderingSystem {
 
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
             const mesh = this.satelliteMeshes[i];
-            
+
             let colorToSet: number;
             if (isUniform) {
                 colorToSet = parseInt(uniformColor.replace('#', ''), 16);
@@ -655,7 +675,7 @@ export class RenderingSystem {
                 const colorIndex = (i - 1) % colors.length;
                 colorToSet = colors[colorIndex];
             }
-            
+
             if (is3DFile && this.loadedModel) {
                 // For 3D models, traverse and update all materials
                 mesh.traverse((child) => {
@@ -676,7 +696,7 @@ export class RenderingSystem {
     }
 
     public clearTrails(satellites: Satellite[]): void {
-        satellites.forEach(sat => {
+        satellites.forEach((sat) => {
             this.trailRenderer.clearTrail(sat);
         });
     }
@@ -708,10 +728,14 @@ export class RenderingSystem {
                     }
                     // Check if it's an instance from InstancedMesh
                     else if (intersection.object === instancedMesh && intersection.instanceId !== undefined) {
-                        const satelliteIndex = this.instancedRenderer.getSatelliteIndexFromInstanceId(intersection.instanceId);
+                        const satelliteIndex = this.instancedRenderer.getSatelliteIndexFromInstanceId(
+                            intersection.instanceId,
+                        );
                         if (satelliteIndex >= 0) {
                             this.selectedSatelliteIndex = satelliteIndex;
-                            console.log(`Selected satellite ${satelliteIndex} (instanceId: ${intersection.instanceId})`);
+                            console.log(
+                                `Selected satellite ${satelliteIndex} (instanceId: ${intersection.instanceId})`,
+                            );
                             this.updateSelectedSatelliteInfo();
                         }
                     }
@@ -730,8 +754,10 @@ export class RenderingSystem {
                     let index = -1;
                     for (let i = 0; i < this.satelliteMeshes.length; i++) {
                         const satelliteMesh = this.satelliteMeshes[i];
-                        if (satelliteMesh === clickedObject ||
-                            (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))) {
+                        if (
+                            satelliteMesh === clickedObject ||
+                            (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))
+                        ) {
                             index = i;
                             break;
                         }
@@ -755,7 +781,7 @@ export class RenderingSystem {
             this.updateSelectedSatelliteInfo();
         }
     }
-    
+
     private isChildOf(object: THREE.Object3D, parent: THREE.Object3D): boolean {
         let current = object.parent;
         while (current) {
@@ -775,7 +801,6 @@ export class RenderingSystem {
         this.renderer.render(this.scene, this.camera);
     }
 
-
     public updateCelestialBodies(time: number, simulationStartTime?: Date): void {
         this.celestialBodies.update(time, simulationStartTime);
     }
@@ -787,7 +812,7 @@ export class RenderingSystem {
     public getSelectedSatelliteIndex(): number {
         return this.selectedSatelliteIndex;
     }
-    
+
     public updateSatelliteSize(satellites: Satellite[]): void {
         // Recreate satellite meshes with new size
         this.createSatelliteMeshes(satellites);

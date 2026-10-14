@@ -9,7 +9,11 @@ export const ARROW_KEY_DELTA_V = 0.001;
 function isEditableTarget(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     if (target.isContentEditable) return true;
-    return target.closest('input, textarea, select, button, a, [role="slider"], [role="combobox"], [role="switch"], [role="menuitem"]') !== null;
+    return (
+        target.closest(
+            'input, textarea, select, button, a, [role="slider"], [role="combobox"], [role="switch"], [role="menuitem"]',
+        ) !== null
+    );
 }
 
 function stepTimeScale(direction: 1 | -1): void {

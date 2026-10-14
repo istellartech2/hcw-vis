@@ -12,8 +12,8 @@ export interface SatelliteMetadata {
     shape: string;
     size: number;
     color: string;
-    boxRatios?: { x: number, y: number, z: number };
-    rotation?: { r: number, s: number };
+    boxRatios?: { x: number; y: number; z: number };
+    rotation?: { r: number; s: number };
     model3dFile?: string;
 }
 
@@ -49,7 +49,7 @@ export class FormationGenerator {
         satellites.push(centerSatellite);
 
         // 有効なレイヤーから衛星を生成
-        const enabledLayers = config.layers.filter(layer => layer.enabled);
+        const enabledLayers = config.layers.filter((layer) => layer.enabled);
 
         for (const layer of enabledLayers) {
             const layerSatellites = this.generateLayerSatellites(layer);
@@ -75,14 +75,14 @@ export class FormationGenerator {
         const spacing = layer.spacing;
 
         // 楕円軌道パラメータの変換
-        let periodicParams: { A: number, B: number, D: number, E: number, F: number } | undefined;
+        let periodicParams: { A: number; B: number; D: number; E: number; F: number } | undefined;
         if (layer.periodicParams) {
             periodicParams = {
                 A: layer.periodicParams.A,
                 B: layer.periodicParams.B,
                 D: layer.periodicParams.D,
                 E: layer.periodicParams.E,
-                F: layer.periodicParams.F
+                F: layer.periodicParams.F,
             };
         }
 
@@ -96,7 +96,7 @@ export class FormationGenerator {
             positiveZ,
             periodicParams,
             spacing,
-            layer.rswOffset  // RSWオフセット（軸上パターン用）
+            layer.rswOffset, // RSWオフセット（軸上パターン用）
         );
 
         // 各初期条件から衛星を生成
@@ -104,19 +104,9 @@ export class FormationGenerator {
             const ic = initialConditions[i];
 
             // 色を決定（colorModeに応じて）
-            const satelliteColor = layer.colorMode === 'random'
-                ? randomColors[i % randomColors.length]
-                : layer.color;
+            const satelliteColor = layer.colorMode === 'random' ? randomColors[i % randomColors.length] : layer.color;
 
-            const satellite = new Satellite(
-                ic.x0,
-                ic.y0,
-                ic.z0,
-                ic.vx0,
-                ic.vy0,
-                ic.vz0,
-                satelliteColor
-            );
+            const satellite = new Satellite(ic.x0, ic.y0, ic.z0, ic.vx0, ic.vy0, ic.vz0, satelliteColor);
 
             // メタデータを衛星に付加（拡張プロパティとして）
             (satellite as any).metadata = {
@@ -127,7 +117,7 @@ export class FormationGenerator {
                 color: satelliteColor,
                 boxRatios: layer.boxRatios,
                 rotation: layer.rotation,
-                model3dFile: layer.model3dFile
+                model3dFile: layer.model3dFile,
             } as SatelliteMetadata;
 
             satellites.push(satellite);
@@ -152,7 +142,7 @@ export class FormationGenerator {
         totalSatellites: number;
         satellitesByLayer: Map<string, number>;
     } {
-        const enabledLayers = config.layers.filter(layer => layer.enabled);
+        const enabledLayers = config.layers.filter((layer) => layer.enabled);
         const satellitesByLayer = new Map<string, number>();
 
         for (const layer of enabledLayers) {
@@ -165,7 +155,7 @@ export class FormationGenerator {
             totalLayers: config.layers.length,
             enabledLayers: enabledLayers.length,
             totalSatellites,
-            satellitesByLayer
+            satellitesByLayer,
         };
     }
 }

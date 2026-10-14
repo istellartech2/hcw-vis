@@ -31,7 +31,9 @@ export function OrbitForm() {
     const pending = FIELDS.some(({ key }) => parseFloat(draft[key]) !== orbit[key]);
 
     const apply = () => {
-        const parsed = Object.fromEntries(FIELDS.map(({ key }) => [key, parseFloat(draft[key])])) as unknown as OrbitInputs;
+        const parsed = Object.fromEntries(
+            FIELDS.map(({ key }) => [key, parseFloat(draft[key])]),
+        ) as unknown as OrbitInputs;
         const nanKeys = FIELDS.filter(({ key }) => !Number.isFinite(parsed[key])).map(({ key }) => key);
         setInvalid(new Set(nanKeys));
         if (nanKeys.length > 0) {
@@ -56,7 +58,9 @@ export function OrbitForm() {
         >
             {FIELDS.map(({ key, label, unit, min, max, step }) => (
                 <Field key={key} data-invalid={invalid.has(key) || undefined}>
-                    <FieldLabel htmlFor={`orbit-${key}`}><UnitLabel unit={unit}>{label}</UnitLabel></FieldLabel>
+                    <FieldLabel htmlFor={`orbit-${key}`}>
+                        <UnitLabel unit={unit}>{label}</UnitLabel>
+                    </FieldLabel>
                     <Input
                         id={`orbit-${key}`}
                         type="number"
@@ -72,7 +76,14 @@ export function OrbitForm() {
             ))}
             <div className="col-span-2 flex justify-end gap-2">
                 {pending && (
-                    <Button type="button" variant="ghost" onClick={() => { setDraft(toDraft(orbit)); setInvalid(new Set()); }}>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                            setDraft(toDraft(orbit));
+                            setInvalid(new Set());
+                        }}
+                    >
                         元に戻す
                     </Button>
                 )}

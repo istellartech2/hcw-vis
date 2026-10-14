@@ -11,7 +11,7 @@ export class CameraController {
     // Scale=1: 1m = 1 unit, 10m range needs ~30 unit distance
     private readonly INITIAL_CAMERA_DISTANCE: number = 30;
     private readonly INITIAL_CAMERA_PHI: number = Math.PI / 3;
-    private readonly INITIAL_CAMERA_THETA: number = Math.PI * 4 / 5;
+    private readonly INITIAL_CAMERA_THETA: number = (Math.PI * 4) / 5;
     private cameraPhi: number = this.INITIAL_CAMERA_PHI;
     private cameraTheta: number = this.INITIAL_CAMERA_THETA;
     private cameraDistance: number = this.INITIAL_CAMERA_DISTANCE;
@@ -30,7 +30,7 @@ export class CameraController {
     private listen<K extends keyof HTMLElementEventMap>(
         type: K,
         handler: (e: HTMLElementEventMap[K]) => void,
-        options: AddEventListenerOptions = {}
+        options: AddEventListenerOptions = {},
     ): void {
         this.container.addEventListener(type, handler, { ...options, signal: this.signal });
     }
@@ -42,20 +42,24 @@ export class CameraController {
             this.mouseY = e.clientY;
         });
 
-        this.listen('touchstart', (e) => {
-            if (!this.isInteractiveTarget(e.target)) {
-                e.preventDefault();
-            }
-            if (e.touches.length === 1) {
-                this.mouseDown = true;
-                this.mouseX = e.touches[0].clientX;
-                this.mouseY = e.touches[0].clientY;
-            } else if (e.touches.length === 2) {
-                this.mouseDown = false;
-                this.pinchStartDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
-                this.initialCameraDistance = this.cameraDistance;
-            }
-        }, { passive: false });
+        this.listen(
+            'touchstart',
+            (e) => {
+                if (!this.isInteractiveTarget(e.target)) {
+                    e.preventDefault();
+                }
+                if (e.touches.length === 1) {
+                    this.mouseDown = true;
+                    this.mouseX = e.touches[0].clientX;
+                    this.mouseY = e.touches[0].clientY;
+                } else if (e.touches.length === 2) {
+                    this.mouseDown = false;
+                    this.pinchStartDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
+                    this.initialCameraDistance = this.cameraDistance;
+                }
+            },
+            { passive: false },
+        );
 
         this.listen('mousemove', (e) => {
             if (this.mouseDown) {
@@ -68,40 +72,52 @@ export class CameraController {
             }
         });
 
-        this.listen('touchmove', (e) => {
-            if (!this.isInteractiveTarget(e.target)) {
-                e.preventDefault();
-            }
-            if (e.touches.length === 1 && this.mouseDown) {
-                const deltaX = e.touches[0].clientX - this.mouseX;
-                const deltaY = e.touches[0].clientY - this.mouseY;
-                this.cameraTheta -= deltaX * 0.01;
-                this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
-                this.mouseX = e.touches[0].clientX;
-                this.mouseY = e.touches[0].clientY;
-            } else if (e.touches.length === 2 && this.pinchStartDistance !== null) {
-                const newDist = this.getTouchDistance(e.touches[0], e.touches[1]);
-                const scale = this.pinchStartDistance / newDist;
-                this.cameraDistance = this.initialCameraDistance * scale;
-                this.cameraDistance = Math.max(5, Math.min(2000, this.cameraDistance));
-            }
-        }, { passive: false });
+        this.listen(
+            'touchmove',
+            (e) => {
+                if (!this.isInteractiveTarget(e.target)) {
+                    e.preventDefault();
+                }
+                if (e.touches.length === 1 && this.mouseDown) {
+                    const deltaX = e.touches[0].clientX - this.mouseX;
+                    const deltaY = e.touches[0].clientY - this.mouseY;
+                    this.cameraTheta -= deltaX * 0.01;
+                    this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
+                    this.mouseX = e.touches[0].clientX;
+                    this.mouseY = e.touches[0].clientY;
+                } else if (e.touches.length === 2 && this.pinchStartDistance !== null) {
+                    const newDist = this.getTouchDistance(e.touches[0], e.touches[1]);
+                    const scale = this.pinchStartDistance / newDist;
+                    this.cameraDistance = this.initialCameraDistance * scale;
+                    this.cameraDistance = Math.max(5, Math.min(2000, this.cameraDistance));
+                }
+            },
+            { passive: false },
+        );
 
         // キャンバス外でボタンを離してもドラッグ状態が残らないよう window で受ける
-        window.addEventListener('mouseup', () => {
-            this.mouseDown = false;
-        }, { signal: this.signal });
+        window.addEventListener(
+            'mouseup',
+            () => {
+                this.mouseDown = false;
+            },
+            { signal: this.signal },
+        );
 
-        this.listen('touchend', (e) => {
-            if (!this.isInteractiveTarget(e.target)) {
-                e.preventDefault();
-            }
-            this.mouseDown = false;
-            this.pinchStartDistance = null;
-        }, { passive: false });
+        this.listen(
+            'touchend',
+            (e) => {
+                if (!this.isInteractiveTarget(e.target)) {
+                    e.preventDefault();
+                }
+                this.mouseDown = false;
+                this.pinchStartDistance = null;
+            },
+            { passive: false },
+        );
 
         this.listen('wheel', (e) => {
-            this.cameraDistance *= (1 + e.deltaY * 0.001);
+            this.cameraDistance *= 1 + e.deltaY * 0.001;
             this.cameraDistance = Math.max(1, Math.min(1000, this.cameraDistance));
         });
     }

@@ -104,5 +104,12 @@ export const CSV_SAMPLES: ReadonlyArray<{ path: string; label: string }> = [
 
 /** 非統一色モードで衛星に割り当てるパレット */
 export const SATELLITE_PALETTE = [
-    '#ff6b6b', '#4ecdc4', '#45b7d1', '#f7b731', '#5f27cd', '#00d2d3', '#ff9ff3', '#54a0ff',
+    '#ff6b6b',
+    '#4ecdc4',
+    '#45b7d1',
+    '#f7b731',
+    '#5f27cd',
+    '#00d2d3',
+    '#ff9ff3',
+    '#54a0ff',
 ] as const;
