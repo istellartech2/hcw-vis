@@ -10,7 +10,7 @@
 
 ## 1. 背景と目的
 
-HCW 方程式の円軌道解（基準衛星からの距離が一定の相対軌道）は、大きさのパラメータ $\rho$ と位相 $\theta$ の 2 つで表される。したがって、平面上の点 $(\rho, \theta)$ の集合を用意すれば、それぞれを円軌道解に対応させることで、基準衛星のまわりを円盤状に周回する衛星群の初期状態が得られる。
+HCW 方程式の円軌道解（基準衛星からの距離が一定の相対軌道）は、半径 $\rho$ と位相 $\theta$ の 2 つのパラメータで表される。したがって、平面上の点 $(\rho, \theta)$ の集合を用意すれば、それぞれを円軌道解に対応させることで、基準衛星のまわりを円盤状に周回する衛星群の初期状態が得られる。
 
 衛星を円盤内にむらなく並べるため、平面を充填する格子（六角格子または正方格子）の点を原点から近い順に必要数だけ取り出し、極座標に変換して用いる。
 
@@ -156,25 +156,21 @@ function square_disk_points(X):
 
 同心リング配置では、間隔指定のときは $\Delta = S$ とし、半径指定のときは衛星数から $\Delta$ を決め、半径を $R$ 以下に制限する。
 
-> ここでの $R$ と $S$ は、8 章のパラメータ $\rho$ に対する値である。8 章の写像は平面上の距離を $2/\sqrt{5} \approx 0.894$ 倍に縮めるため、3 次元空間での実際の円盤半径と衛星間隔は、それぞれ $2R/\sqrt{5}$、$2S/\sqrt{5}$ になる。
-
 ## 8. 円軌道の初期状態への変換
 
 円盤上の点 $(\rho, \theta)$ は、HCW 方程式の円軌道解の初期状態に次のように対応させる（$n$ は平均運動）。
 
 $$
 \begin{aligned}
-x_0 &= \frac{\rho}{\sqrt{5}}\cos\theta, & \dot{x}_0 &= \frac{\rho n}{\sqrt{5}}\sin\theta,\\
-y_0 &= \frac{2\rho}{\sqrt{5}}\sin\theta, & \dot{y}_0 &= -\frac{2\rho n}{\sqrt{5}}\cos\theta,\\
-z_0 &= \frac{\sqrt{3}\,\rho}{\sqrt{5}}\cos\theta, & \dot{z}_0 &= \frac{\sqrt{3}\,\rho n}{\sqrt{5}}\sin\theta
+x_0 &= \frac{\rho}{2}\cos\theta, & \dot{x}_0 &= \frac{\rho n}{2}\sin\theta,\\
+y_0 &= \rho\sin\theta, & \dot{y}_0 &= -\rho n\cos\theta,\\
+z_0 &= \frac{\sqrt{3}\,\rho}{2}\cos\theta, & \dot{z}_0 &= \frac{\sqrt{3}\,\rho n}{2}\sin\theta
 \end{aligned}
 $$
 
-このとき $x^2 + y^2 + z^2 = \tfrac{4}{5}\rho^2$ が常に成り立つ。すなわち各衛星は基準衛星から一定の距離 $2\rho/\sqrt{5}$ を保って周回し、衛星群全体は軌道面に対して傾いた円盤として回転する。平面上の点 $(\rho\cos\theta, \rho\sin\theta)$ から初期位置 $(x_0, y_0, z_0)$ への写像は相似変換（倍率 $2/\sqrt{5}$）であるため、格子点の並びは形を保ったまま円盤上に写される。
+このとき $x^2 + y^2 + z^2 = \rho^2$ が常に成り立ち、各衛星は基準衛星から距離 $\rho$ を保って周回する（[HCW 方程式の理論](theory.md) 7.3 節の円軌道解と同じ）。平面上の点 $(\rho\cos\theta, \rho\sin\theta)$ から初期位置 $(x_0, y_0, z_0)$ への写像は長さを保つため、7 章で指定した半径 $R$ と衛星間隔 $S$ は、3 次元空間での実際の円盤半径と衛星間隔にそのまま一致する。衛星群全体は、軌道面に対して傾いた円盤として回転する。
 
-[HCW 方程式の理論](theory.md) 7.3 節の円の半径 $r$ とは $r = 2\rho/\sqrt{5}$ の関係にある。
-
-J2 安定配置を有効にした場合は、$\dot{y}_0$ に Schweighart-Sedwick 係数 $c$ を掛けて $\dot{y}_0 = -2\rho n c\cos\theta / \sqrt{5}$ とする（[J2 安定配置](j2-stable-arrangement.md)）。
+J2 安定配置を有効にした場合は、$\dot{y}_0$ に Schweighart-Sedwick 係数 $c$ を掛けて $\dot{y}_0 = -\rho n c\cos\theta$ とする（[J2 安定配置](j2-stable-arrangement.md)）。実装は `diskPatterns.ts` の `circularOrbitInitialCondition` にある。
 
 ## 9. まとめ
 

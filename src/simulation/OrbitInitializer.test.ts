@@ -160,21 +160,44 @@ describe('OrbitInitializer 性質', () => {
         expect(rbar.map((p) => -p.x0)).toEqual([15, 30, 45, 60]);
     });
 
-    it('hexagonal / square_lattice disk は外周が radius、z0 = √3·x0', () => {
-        // r_physical = radiusEuclid * scale、外周点は r_physical = radius
+    it('hexagonal / square_lattice disk は外周の衛星までの距離が radius、z0 = √3·x0', () => {
         for (const pattern of ['hexagonal_disk', 'square_lattice_disk']) {
             const positions = create().generatePositions(pattern, 19, 100, 0);
-            const rPhysical = positions.map((p) => Math.hypot(p.x0 * Math.sqrt(5), (p.y0 * Math.sqrt(5)) / 2));
-            expect(Math.max(...rPhysical), pattern).toBeCloseTo(100, 9);
+            const distances = positions.map((p) => Math.hypot(p.x0, p.y0, p.z0));
+            expect(Math.max(...distances), pattern).toBeCloseTo(100, 9);
             for (const p of positions) expect(p.z0).toBeCloseTo(Math.sqrt(3) * p.x0, 9);
         }
     });
 
-    it('hexagonal_disk (spacing) は最近接の格子間隔が spacing', () => {
+    it('concentric_disk は衛星までの距離が radius 以内、spacing 指定時はリング間隔が spacing', () => {
+        const byRadius = create().generatePositions('concentric_disk', 19, 100, 0);
+        for (const p of byRadius) expect(Math.hypot(p.x0, p.y0, p.z0)).toBeLessThanOrEqual(100 + 1e-9);
+        const bySpacing = create().generatePositions(
+            'concentric_disk',
+            19,
+            100,
+            0,
+            undefined,
+            undefined,
+            undefined,
+            20,
+        );
+        const rings = new Set(bySpacing.map((p) => Math.round(Math.hypot(p.x0, p.y0, p.z0) * 1e6) / 1e6));
+        expect([...rings].sort((a, b) => a - b)).toEqual([0, 20, 40]);
+    });
+
+    it('hexagonal_disk (spacing) は最近接の衛星間隔が spacing', () => {
         const positions = create().generatePositions('hexagonal_disk', 7, 100, 0, undefined, undefined, undefined, 20);
-        const rPhysical = positions.map((p) => Math.hypot(p.x0 * Math.sqrt(5), (p.y0 * Math.sqrt(5)) / 2));
-        expect(rPhysical[0]).toBe(0);
-        for (const r of rPhysical.slice(1)) expect(r).toBeCloseTo(20, 9);
+        const [center, ...ring] = positions;
+        expect(Math.hypot(center.x0, center.y0, center.z0)).toBe(0);
+        for (const p of ring) expect(Math.hypot(p.x0, p.y0, p.z0)).toBeCloseTo(20, 9);
+        // 隣り合うリング上の衛星どうしも 3 次元空間で spacing だけ離れる
+        for (const p of ring) {
+            const nearest = Math.min(
+                ...ring.filter((q) => q !== p).map((q) => Math.hypot(p.x0 - q.x0, p.y0 - q.y0, p.z0 - q.z0)),
+            );
+            expect(nearest).toBeCloseTo(20, 9);
+        }
     });
 
     it.each([

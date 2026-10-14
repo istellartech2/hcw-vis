@@ -11,6 +11,25 @@ export interface DiskPatternOptions {
     ssCoefficient: number;
 }
 
+/**
+ * 基準衛星から距離 r を保って回る HCW 円軌道解の初期状態（位相 theta）。
+ * x0 = r/2·cosθ, y0 = r·sinθ, z0 = √3/2·r·cosθ で、常に x² + y² + z² = r²。
+ * J2 安定配置では vy0 = -2nc·x0（c = 1 で古典的な周期条件 vy0 = -2n·x0）。
+ */
+function circularOrbitInitialCondition(r: number, theta: number, n: number, c: number): InitialCondition {
+    const cosTheta = Math.cos(theta);
+    const sinTheta = Math.sin(theta);
+    const halfSqrt3 = Math.sqrt(3) / 2;
+    return {
+        x0: (r / 2) * cosTheta,
+        y0: r * sinTheta,
+        z0: halfSqrt3 * r * cosTheta,
+        vx0: ((r * n) / 2) * sinTheta,
+        vy0: -r * n * c * cosTheta,
+        vz0: halfSqrt3 * r * n * sinTheta,
+    };
+}
+
 export function generateHexagonalDisk(
     count: number,
     radius: number,
@@ -43,9 +62,6 @@ function createDiskInitialConditions(
         return positions;
     }
 
-    const sqrt5 = Math.sqrt(5);
-    const sqrt3 = Math.sqrt(3);
-
     const hasSpacing = spacing !== undefined && Number.isFinite(spacing) && spacing > 0;
     const maxEuclidRadius = points.reduce((max, point) => Math.max(max, point.radiusEuclid), 0);
 
@@ -62,29 +78,7 @@ function createDiskInitialConditions(
     }
 
     for (const point of points) {
-        const rPhysical = point.radiusEuclid * radialScale;
-        const theta = point.theta;
-
-        const x0 = (rPhysical / sqrt5) * Math.cos(theta);
-        const y0 = ((2 * rPhysical) / sqrt5) * Math.sin(theta);
-        const z0 = ((sqrt3 * rPhysical) / sqrt5) * Math.cos(theta);
-
-        const vx0 = ((rPhysical * n) / sqrt5) * Math.sin(theta);
-
-        // J2安定配置: vy0 = -2nc·x0 を満たす初期速度
-        // 通常: vy0 = -2n·x0
-        const vy0 = -((2 * rPhysical * n * c) / sqrt5) * Math.cos(theta);
-
-        const vz0 = ((sqrt3 * rPhysical * n) / sqrt5) * Math.sin(theta);
-
-        positions.push({
-            x0,
-            y0,
-            z0,
-            vx0,
-            vy0,
-            vz0,
-        });
+        positions.push(circularOrbitInitialCondition(point.radiusEuclid * radialScale, point.theta, n, c));
     }
 
     return positions;
@@ -101,9 +95,6 @@ export function generateConcentricDisk(
     if (count <= 0) {
         return positions;
     }
-
-    const sqrt5 = Math.sqrt(5);
-    const sqrt3 = Math.sqrt(3);
 
     // スペーシングを決定
     // spacing指定の場合: ユーザー指定の衛星間距離を使用
@@ -166,22 +157,7 @@ export function generateConcentricDisk(
 
         for (let node = 0; node < nodes && positions.length < count; node++) {
             const theta = offset + node * deltaTheta;
-            const cosTheta = Math.cos(theta);
-            const sinTheta = Math.sin(theta);
-
-            const x0 = (ringRadius / sqrt5) * cosTheta;
-            const y0 = ((2 * ringRadius) / sqrt5) * sinTheta;
-            const z0 = ((sqrt3 * ringRadius) / sqrt5) * cosTheta;
-
-            const vx0 = ((ringRadius * n) / sqrt5) * sinTheta;
-
-            // J2安定配置: vy0 = -2nc·x0 を満たす初期速度
-            // 通常: vy0 = -2n·x0
-            const vy0 = -((2 * ringRadius * n * c) / sqrt5) * cosTheta;
-
-            const vz0 = ((sqrt3 * ringRadius * n) / sqrt5) * sinTheta;
-
-            positions.push({ x0, y0, z0, vx0, vy0, vz0 });
+            positions.push(circularOrbitInitialCondition(ringRadius, theta, n, c));
         }
     }
 
