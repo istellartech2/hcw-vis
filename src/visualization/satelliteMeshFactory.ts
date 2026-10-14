@@ -19,8 +19,10 @@ export interface SatelliteAppearance {
 
 /** 基準衛星（index 0）の色と発光強度 */
 export const REFERENCE_COLOR = 0xffffff;
-export const REFERENCE_EMISSIVE_INTENSITY = 0.3;
-export const SATELLITE_EMISSIVE_INTENSITY = 0.2;
+export const REFERENCE_EMISSIVE_INTENSITY = 0.08;
+export const SATELLITE_EMISSIVE_INTENSITY = 0.08;
+/** 選択中・衝突フラッシュ中の発光強度 */
+export const SELECTED_EMISSIVE_INTENSITY = 0.7;
 
 const UNIT_BOX: BoxRatios = { x: 1, y: 1, z: 1 };
 
@@ -53,8 +55,15 @@ export function resolveSatelliteColor(sat: Satellite, index: number, display: Di
     return displayColor(display, index - 1);
 }
 
-export function createPhongMaterial(color: number, emissiveIntensity: number): THREE.MeshPhongMaterial {
-    return new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity });
+/** 衛星のマテリアル。少し艶のあるサテン調で、発光は選択ハイライト用に弱く残す */
+export function createSatelliteMaterial(color: number, emissiveIntensity: number): THREE.MeshStandardMaterial {
+    return new THREE.MeshStandardMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity,
+        roughness: 0.4,
+        metalness: 0.1,
+    });
 }
 
 /** 立方体: size は半辺長 */
@@ -93,7 +102,7 @@ export function createModelObject(
     const object = model.clone();
     object.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
-            (child as THREE.Mesh).material = createPhongMaterial(color, emissiveIntensity);
+            (child as THREE.Mesh).material = createSatelliteMaterial(color, emissiveIntensity);
         }
     });
     object.scale.setScalar(size);
@@ -110,7 +119,7 @@ export function createSatelliteObject(
     if (appearance.shape === '3dfile' && loadedModel) {
         return createModelObject(loadedModel, appearance.size, color, emissiveIntensity);
     }
-    return new THREE.Mesh(createPrimitiveGeometry(appearance), createPhongMaterial(color, emissiveIntensity));
+    return new THREE.Mesh(createPrimitiveGeometry(appearance), createSatelliteMaterial(color, emissiveIntensity));
 }
 
 /** object 自身とその子孫の全メッシュのマテリアルに fn を適用（Mesh 単体・Group どちらも可） */
@@ -126,12 +135,15 @@ export function forEachMaterial(object: THREE.Object3D, fn: (material: THREE.Mat
     });
 }
 
-/** Phong 系（emissive を持つ）マテリアルにだけ fn を適用 */
-export function forEachPhongMaterial(object: THREE.Object3D, fn: (material: THREE.MeshPhongMaterial) => void): void {
+/** emissive を持つ（衛星用の）マテリアルにだけ fn を適用 */
+export function forEachEmissiveMaterial(
+    object: THREE.Object3D,
+    fn: (material: THREE.MeshStandardMaterial) => void,
+): void {
     object.traverse((child) => {
         const mesh = child as THREE.Mesh;
         if (!mesh.isMesh || !mesh.material) return;
-        const material = mesh.material as THREE.MeshPhongMaterial;
+        const material = mesh.material as THREE.MeshStandardMaterial;
         if (material.emissiveIntensity !== undefined) fn(material);
     });
 }

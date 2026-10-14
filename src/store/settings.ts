@@ -5,6 +5,9 @@
 
 export type SatelliteShape = 'sphere' | 'cube' | '3dfile';
 
+/** 地球テクスチャの明るさ（衛星を目立たせるため、既定では少し沈ませる） */
+export type EarthBrightness = 'dim' | 'normal' | 'bright';
+
 export interface DisplaySettings {
     showGrid: boolean;
     showAxes: boolean;
@@ -13,6 +16,7 @@ export interface DisplaySettings {
     showTrails: boolean;
     trailLength: number;
     earthTexture: string;
+    earthBrightness: EarthBrightness;
     // フォーメーションのメタデータが無い衛星（CSV再生など）に使う既定の見た目
     satelliteShape: SatelliteShape;
     satelliteSize: number;
@@ -50,6 +54,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
     showTrails: true,
     trailLength: 200,
     earthTexture: 'earth00.webp',
+    earthBrightness: 'normal',
     satelliteShape: 'sphere',
     satelliteSize: 1.0,
     uniformSatelliteColor: false,
@@ -97,6 +102,12 @@ export const EARTH_TEXTURE_OPTIONS: ReadonlyArray<{ value: string; label: string
     { value: 'earth05_highres.webp', label: '高解像度' },
 ];
 
+export const EARTH_BRIGHTNESS_OPTIONS: ReadonlyArray<{ value: EarthBrightness; label: string }> = [
+    { value: 'dim', label: '暗め' },
+    { value: 'normal', label: '標準' },
+    { value: 'bright', label: '明るい' },
+];
+
 export const CSV_SAMPLES: ReadonlyArray<{ path: string; label: string }> = [
     { path: 'samples/single_satellite_6dof.csv', label: '衛星1機 (6DOF)' },
     { path: 'samples/three_satellite_6dof.csv', label: '衛星3機 (6DOF)' },
@@ -113,3 +124,10 @@ export const SATELLITE_PALETTE = [
     '#ff9ff3',
     '#54a0ff',
 ] as const;
+
+/** RSW 座標軸の色。3D の座標軸と HUD の凡例で共有する */
+export const AXIS_COLORS = {
+    r: '#ff6b6b',
+    s: '#2ecc71',
+    w: '#00bfff',
+} as const;

@@ -1,10 +1,12 @@
+import { AXIS_COLORS } from '@/store/settings';
+
 const AXES = [
-    { name: 'R', color: '#FF6B6B', label: 'Radial', description: '地心→衛星' },
-    { name: 'S', color: '#2ECC71', label: 'Along-track', description: '進行方向' },
-    { name: 'W', color: '#00BFFF', label: 'Cross-track', description: '軌道面垂直' },
+    { name: 'R', color: AXIS_COLORS.r, label: 'Radial', description: '地心→衛星' },
+    { name: 'S', color: AXIS_COLORS.s, label: 'Along-track', description: '進行方向' },
+    { name: 'W', color: AXIS_COLORS.w, label: 'Cross-track', description: '軌道面垂直' },
 ];
 
-/** RSW 座標軸の凡例（色は RenderingSystem の座標軸と一致させる） */
+/** RSW 座標軸の凡例（色は 3D の座標軸と共有） */
 export function AxesLegend() {
     return (
         <div className="glass fixed right-3 bottom-[calc(14px+env(safe-area-inset-bottom,0px))] z-10 hidden space-y-0.5 rounded-[10px] px-2.5 py-2 text-[11px] lg:block">

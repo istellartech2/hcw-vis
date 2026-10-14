@@ -58,7 +58,7 @@ export class SimulationEngine {
         this.viewport = viewport;
         const { signal } = this.abort;
 
-        this.camera = new THREE.PerspectiveCamera(75, this.aspect(), 0.001, 50000000);
+        this.camera = new THREE.PerspectiveCamera(50, this.aspect(), 0.001, 50000000);
         this.renderer = new THREE.WebGLRenderer({
             canvas,
             antialias: true,
@@ -89,7 +89,7 @@ export class SimulationEngine {
         this.applyFormation(this.formationGenerator.generateSatellites(state.formation));
 
         const celestial = this.renderingSystem.getCelestialBodies();
-        celestial.createEarth(this.orbitRadius, state.display.earthTexture);
+        celestial.createEarth(this.orbitRadius, state.display.earthTexture, state.display.earthBrightness);
         celestial.setEarthVisibility(state.display.showEarth);
         celestial.setLatLongGridVisibility(state.display.showLatLongGrid);
 
@@ -121,8 +121,9 @@ export class SimulationEngine {
             const celestial = this.renderingSystem.getCelestialBodies();
             if (d.showEarth !== pd.showEarth) celestial.setEarthVisibility(d.showEarth);
             if (d.showLatLongGrid !== pd.showLatLongGrid) celestial.setLatLongGridVisibility(d.showLatLongGrid);
+            if (d.earthBrightness !== pd.earthBrightness) celestial.setEarthBrightness(d.earthBrightness);
             if (d.earthTexture !== pd.earthTexture) {
-                celestial.createEarth(this.orbitRadius, d.earthTexture);
+                celestial.createEarth(this.orbitRadius, d.earthTexture, d.earthBrightness);
                 celestial.setLatLongGridVisibility(d.showLatLongGrid);
             }
             if (!d.showTrails && pd.showTrails) this.clearTrails();
@@ -374,7 +375,11 @@ export class SimulationEngine {
         this.setOrbit(inputs);
         this.renderingSystem
             .getCelestialBodies()
-            .createEarth(this.orbitRadius, appStore.getState().display.earthTexture);
+            .createEarth(
+                this.orbitRadius,
+                appStore.getState().display.earthTexture,
+                appStore.getState().display.earthBrightness,
+            );
         this.renderingSystem.getCelestialBodies().setLatLongGridVisibility(appStore.getState().display.showLatLongGrid);
         appStore.getState().patch({ orbit: { ...inputs } });
         this.publishReferenceInfo();
