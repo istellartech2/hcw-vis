@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
+import type { FormationConfig } from '@/formation/FormationTypes';
 import { addLayer, countSatellites, parseFormation, serializeFormation } from '@/formation/formationConfig';
 import { appStore, useAppStore } from '@/store/appStore';
 import { LayerCard } from './LayerCard';
@@ -34,12 +35,19 @@ export function FormationSection() {
     const engine = useEngine();
     const config = useAppStore((s) => s.formation);
     const updateFormation = useAppStore((s) => s.updateFormation);
-    const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
+    const [editing, setEditing] = useState<{ layerId: string; before?: FormationConfig } | null>(null);
     const importRef = useRef<HTMLInputElement>(null);
 
-    const editingLayer = config.layers.find((l) => l.id === editingLayerId) ?? null;
+    const editingLayer = config.layers.find((l) => l.id === editing?.layerId) ?? null;
     if (editingLayer) {
-        return <LayerEditor key={editingLayer.id} layer={editingLayer} onClose={() => setEditingLayerId(null)} />;
+        return (
+            <LayerEditor
+                key={editingLayer.id}
+                layer={editingLayer}
+                restoreOnCancel={editing?.before}
+                onClose={() => setEditing(null)}
+            />
+        );
     }
 
     const importJSON = async (file: File) => {
@@ -120,7 +128,7 @@ export function FormationSection() {
                         layer={layer}
                         isFirst={index === 0}
                         isLast={index === config.layers.length - 1}
-                        onEdit={() => setEditingLayerId(layer.id)}
+                        onEdit={() => setEditing({ layerId: layer.id })}
                     />
                 ))}
                 <Button
@@ -128,10 +136,11 @@ export function FormationSection() {
                     size="sm"
                     className="w-full border-dashed text-fg-muted"
                     onClick={() => {
-                        const next = addLayer(appStore.getState().formation);
+                        const before = appStore.getState().formation;
+                        const next = addLayer(before);
                         updateFormation(() => next);
                         engine.resetPositions();
-                        setEditingLayerId(next.layers[next.layers.length - 1].id);
+                        setEditing({ layerId: next.layers[next.layers.length - 1].id, before });
                     }}
                 >
                     <Plus />

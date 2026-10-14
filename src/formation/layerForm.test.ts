@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { ALL_PATTERNS, DEFAULT_LAYER } from './FormationTypes';
-import { PATTERN_GROUPS, checkLayerForm, layerToForm } from './layerForm';
+import { PATTERN_GROUPS, checkLayerForm, formToLayerUpdates, layerToForm } from './layerForm';
 
 const baseForm = () => layerToForm({ ...structuredClone(DEFAULT_LAYER), id: 'a', name: 'A' });
 
@@ -30,5 +30,18 @@ describe('layerForm', () => {
     it('非表示の欄は検証しない', () => {
         expect(checkLayerForm({ ...baseForm(), pattern: 'origin', satelliteCount: '' })).toBeNull();
         expect(checkLayerForm({ ...baseForm(), colorMode: 'random', color: 'x' })).toBeNull();
+    });
+
+    it('円軌道はフォーム上で実際の半径（radius の 2 倍）を扱う', () => {
+        const layer = {
+            ...structuredClone(DEFAULT_LAYER),
+            id: 'a',
+            name: 'A',
+            pattern: 'circular_orbit' as const,
+            radius: 5,
+        };
+        const form = layerToForm(layer);
+        expect(form.radius).toBe('10');
+        expect(formToLayerUpdates({ ...form, radius: '30' }).radius).toBe(15);
     });
 });

@@ -4,7 +4,7 @@
  */
 
 import type { FormationLayer, PatternType, PlacementMode, ShapeType } from './FormationTypes';
-import { layerSatelliteCount } from './formationConfig';
+import { MAX_GENERATED_SATELLITES, layerSatelliteCount } from './formationConfig';
 
 export const PATTERN_LABELS: Record<PatternType, string> = {
     origin: '単独（1 機）',
@@ -31,7 +31,7 @@ export const PATTERN_DESCRIPTIONS: Record<PatternType, string> = {
     random_position_velocity: '位置も速度もランダム。多くはドリフトして離れていきます。',
     random_periodic: 'ランダムな位置・速度のうち、ドリフトしない条件を満たすものを置きます。',
     periodic_orbit: 'HCW 周期解の係数 A, B, D, E, F を指定し、同じ楕円上に等間隔で並べます。',
-    circular_orbit: '基準衛星から一定距離（範囲の 2 倍）を保って回る軌道上に等間隔で並べます。',
+    circular_orbit: '基準衛星から一定距離（半径）を保って回る円軌道上に等間隔で並べます。軌道面は傾いています。',
     hexagonal_disk: '基準衛星のまわりを回る円盤状の配置。六角格子に並べます。',
     square_lattice_disk: '基準衛星のまわりを回る円盤状の配置。正方格子に並べます。',
     concentric_disk: '基準衛星のまわりを回る円盤状の配置。同心円のリングに並べます。',
@@ -114,7 +114,7 @@ export function layerToForm(layer: FormationLayer): LayerFormValues {
         name: layer.name,
         pattern: layer.pattern,
         placementMode: layer.placementMode,
-        radius: String(layer.radius || 10),
+        radius: String((layer.radius || 10) * (layer.pattern === 'circular_orbit' ? CIRCULAR_RADIUS_FACTOR : 1)),
         spacing: String(layer.spacing || 1),
         satelliteCount: String(layer.satelliteCount),
         shape: layer.shape,
@@ -193,6 +193,12 @@ export function getSizeLabel(shape: ShapeType): string {
     }
 }
 
+/**
+ * 円軌道パターンの radius は x 方向の振幅で、基準衛星からの距離（円の半径）はその 2 倍になる。
+ * フォームでは分かりやすさのため実際の半径を入力させ、保存時に radius へ戻す。
+ */
+export const CIRCULAR_RADIUS_FACTOR = 2;
+
 /** 「範囲」入力欄のラベル。パターンによって意味が違う */
 export function getRadiusLabel(pattern: PatternType): string {
     switch (pattern) {
@@ -201,7 +207,7 @@ export function getRadiusLabel(pattern: PatternType): string {
         case 'random_periodic':
             return '範囲（±）';
         case 'circular_orbit':
-            return '軌道の大きさ';
+            return '半径';
         case 'periodic_orbit':
             return '振幅 A（R 方向）';
         case 'hexagonal_disk':
@@ -224,9 +230,6 @@ export function getCountLabel(pattern: PatternType): string {
             return '衛星数';
     }
 }
-
-/** 一度に生成できる衛星数の上限（ライブ反映で固まらないように） */
-export const MAX_GENERATED_SATELLITES = 20000;
 
 /**
  * フォームの入力内容をチェックし、問題があれば利用者向けのメッセージを返す。
@@ -327,7 +330,7 @@ export function formToLayerUpdates(values: LayerFormValues): Partial<FormationLa
         };
         updates.positiveZ = undefined;
     } else if (pattern === 'circular_orbit') {
-        updates.radius = num(values.radius, 10) || 10;
+        updates.radius = (num(values.radius, 20) || 20) / CIRCULAR_RADIUS_FACTOR;
         updates.spacing = undefined;
         updates.placementMode = 'radius';
         updates.positiveZ = values.positiveZ;

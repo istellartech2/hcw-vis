@@ -16,6 +16,9 @@ import {
 
 const MAX_SATELLITES_PER_LAYER = 100000;
 
+/** 1 グループが生成できる衛星数の上限（多すぎると描画が固まる） */
+export const MAX_GENERATED_SATELLITES = 20000;
+
 export function createDefaultFormation(): FormationConfig {
     return structuredClone(DEFAULT_FORMATION_CONFIG);
 }
@@ -130,6 +133,8 @@ function validateLayer(layer: FormationLayer, index: number): string[] {
 
     if (!(layer.satelliteCount >= 1 && layer.satelliteCount <= MAX_SATELLITES_PER_LAYER)) {
         errors.push(`${prefix}衛星数は1〜${MAX_SATELLITES_PER_LAYER}の範囲で指定してください`);
+    } else if (layerSatelliteCount(layer) > MAX_GENERATED_SATELLITES) {
+        errors.push(`${prefix}生成される衛星が ${MAX_GENERATED_SATELLITES} 機を超えます`);
     }
 
     if (layer.placementMode === 'radius' && !(layer.radius && layer.radius > 0)) {

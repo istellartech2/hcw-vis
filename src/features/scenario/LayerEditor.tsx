@@ -15,7 +15,13 @@ import {
 import { COMPACT_INPUT_CLASS, HelpTip, SegmentedControl, WithUnit } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
-import type { FormationLayer, PatternType, PlacementMode, ShapeType } from '@/formation/FormationTypes';
+import type {
+    FormationConfig,
+    FormationLayer,
+    PatternType,
+    PlacementMode,
+    ShapeType,
+} from '@/formation/FormationTypes';
 import { layerSatelliteCount, updateLayer } from '@/formation/formationConfig';
 import {
     PATTERN_DESCRIPTIONS,
@@ -46,6 +52,8 @@ type TextKey = { [K in keyof LayerFormValues]: LayerFormValues[K] extends string
 
 interface LayerEditorProps {
     layer: FormationLayer;
+    /** キャンセル時に戻す配置。省略時は編集を開いた時点の配置（追加直後なら追加前の配置を渡す） */
+    restoreOnCancel?: FormationConfig;
     onClose: () => void;
 }
 
@@ -54,11 +62,11 @@ interface LayerEditorProps {
  * 入力は少し待ってから自動で 3D に反映する（時刻は t = 0 に戻る）。
  * 「キャンセル」で開いたときの配置に戻す。
  */
-export function LayerEditor({ layer, onClose }: LayerEditorProps) {
+export function LayerEditor({ layer, restoreOnCancel, onClose }: LayerEditorProps) {
     const engine = useEngine();
     const updateFormation = useAppStore((s) => s.updateFormation);
     const [values, setValues] = useState(() => layerToForm(layer));
-    const [snapshot] = useState(() => appStore.getState().formation);
+    const [snapshot] = useState(() => restoreOnCancel ?? appStore.getState().formation);
     const touched = useRef(false);
     const problem = checkLayerForm(values);
 
@@ -86,6 +94,7 @@ export function LayerEditor({ layer, onClose }: LayerEditorProps) {
         onClose();
     };
 
+    // 追加直後のグループは、何も変えずに閉じても残す（キャンセルしたときだけ取り消す）
     const cancel = () => {
         updateFormation(() => snapshot);
         engine.resetPositions();
@@ -318,6 +327,7 @@ function SizeSection({ values, onChange }: SectionProps) {
                 </div>
             )}
 
+            {/* zAmplitude は periodicParams が無い古い JSON 用のフォールバックでしか使われないので編集欄は出さない */}
             {visible.periodicParams && (
                 <div className="space-y-1.5 rounded-lg border border-line bg-sunken/50 p-2.5">
                     <div className="flex items-baseline justify-between gap-2">

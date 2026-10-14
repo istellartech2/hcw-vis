@@ -12,7 +12,7 @@ import {
 import type { FormationConfig, FormationLayer } from '@/formation/FormationTypes';
 import { useEngine } from '@/engine/EngineContext';
 import { layerSatelliteCount, moveLayer, removeLayer, toggleLayer } from '@/formation/formationConfig';
-import { PATTERN_LABELS, SHAPE_LABELS } from '@/formation/layerForm';
+import { CIRCULAR_RADIUS_FACTOR, PATTERN_LABELS, SHAPE_LABELS } from '@/formation/layerForm';
 import { appStore, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +37,9 @@ export function LayerCard({ layer, isFirst, isLast, onEdit }: LayerCardProps) {
         layer.pattern === 'origin'
             ? null
             : layer.placementMode === 'radius'
-              ? `大きさ ${layer.radius} m`
+              ? layer.pattern === 'circular_orbit'
+                  ? `半径 ${(layer.radius ?? 10) * CIRCULAR_RADIUS_FACTOR} m`
+                  : `大きさ ${layer.radius} m`
               : `間隔 ${layer.spacing} m`;
     const remove = () => {
         const before = appStore.getState().formation;

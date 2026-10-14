@@ -9,6 +9,7 @@ import { FormationSection } from '@/features/scenario/FormationSection';
 import { OrbitTab } from '@/features/scenario/OrbitTab';
 import { appStore, useAppMode, useAppStore, type AppMode, type PanelTab } from '@/store/appStore';
 import { cn } from '@/lib/utils';
+import { switchMode } from '@/store/appMode';
 import { useSheetDrag } from './useSheetDrag';
 
 const PANEL_WIDTH_PX = 360;
@@ -39,19 +40,9 @@ const TABS: Record<AppMode, ReadonlyArray<{ value: PanelTab; label: string }>> =
 /** パネル最上部のモード切り替え。モードによって下のタブ構成が変わる */
 function ModeSwitch({ mode }: { mode: AppMode }) {
     const engine = useEngine();
-    const setUI = appStore.getState().setUI;
 
     const change = (next: AppMode) => {
-        if (next === mode) return;
-        if (next === 'simulation') {
-            if (appStore.getState().playback.active) engine.exitPlayback();
-            setUI({ mode: 'simulation', panelTab: 'formation' });
-            appStore.getState().patch({ paused: false });
-        } else {
-            // ファイルを読み込むまでシミュレーションは止めておく（裏で動いていると CSV 再生と紛らわしい）
-            setUI({ mode: 'csv', panelTab: 'csv' });
-            appStore.getState().patch({ paused: true });
-        }
+        if (next !== mode) switchMode(engine, next);
     };
 
     return (

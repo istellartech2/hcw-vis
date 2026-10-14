@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import type { SimulationEngine } from '@/engine/SimulationEngine';
 import { appStore } from '@/store/appStore';
+import { isCsvModeWithoutFile, switchMode } from '@/store/appMode';
 import { TIME_SCALE_OPTIONS } from '@/store/settings';
 
 /** 矢印キー1回あたりの増速量 (m/s) */
@@ -45,7 +46,7 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
                     e.preventDefault();
                     // 再生バーの再生ボタンと同じ動作にする
                     if (store.playback.active) engine.togglePlaybackPlay();
-                    else engine.togglePause();
+                    else if (!isCsvModeWithoutFile()) engine.togglePause();
                     break;
                 case 'r':
                     engine.resetPositions();
@@ -72,8 +73,10 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
                     store.setUI({ helpOpen: true });
                     break;
                 case 'f':
-                    if (!store.playback.active)
-                        store.setUI({ panelOpen: true, mode: 'simulation', panelTab: 'formation' });
+                    // CSV 再生中は衛星配置を使わないので何もしない
+                    if (store.playback.active) break;
+                    if (isCsvModeWithoutFile()) switchMode(engine, 'simulation');
+                    store.setUI({ panelOpen: true, panelTab: 'formation' });
                     break;
                 case 'escape':
                     if (store.ui.activeDialog) store.setUI({ activeDialog: null });

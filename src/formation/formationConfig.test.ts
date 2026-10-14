@@ -50,6 +50,13 @@ describe('formationConfig', () => {
         }
     });
 
+    it('生成される機数が上限を超える JSON は読み込まない', () => {
+        const config = createDefaultFormation();
+        config.layers[0] = { ...config.layers[0], pattern: 'grid', satelliteCount: 100 };
+        const result = parseFormation(serializeFormation(config));
+        expect(result.ok).toBe(false);
+    });
+
     it('moveLayer は範囲外への移動を無視する', () => {
         const config = addLayer(createDefaultFormation(), 'B');
         const [a, b] = config.layers;
