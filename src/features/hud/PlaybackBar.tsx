@@ -4,6 +4,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useEngine } from '@/engine/EngineContext';
 import { formatSimTime } from '@/lib/format';
+import { orbitPeriodMinutes } from '@/simulation/OrbitElements';
 import { appStore, useAppMode, useAppStore } from '@/store/appStore';
 import { TIME_SCALE_OPTIONS } from '@/store/settings';
 import { cn } from '@/lib/utils';
@@ -100,8 +101,8 @@ function SimulationBar() {
     const paused = useAppStore((s) => s.paused);
     const simTime = useAppStore((s) => s.simTime);
     const timeScale = useAppStore((s) => s.simulation.timeScale);
-    const periodMinutes = useAppStore((s) => s.referenceInfo?.orbit.periodMinutes);
-    const orbits = periodMinutes ? simTime / (periodMinutes * 60) : null;
+    const periodMinutes = useAppStore((s) => orbitPeriodMinutes(s.orbit.altitudeKm));
+    const orbits = simTime / (periodMinutes * 60);
 
     return (
         <>
@@ -127,7 +128,7 @@ function SimulationBar() {
                 {paused ? (
                     <div className="font-medium text-warning">一時停止中</div>
                 ) : (
-                    <div className="text-fg-subtle">{orbits === null ? '—' : `${orbits.toFixed(2)} 周回`}</div>
+                    <div className="text-fg-subtle">{`${orbits.toFixed(2)} 周回`}</div>
                 )}
             </div>
         </>

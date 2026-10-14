@@ -128,7 +128,7 @@ function ShapeSection() {
         >
             <SegmentedControl<SatelliteShape>
                 ariaLabel="衛星の形状"
-                value={shape === '3dfile' ? 'cube' : shape}
+                value={shape}
                 options={[
                     { value: 'sphere', label: '球' },
                     { value: 'cube', label: '立方体' },

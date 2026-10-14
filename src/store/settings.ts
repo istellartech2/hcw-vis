@@ -3,7 +3,7 @@
  * UI とシミュレーションエンジンの両方がこの定義を共有する。
  */
 
-export type SatelliteShape = 'sphere' | 'cube' | '3dfile';
+export type SatelliteShape = 'sphere' | 'cube';
 
 /** 地球テクスチャの明るさ（衛星を目立たせるため、既定では少し沈ませる） */
 export type EarthBrightness = 'dim' | 'normal' | 'bright';
@@ -22,10 +22,6 @@ export interface DisplaySettings {
     satelliteSize: number;
     uniformSatelliteColor: boolean;
     satelliteColor: string;
-    cubeRotationR: number;
-    cubeRotationS: number;
-    file3dRotationR: number;
-    file3dRotationS: number;
 }
 
 export interface SimulationSettings {
@@ -59,10 +55,6 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
     satelliteSize: 1.0,
     uniformSatelliteColor: false,
     satelliteColor: '#ffffff',
-    cubeRotationR: 0,
-    cubeRotationS: 0,
-    file3dRotationR: 0,
-    file3dRotationS: 0,
 };
 
 export const DEFAULT_SIMULATION_SETTINGS: SimulationSettings = {

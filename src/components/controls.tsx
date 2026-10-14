@@ -27,16 +27,6 @@ export function HelpTip({ children }: { children: ReactNode }) {
     );
 }
 
-/** 単位つきラベル */
-export function UnitLabel({ children, unit }: { children: ReactNode; unit: string }) {
-    return (
-        <>
-            {children}
-            <span className="text-xs font-normal text-fg-subtle">({unit})</span>
-        </>
-    );
-}
-
 /** ラベル + スイッチの 1 行 */
 export function ToggleRow({
     label,

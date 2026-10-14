@@ -1,11 +1,15 @@
 /**
- * 軌道要素の計算と管理を行うクラス
- * satellite.jsライブラリを使用して軌道要素の変換と計算を実行
+ * 基準軌道の軌道要素と、satellite.js（SGP4）による ECI 位置の計算
  */
 
 import * as satellite from 'satellite.js';
 
-interface OrbitalElements {
+/** 地球赤道半径 (m) */
+export const EARTH_RADIUS = 6378137;
+/** 地心重力定数 (m³/s²) */
+export const EARTH_MU = 3.986004418e14;
+
+export interface OrbitalElements {
     inclination: number; // 軌道傾斜角 (degrees)
     raan: number; // 昇交点経度 (degrees)
     eccentricity: number; // 離心率
@@ -17,12 +21,15 @@ interface OrbitalElements {
     meanMotion: number; // 平均運動 (rad/s)
 }
 
-export type { OrbitalElements };
+/** 高度 altitudeKm の円軌道の周期（分） */
+export function orbitPeriodMinutes(altitudeKm: number): number {
+    return (2 * Math.PI * Math.sqrt((EARTH_RADIUS + altitudeKm * 1000) ** 3 / EARTH_MU)) / 60;
+}
+
+/** 軌道要素ごとの SGP4 レコード（初期化は重いので一度だけ行う） */
+const satrecCache = new WeakMap<OrbitalElements, satellite.SatRec>();
 
 export class OrbitElementsCalculator {
-    private static readonly EARTH_RADIUS = 6378137; // m (meters)
-    private static readonly EARTH_MU = 3.986004418e14; // m³/s²
-
     /**
      * 基本軌道要素から計算された軌道要素を取得
      */
@@ -34,15 +41,10 @@ export class OrbitElementsCalculator {
         meanAnomaly: number,
         altitude: number, // m (meters)
     ): OrbitalElements {
-        // 長半径を計算 (meters)
-        const semiMajorAxis = this.EARTH_RADIUS + altitude;
-
-        // 軌道周期を計算 (ケプラーの第3法則)
-        const periodSeconds = 2 * Math.PI * Math.sqrt(Math.pow(semiMajorAxis, 3) / this.EARTH_MU);
-        const periodMinutes = periodSeconds / 60;
-
-        // 平均運動を計算
-        const meanMotion = Math.sqrt(this.EARTH_MU / Math.pow(semiMajorAxis, 3));
+        const semiMajorAxis = EARTH_RADIUS + altitude;
+        // 平均運動と軌道周期（ケプラーの第3法則）
+        const meanMotion = Math.sqrt(EARTH_MU / Math.pow(semiMajorAxis, 3));
+        const periodMinutes = (2 * Math.PI) / meanMotion / 60;
 
         return {
             inclination,
@@ -55,20 +57,6 @@ export class OrbitElementsCalculator {
             period: periodMinutes,
             meanMotion,
         };
-    }
-
-    /**
-     * 度からラジアンに変換
-     */
-    public static degToRad(degrees: number): number {
-        return (degrees * Math.PI) / 180;
-    }
-
-    /**
-     * ラジアンから度に変換
-     */
-    public static radToDeg(radians: number): number {
-        return (radians * 180) / Math.PI;
     }
 
     /**
@@ -105,60 +93,9 @@ export class OrbitElementsCalculator {
     }
 
     /**
-     * デフォルトのISS軌道要素を取得
-     */
-    public static getISSElements(): OrbitalElements {
-        return this.calculateOrbitalElements(
-            51.6, // ISS軌道傾斜角
-            0, // 昇交点経度
-            0, // 離心率（円軌道）
-            0, // 近地点引数
-            0, // 平均近点角
-            408000, // ISS平均高度 (408 km = 408000 m)
-        );
-    }
-
-    /**
-     * 軌道要素から軌道周期での位置を計算（簡易版）
-     */
-    public static calculatePositionAtTime(
-        elements: OrbitalElements,
-        timeSeconds: number,
-    ): {
-        trueAnomaly: number;
-        radius: number;
-    } {
-        // 平均近点角の計算（時間発展）
-        const meanAnomalyRad = this.degToRad(elements.meanAnomaly) + elements.meanMotion * timeSeconds;
-
-        // 簡易計算（離心率が小さい場合の近似）
-        let trueAnomaly = meanAnomalyRad;
-        if (elements.eccentricity > 0.001) {
-            // ケプラー方程式の簡易解法（ニュートン法1回）
-            const eccentricAnomaly = meanAnomalyRad + elements.eccentricity * Math.sin(meanAnomalyRad);
-            trueAnomaly =
-                2 *
-                Math.atan(
-                    Math.sqrt((1 + elements.eccentricity) / (1 - elements.eccentricity)) *
-                        Math.tan(eccentricAnomaly / 2),
-                );
-        }
-
-        // 軌道上の距離（m）
-        const radius =
-            (elements.semiMajorAxis * (1 - elements.eccentricity * elements.eccentricity)) /
-            (1 + elements.eccentricity * Math.cos(trueAnomaly));
-
-        return {
-            trueAnomaly: this.radToDeg(trueAnomaly),
-            radius,
-        };
-    }
-
-    /**
      * 軌道要素からTLE形式の文字列を生成してsatellite.jsのSGP4レコードを作成
      */
-    public static createSatelliteRecord(elements: OrbitalElements): any {
+    private static createSatelliteRecord(elements: OrbitalElements): satellite.SatRec {
         // 簡単なTLE形式を生成（実際のTLEではないが、satellite.jsで動作する形式）
         const meanMotionRevPerDay = (elements.meanMotion * 86400) / (2 * Math.PI);
 
@@ -175,8 +112,7 @@ export class OrbitElementsCalculator {
 
         const line2 = `2 25544 ${inclination} ${raan} ${eccentricity} ${argOfPerigee} ${meanAnomaly} ${meanMotion}00001`;
 
-        const satrec = satellite.twoline2satrec(line1, line2);
-        return satrec;
+        return satellite.twoline2satrec(line1, line2);
     }
 
     /**
@@ -191,36 +127,34 @@ export class OrbitElementsCalculator {
         geodetic: { latitude: number; longitude: number; altitude: number };
     } | null {
         try {
-            const satrec = this.createSatelliteRecord(elements);
-            const result = satellite.propagate(satrec, date);
-
-            if (result && result.position && result.velocity) {
-                // GMSTを計算
-                const gmst = satellite.gstime(date);
-
-                // ECI座標から緯度経度高度を計算
-                const positionGd = satellite.eciToGeodetic(result.position, gmst);
-
-                return {
-                    position: {
-                        x: result.position.x * 1000, // km to m
-                        y: result.position.y * 1000, // km to m
-                        z: result.position.z * 1000, // km to m
-                    },
-                    velocity: {
-                        x: result.velocity.x * 1000, // km/s to m/s
-                        y: result.velocity.y * 1000, // km/s to m/s
-                        z: result.velocity.z * 1000, // km/s to m/s
-                    },
-                    geodetic: {
-                        latitude: satellite.degreesLat(positionGd.latitude),
-                        longitude: satellite.degreesLong(positionGd.longitude),
-                        altitude: positionGd.height * 1000, // km to m
-                    },
-                };
+            let satrec = satrecCache.get(elements);
+            if (!satrec) {
+                satrec = this.createSatelliteRecord(elements);
+                satrecCache.set(elements, satrec);
             }
+            const result = satellite.propagate(satrec, date);
+            if (!result?.position || !result.velocity) return null;
 
-            return null;
+            // ECI座標から緯度経度高度を計算
+            const positionGd = satellite.eciToGeodetic(result.position, satellite.gstime(date));
+            // satellite.js は km, km/s で返すので m, m/s に換算する
+            return {
+                position: {
+                    x: result.position.x * 1000,
+                    y: result.position.y * 1000,
+                    z: result.position.z * 1000,
+                },
+                velocity: {
+                    x: result.velocity.x * 1000,
+                    y: result.velocity.y * 1000,
+                    z: result.velocity.z * 1000,
+                },
+                geodetic: {
+                    latitude: satellite.degreesLat(positionGd.latitude),
+                    longitude: satellite.degreesLong(positionGd.longitude),
+                    altitude: positionGd.height * 1000,
+                },
+            };
         } catch (error) {
             console.error('ECI position calculation failed:', error);
             return null;

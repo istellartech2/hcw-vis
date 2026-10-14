@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vite-plus/test';
 import { Satellite } from '../simulation/Satellite.js';
 import { DEFAULT_DISPLAY_SETTINGS } from '@/store/settings';
 import {
-    createSatelliteObject,
+    createSatelliteMesh,
     displayColor,
     resolveAppearance,
     resolveSatelliteColor,
@@ -20,43 +20,29 @@ const appearance = (shape: string, boxRatios = { x: 1, y: 1, z: 1 }): SatelliteA
     boxRatios,
 });
 
-describe('createSatelliteObject', () => {
+describe('createSatelliteMesh', () => {
     it('builds a cube with side = size, as wide as a sphere of the same size', () => {
-        expect(boundingSize(createSatelliteObject(appearance('cube'), 0xff0000, 0.2, null))).toEqual([0.5, 0.5, 0.5]);
+        expect(boundingSize(createSatelliteMesh(appearance('cube'), 0xff0000))).toEqual([0.5, 0.5, 0.5]);
     });
 
     it('builds a box scaled by its ratios', () => {
-        const box = createSatelliteObject(appearance('box', { x: 1, y: 2, z: 3 }), 0xff0000, 0.2, null);
+        const box = createSatelliteMesh(appearance('box', { x: 1, y: 2, z: 3 }), 0xff0000);
         expect(boundingSize(box)).toEqual([0.5, 1, 1.5]);
     });
 
     it('builds a sphere with diameter = size', () => {
-        const [x] = boundingSize(createSatelliteObject(appearance('sphere'), 0xff0000, 0.2, null));
+        const [x] = boundingSize(createSatelliteMesh(appearance('sphere'), 0xff0000));
         expect(x).toBeCloseTo(0.5, 6);
     });
 
-    it('falls back to a sphere when no 3D model is loaded', () => {
-        const mesh = createSatelliteObject(appearance('3dfile'), 0xff0000, 0.2, null) as THREE.Mesh;
-        expect(mesh.geometry).toBeInstanceOf(THREE.SphereGeometry);
+    it('falls back to a sphere for unknown shapes such as 3dfile', () => {
+        expect(createSatelliteMesh(appearance('3dfile'), 0xff0000).geometry).toBeInstanceOf(THREE.SphereGeometry);
     });
 
-    it('clones a loaded model with a colored material and scale', () => {
-        const model = new THREE.Group().add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1)));
-        const object = createSatelliteObject(appearance('3dfile'), 0x00ff00, 0.2, model);
-        expect(object).not.toBe(model);
-        expect(object.scale.x).toBe(0.5);
-        const material = (object.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    it('uses the color for both the base and the emissive color', () => {
+        const { material } = createSatelliteMesh(appearance('sphere'), 0x00ff00);
         expect(material.color.getHex()).toBe(0x00ff00);
-        expect(material.emissiveIntensity).toBe(0.2);
-    });
-
-    it('keeps the normalization of a loaded model so its longest side equals size', () => {
-        // ModelLoader は最長辺が 1 になるよう root の scale を設定して返す
-        const model = new THREE.Group().add(new THREE.Mesh(new THREE.BoxGeometry(4, 2, 1)));
-        model.scale.setScalar(1 / 4);
-        const [x, y] = boundingSize(createSatelliteObject(appearance('3dfile'), 0x00ff00, 0.2, model));
-        expect(x).toBeCloseTo(0.5, 6);
-        expect(y).toBeCloseTo(0.25, 6);
+        expect(material.emissive.getHex()).toBe(0x00ff00);
     });
 });
 
@@ -64,8 +50,6 @@ describe('appearance and color resolution', () => {
     it('uses formation metadata over display settings', () => {
         const sat = new Satellite(0, 0, 0, 0, 0, 0, '#ffffff');
         sat.metadata = {
-            layerId: 'l',
-            layerName: 'L',
             shape: 'box',
             size: 2,
             color: '#123456',

@@ -21,17 +21,10 @@ import {
     type SimulationSettings,
 } from './settings';
 
+/** 基準衛星の現在の緯度経度（度） */
 export interface ReferenceSatelliteInfo {
-    geodetic: { latitude: number; longitude: number; altitudeKm: number } | null;
-    eciKm: { x: number; y: number; z: number } | null;
-    orbit: {
-        altitudeKm: number;
-        periodMinutes: number;
-        inclination: number;
-        eccentricity: number;
-        raan: number;
-        argOfPerigee: number;
-    };
+    latitude: number;
+    longitude: number;
 }
 
 export interface SelectedSatelliteInfo {
@@ -61,9 +54,6 @@ export interface PlaybackStatus {
 export interface LoadingState {
     title: string;
     message: string;
-    /** 0..1。undefined なら不定プログレス */
-    progress?: number;
-    fileSize?: number;
 }
 
 export type ActiveDialog = 'thrust' | 'position' | null;

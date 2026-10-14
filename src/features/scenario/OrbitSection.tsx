@@ -7,6 +7,7 @@ import { COMPACT_INPUT_CLASS, HelpTip, WithUnit } from '@/components/controls';
 import { PanelSection } from '@/components/panel-section';
 import { useEngine } from '@/engine/EngineContext';
 import { formatPeriod } from '@/lib/format';
+import { orbitPeriodMinutes } from '@/simulation/OrbitElements';
 import { useAppStore } from '@/store/appStore';
 import type { OrbitInputs } from '@/store/settings';
 import { cn } from '@/lib/utils';
@@ -35,7 +36,12 @@ const toDraft = (orbit: OrbitInputs): Draft =>
 export function OrbitSection() {
     const engine = useEngine();
     const orbit = useAppStore((s) => s.orbit);
-    const info = useAppStore((s) => s.referenceInfo);
+    // 文字列で購読して、表示が変わらない更新では再描画しない
+    const position = useAppStore(
+        (s) =>
+            s.referenceInfo &&
+            `${formatLatitude(s.referenceInfo.latitude)} ${formatLongitude(s.referenceInfo.longitude)}`,
+    );
     const [draft, setDraft] = useState<Draft>(() => toDraft(orbit));
     const [invalid, setInvalid] = useState<ReadonlySet<keyof OrbitInputs>>(new Set());
 
@@ -66,8 +72,7 @@ export function OrbitSection() {
             action={
                 <HelpTip>
                     基準衛星の円軌道（離心率 0）です。値を変えたら「軌道を反映」で適用します。
-                    {info?.geodetic &&
-                        ` 現在位置: ${formatLatitude(info.geodetic.latitude)} ${formatLongitude(info.geodetic.longitude)}`}
+                    {position && ` 現在位置: ${position}`}
                 </HelpTip>
             }
         >
@@ -97,14 +102,12 @@ export function OrbitSection() {
                             </WithUnit>
                         </label>
                     ))}
-                    {info && (
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-xs text-fg-muted">軌道周期</span>
-                            <span className="num flex h-7 items-center text-xs text-fg">
-                                {formatPeriod(info.orbit.periodMinutes)}
-                            </span>
-                        </div>
-                    )}
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-xs text-fg-muted">軌道周期</span>
+                        <span className="num flex h-7 items-center text-xs text-fg">
+                            {formatPeriod(orbitPeriodMinutes(orbit.altitudeKm))}
+                        </span>
+                    </div>
                 </div>
 
                 <div className={cn('flex gap-2', !pending && 'hidden')}>

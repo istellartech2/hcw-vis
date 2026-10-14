@@ -1,77 +1,71 @@
 import * as THREE from 'three';
-import { Satellite } from '../simulation/Satellite.js';
+import type { Satellite } from '../simulation/Satellite.js';
+import { setHillPosition } from './satelliteFrame.js';
 
 /** 軌跡の先端（最新点）の不透明度 */
 const TRAIL_OPACITY = 0.7;
+/** 何フレームごとに軌跡へ点を追加するか */
+const TRAIL_INTERVAL_FRAMES = 10;
 
+interface Trail {
+    points: THREE.Vector3[];
+    line: THREE.Line<THREE.BufferGeometry, THREE.LineBasicMaterial> | null;
+    frame: number;
+}
+
+/** 衛星ごとの軌跡（古い点ほど透明な線）。状態は衛星をキーに保持する */
 export class TrailRenderer {
     private scene: THREE.Scene;
+    private trails = new Map<Satellite, Trail>();
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;
     }
 
-    updateTrail(
-        sat: Satellite,
-        position: { x: number; y: number; z: number },
-        scale: number,
-        color: THREE.Color,
-        trailMax: number,
-    ): void {
-        // 軌跡を5フレームに1回だけ更新（メモリと計算負荷軽減）
-        sat.frameCounter++;
-        if (sat.frameCounter % 5 === 0) {
-            // 軌跡も座標変換を適用
-            if (sat.trail.length === 0 || sat.frameCounter % 10 === 0) {
-                // 10フレームに1回だけVector3を新規作成
-                // position.x = R (Radial), position.y = S (Along-track), position.z = W (Cross-track)
-                // Three.js: X = W (Cross-track), Y = R (Radial), Z = S (Along-track)
-                sat.trail.push(new THREE.Vector3(position.z * scale, position.x * scale, position.y * scale));
-                if (sat.trail.length > trailMax) {
-                    sat.trail.shift();
-                }
-            }
-
-            if (sat.trail.length > 1) {
-                // 初回のみgeometry/materialを作成、以降は使い回し
-                if (!sat.trailGeometry) {
-                    sat.trailGeometry = new THREE.BufferGeometry();
-                    sat.trailMaterial = new THREE.LineBasicMaterial({
-                        vertexColors: true,
-                        transparent: true,
-                        depthWrite: false,
-                    });
-                    sat.trailLine = new THREE.Line(sat.trailGeometry, sat.trailMaterial);
-                    this.scene.add(sat.trailLine);
-                }
-
-                // 古い点ほど透明にして、衛星の後ろへ尾を引くように見せる
-                sat.trailGeometry.setFromPoints(sat.trail);
-                const count = sat.trail.length;
-                const colors = new Float32Array(count * 4);
-                for (let i = 0; i < count; i++) {
-                    const t = i / (count - 1);
-                    colors.set([color.r, color.g, color.b, TRAIL_OPACITY * t * t], i * 4);
-                }
-                sat.trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
-            }
+    updateTrail(sat: Satellite, position: { x: number; y: number; z: number }, color: THREE.Color, max: number): void {
+        let trail = this.trails.get(sat);
+        if (!trail) {
+            trail = { points: [], line: null, frame: 0 };
+            this.trails.set(sat, trail);
         }
+        if (trail.frame++ % TRAIL_INTERVAL_FRAMES !== 0) return;
+
+        trail.points.push(setHillPosition(new THREE.Vector3(), position));
+        if (trail.points.length > max) trail.points.shift();
+        if (trail.points.length < 2) return;
+
+        if (!trail.line) {
+            trail.line = new THREE.Line(
+                new THREE.BufferGeometry(),
+                new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false }),
+            );
+            this.scene.add(trail.line);
+        }
+
+        // 古い点ほど透明にして、衛星の後ろへ尾を引くように見せる
+        const count = trail.points.length;
+        const colors = new Float32Array(count * 4);
+        for (let i = 0; i < count; i++) {
+            const t = i / (count - 1);
+            colors[i * 4] = color.r;
+            colors[i * 4 + 1] = color.g;
+            colors[i * 4 + 2] = color.b;
+            colors[i * 4 + 3] = TRAIL_OPACITY * t * t;
+        }
+        // 属性を差し替える前に破棄して、古い GPU バッファを解放する
+        const geometry = trail.line.geometry;
+        geometry.dispose();
+        geometry.setFromPoints(trail.points);
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
     }
 
     clearTrail(sat: Satellite): void {
-        if (sat.trailLine) {
-            this.scene.remove(sat.trailLine);
-            sat.trailLine = null;
+        const line = this.trails.get(sat)?.line;
+        if (line) {
+            this.scene.remove(line);
+            line.geometry.dispose();
+            line.material.dispose();
         }
-        if (sat.trailGeometry) {
-            sat.trailGeometry.dispose();
-            sat.trailGeometry = null;
-        }
-        if (sat.trailMaterial) {
-            sat.trailMaterial.dispose();
-            sat.trailMaterial = null;
-        }
-        sat.trail = [];
-        sat.frameCounter = 0;
+        this.trails.delete(sat);
     }
 }
