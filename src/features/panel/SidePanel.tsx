@@ -1,32 +1,104 @@
 import { useEffect, type CSSProperties } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Atom, FileSpreadsheet, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useEngine } from '@/engine/EngineContext';
+import { CsvTab } from '@/features/csv/CsvTab';
 import { DisplayTab } from '@/features/display/DisplayTab';
-import { PlaybackTab } from '@/features/playback/PlaybackTab';
-import { ScenarioTab } from '@/features/scenario/ScenarioTab';
-import { appStore, useAppStore, type PanelTab } from '@/store/appStore';
+import { FormationSection } from '@/features/scenario/FormationSection';
+import { OrbitTab } from '@/features/scenario/OrbitTab';
+import { appStore, useAppMode, useAppStore, type AppMode, type PanelTab } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 import { useSheetDrag } from './useSheetDrag';
 
 const PANEL_WIDTH_PX = 360;
 const WIDE_QUERY = '(min-width: 769px)';
 
-const TABS: ReadonlyArray<{ value: PanelTab; label: string }> = [
-    { value: 'scenario', label: 'シナリオ' },
-    { value: 'display', label: '表示' },
-    { value: 'playback', label: '再生' },
-];
+const MODE_LABELS: Record<AppMode, string> = {
+    simulation: 'シミュレーション',
+    csv: 'CSV 再生',
+};
+
+const MODE_ICONS: Record<AppMode, typeof Atom> = {
+    simulation: Atom,
+    csv: FileSpreadsheet,
+};
+
+const TABS: Record<AppMode, ReadonlyArray<{ value: PanelTab; label: string }>> = {
+    simulation: [
+        { value: 'formation', label: '衛星配置' },
+        { value: 'orbit', label: '軌道・力学' },
+        { value: 'display', label: '表示' },
+    ],
+    csv: [
+        { value: 'csv', label: 'CSV データ' },
+        { value: 'display', label: '表示' },
+    ],
+};
+
+/** パネル最上部のモード切り替え。モードによって下のタブ構成が変わる */
+function ModeSwitch({ mode }: { mode: AppMode }) {
+    const engine = useEngine();
+    const setUI = appStore.getState().setUI;
+
+    const change = (next: AppMode) => {
+        if (next === mode) return;
+        if (next === 'simulation') {
+            if (appStore.getState().playback.active) engine.exitPlayback();
+            setUI({ mode: 'simulation', panelTab: 'formation' });
+            appStore.getState().patch({ paused: false });
+        } else {
+            // ファイルを読み込むまでシミュレーションは止めておく（裏で動いていると CSV 再生と紛らわしい）
+            setUI({ mode: 'csv', panelTab: 'csv' });
+            appStore.getState().patch({ paused: true });
+        }
+    };
+
+    return (
+        <div
+            role="radiogroup"
+            aria-label="モード"
+            className="grid flex-1 grid-cols-2 gap-1 rounded-lg bg-sunken p-[3px]"
+        >
+            {(Object.keys(MODE_LABELS) as AppMode[]).map((value) => {
+                const Icon = MODE_ICONS[value];
+                const selected = value === mode;
+                return (
+                    <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => change(value)}
+                        className={cn(
+                            'inline-flex h-8 items-center justify-center gap-1.5 rounded-md text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-brand',
+                            selected ? 'bg-brand text-brand-fg shadow-sm' : 'text-fg-muted hover:text-fg',
+                        )}
+                    >
+                        <Icon className="size-3.5" />
+                        {MODE_LABELS[value]}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
 
 /**
  * 左上のメニューボタンから開くサイドパネル（スマホではボトムシート）。
+ * 最上部でモード（シミュレーション / CSV 再生）を選び、その下のタブで設定する。
  * 開いている間は下部 HUD をパネルの右側へずらす。
  */
 export function SidePanel() {
     const open = useAppStore((s) => s.ui.panelOpen);
-    const tab = useAppStore((s) => s.ui.panelTab);
+    const storedTab = useAppStore((s) => s.ui.panelTab);
+    const mode = useAppMode();
     const setUI = appStore.getState().setUI;
     const sheet = useSheetDrag(() => setUI({ panelOpen: false }));
+
+    const tabs = TABS[mode];
+    const tab = tabs.some((t) => t.value === storedTab) ? storedTab : tabs[0].value;
+    const ModeIcon = MODE_ICONS[mode];
 
     useEffect(() => {
         const root = document.documentElement;
@@ -46,11 +118,15 @@ export function SidePanel() {
             {!open && (
                 <Button
                     variant="ghost"
-                    aria-label="メニューを開く"
-                    className="glass fixed top-[calc(12px+env(safe-area-inset-top,0px))] left-3 z-30 size-10 rounded-[10px] text-fg hover:bg-raised-hover hover:text-brand-text"
+                    aria-label={`メニューを開く（${MODE_LABELS[mode]}モード）`}
+                    className="glass fixed top-[calc(12px+env(safe-area-inset-top,0px))] left-3 z-30 h-10 gap-2 rounded-[10px] pr-3.5 pl-2.5 text-fg hover:bg-raised-hover hover:text-brand-text"
                     onClick={() => setUI({ panelOpen: true })}
                 >
                     <Menu className="size-5" />
+                    <span className="flex items-center gap-1 text-[13px] font-medium">
+                        <ModeIcon className={cn('size-3.5', mode === 'csv' ? 'text-brand-text' : 'text-fg-subtle')} />
+                        {MODE_LABELS[mode]}
+                    </span>
                 </Button>
             )}
 
@@ -83,37 +159,43 @@ export function SidePanel() {
                             onClick={() => sheet.setSnap(sheet.snap === 'full' ? 'half' : 'full')}
                         />
                     </div>
-                    <div className="side-panel-header" {...sheet.handleProps}>
-                        <TabsList className="grid h-9! w-full flex-1 grid-cols-3 border border-line bg-sunken">
-                            {TABS.map((t) => (
+                    <div className="side-panel-header flex-col items-stretch! gap-2!" {...sheet.handleProps}>
+                        <div className="flex items-center gap-1.5">
+                            <ModeSwitch mode={mode} />
+                            <Button
+                                variant="ghost"
+                                size="icon-lg"
+                                className="shrink-0 text-fg-muted"
+                                aria-label="閉じる"
+                                onClick={() => setUI({ panelOpen: false })}
+                            >
+                                <X />
+                            </Button>
+                        </div>
+                        <TabsList variant="line" className="h-8! w-full justify-start border-b border-line px-0">
+                            {tabs.map((t) => (
                                 <TabsTrigger
                                     key={t.value}
                                     value={t.value}
-                                    className="text-[13px] text-fg-muted data-active:bg-seg-active dark:data-active:border-transparent dark:data-active:bg-seg-active"
+                                    className="flex-none px-2.5 text-[13px] text-fg-muted after:bg-brand data-active:text-fg"
                                 >
                                     {t.label}
                                 </TabsTrigger>
                             ))}
                         </TabsList>
-                        <Button
-                            variant="ghost"
-                            size="icon-lg"
-                            className="shrink-0 text-fg-muted"
-                            aria-label="閉じる"
-                            onClick={() => setUI({ panelOpen: false })}
-                        >
-                            <X />
-                        </Button>
                     </div>
                     <div className="side-panel-content">
-                        <TabsContent value="scenario">
-                            <ScenarioTab />
+                        <TabsContent value="formation">
+                            <FormationSection />
+                        </TabsContent>
+                        <TabsContent value="orbit">
+                            <OrbitTab />
+                        </TabsContent>
+                        <TabsContent value="csv">
+                            <CsvTab />
                         </TabsContent>
                         <TabsContent value="display">
                             <DisplayTab />
-                        </TabsContent>
-                        <TabsContent value="playback">
-                            <PlaybackTab />
                         </TabsContent>
                     </div>
                 </Tabs>

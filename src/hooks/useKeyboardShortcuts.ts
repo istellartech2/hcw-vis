@@ -72,7 +72,8 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
                     store.setUI({ helpOpen: true });
                     break;
                 case 'f':
-                    store.setUI({ panelOpen: true, panelTab: 'scenario' });
+                    if (!store.playback.active)
+                        store.setUI({ panelOpen: true, mode: 'simulation', panelTab: 'formation' });
                     break;
                 case 'escape':
                     if (store.ui.activeDialog) store.setUI({ activeDialog: null });
