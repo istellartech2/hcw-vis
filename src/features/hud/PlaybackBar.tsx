@@ -54,7 +54,7 @@ function SpeedStepper({
     const index = Math.max(0, SPEEDS.indexOf(value));
     const step = (delta: number) => onChange(SPEEDS[Math.min(SPEEDS.length - 1, Math.max(0, index + delta))]);
     return (
-        <div className="flex items-center">
+        <div className="flex shrink-0 items-center">
             <Button
                 variant="ghost"
                 size="icon"
@@ -152,7 +152,7 @@ function CsvBar() {
                 <Square className="size-3.5 fill-current" />
             </Button>
             <Slider
-                className="mx-1 min-w-16 flex-1 md:w-[min(16rem,30vw)] md:flex-none"
+                className="mx-1 min-w-16 flex-1 md:w-64 md:flex-[0_1_auto]"
                 min={0}
                 max={1}
                 step={0.001}

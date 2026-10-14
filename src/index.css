@@ -282,16 +282,12 @@
   position: fixed;
   left: calc(50% + var(--panel-offset) / 2);
   bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  z-index: 20;
-  transition: left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-/* 上部中央の学習シナリオボタン。パネルを開くと残りの領域の中央へずれる */
-.hud-top-center {
-  position: fixed;
-  left: calc(50% + var(--panel-offset) / 2);
-  top: calc(12px + env(safe-area-inset-top, 0px));
+  /*
+   * left: 50% のままだと幅が「left から画面右端まで」に制限され、中身が枠からはみ出す。
+   * 中身の幅に合わせ、パネルを開いて狭いときは max-width で抑える（中身はシークバーが縮む）
+   */
+  width: max-content;
+  max-width: calc(100vw - var(--panel-offset) - 24px);
   transform: translateX(-50%);
   z-index: 20;
   transition: left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -365,20 +361,15 @@
   }
 
   /* シートが開いている間は下部 HUD を隠す */
-  :root[data-sheet-open] .hud-top-center,
   :root[data-sheet-open] .hud-bottom-center,
   :root[data-sheet-open] .hud-bottom-left {
     opacity: 0;
     pointer-events: none;
   }
-  /* 上の行はメニューと視点操作で埋まるので、その下の行に置く */
-  .hud-top-center {
-    top: calc(60px + env(safe-area-inset-top, 0px));
-    max-width: calc(100vw - 24px);
-  }
   .hud-bottom-center {
     left: 12px;
     right: 12px;
+    width: auto;
     transform: none;
     transition: opacity 0.2s ease;
   }
