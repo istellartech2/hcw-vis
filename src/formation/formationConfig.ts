@@ -24,17 +24,29 @@ export function createDefaultFormation(): FormationConfig {
     return structuredClone(DEFAULT_FORMATION_CONFIG);
 }
 
+/**
+ * レイヤーを差し替えた設定を返す。説明（シナリオの観察ポイントなど）は元の配置についてのものなので、
+ * 利用者が配置を編集したら消す
+ */
+function withLayers(config: FormationConfig, layers: FormationLayer[]): FormationConfig {
+    const { description: _description, ...rest } = config;
+    return { ...rest, layers };
+}
+
 export function addLayer(config: FormationConfig, name?: string): FormationConfig {
     const layer: FormationLayer = {
         ...structuredClone(DEFAULT_LAYER),
         id: crypto.randomUUID(),
         name: name ?? `グループ ${config.layers.length + 1}`,
     };
-    return { ...config, layers: [...config.layers, layer] };
+    return withLayers(config, [...config.layers, layer]);
 }
 
 export function removeLayer(config: FormationConfig, layerId: string): FormationConfig {
-    return { ...config, layers: config.layers.filter((l) => l.id !== layerId) };
+    return withLayers(
+        config,
+        config.layers.filter((l) => l.id !== layerId),
+    );
 }
 
 export function updateLayer(
@@ -42,10 +54,10 @@ export function updateLayer(
     layerId: string,
     updates: Partial<FormationLayer>,
 ): FormationConfig {
-    return {
-        ...config,
-        layers: config.layers.map((l) => (l.id === layerId ? { ...l, ...updates, id: l.id } : l)),
-    };
+    return withLayers(
+        config,
+        config.layers.map((l) => (l.id === layerId ? { ...l, ...updates, id: l.id } : l)),
+    );
 }
 
 export function toggleLayer(config: FormationConfig, layerId: string): FormationConfig {
@@ -60,7 +72,7 @@ export function moveLayer(config: FormationConfig, layerId: string, offset: -1 |
     if (from < 0 || to < 0 || to >= config.layers.length) return config;
     const layers = [...config.layers];
     [layers[from], layers[to]] = [layers[to], layers[from]];
-    return { ...config, layers };
+    return withLayers(config, layers);
 }
 
 /**

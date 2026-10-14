@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { parseFormation, serializeFormation, validateFormation } from './formationConfig';
+import {
+    addLayer,
+    moveLayer,
+    parseFormation,
+    removeLayer,
+    toggleLayer,
+    updateLayer,
+    serializeFormation,
+    validateFormation,
+} from './formationConfig';
 import { FORMATION_SCENARIOS } from './scenarios';
 
 describe('FORMATION_SCENARIOS', () => {
@@ -19,5 +28,19 @@ describe('FORMATION_SCENARIOS', () => {
     it('呼ぶたびに新しいレイヤー id を作る', () => {
         const [a, b] = [FORMATION_SCENARIOS[0].build(), FORMATION_SCENARIOS[0].build()];
         expect(a.layers[0].id).not.toBe(b.layers[0].id);
+    });
+
+    it('配置を編集すると説明が消える', () => {
+        const config = FORMATION_SCENARIOS[0].build();
+        const id = config.layers[0].id;
+        const edits = [
+            addLayer(config),
+            removeLayer(config, id),
+            updateLayer(config, id, { size: 2 }),
+            toggleLayer(config, id),
+            moveLayer(config, id, 1),
+        ];
+        for (const edited of edits) expect(edited.description).toBeUndefined();
+        expect(config.description).toBeTruthy();
     });
 });
