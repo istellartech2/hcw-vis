@@ -51,7 +51,7 @@ React UI (features/*)  ──コマンド呼び出し──▶  SimulationEngine
 
 1. **Domain / 3D（フレームワーク非依存、DOM に触れない）**
    - `src/simulation/` HCW ソルバ、軌道要素、座標変換、CSV パーサ、再生エンジン
-   - `src/formation/` フォーメーション定義・生成（`formationConfig.ts` は設定操作・検証・JSON 入出力、`layerForm.ts` はレイヤー編集フォームの純粋関数）。UI 上ではレイヤーを「衛星グループ」と呼ぶ
+   - `src/formation/` フォーメーション定義・生成（`formationConfig.ts` は設定操作・検証・JSON 入出力、`layerForm.ts` はレイヤー編集フォームの純粋関数、`scenarios.ts` は学習用シナリオのプリセット）。UI 上ではレイヤーを「衛星グループ」と呼ぶ
    - `src/collision/` 衝突検出・応答
    - `src/visualization/` Three.js の描画（`RenderingSystem` は表示設定を `getDisplay()` 経由で受け取る）
 
