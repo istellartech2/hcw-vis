@@ -4,15 +4,46 @@ import { TrailRenderer } from './TrailRenderer.js';
 import { CelestialBodies } from './CelestialBodies.js';
 import type { DisplaySettings } from '@/store/settings';
 import { ModelLoader } from './ModelLoader.js';
-import { InstancedSatelliteRenderer } from './InstancedSatelliteRenderer.js';
-import { FormationGenerator } from '../formation/FormationGenerator.js';
+import { consumeCollisionFlash, setHillPosition, setSatelliteAttitude } from './satelliteFrame.js';
+import {
+    REFERENCE_COLOR,
+    REFERENCE_EMISSIVE_INTENSITY,
+    SATELLITE_EMISSIVE_INTENSITY,
+    createSatelliteObject,
+    displayColor,
+    disposeSatelliteObject,
+    forEachPhongMaterial,
+    resolveAppearance,
+    resolveSatelliteColor,
+    type SatelliteObject,
+} from './satelliteMeshFactory.js';
+
+const COLLISION_COLOR = 0xff0000;
+const WHITE = new THREE.Color(0xffffff);
+
+function degToRad(deg: number): number {
+    return (deg * Math.PI) / 180;
+}
+
+/** UI で指定した R/S 軸回転（ラジアン）。UI の形状が立方体なら立方体用、3Dファイルなら3Dモデル用 */
+function uiRotation(display: DisplaySettings): [number, number] {
+    switch (display.satelliteShape as string) {
+        case 'cube':
+        case 'box':
+            return [degToRad(display.cubeRotationR), degToRad(display.cubeRotationS)];
+        case '3dfile':
+            return [degToRad(display.file3dRotationR), degToRad(display.file3dRotationS)];
+        default:
+            return [0, 0];
+    }
+}
 
 export class RenderingSystem {
     private scene: THREE.Scene;
     private camera: THREE.PerspectiveCamera;
     private renderer: THREE.WebGLRenderer;
     private container: HTMLElement;
-    private satelliteMeshes: (THREE.Mesh | THREE.Group)[] = [];
+    private satelliteMeshes: SatelliteObject[] = [];
     private gridHelper: THREE.GridHelper;
     private axesGroup: THREE.Group;
     private trailRenderer: TrailRenderer;
@@ -21,11 +52,7 @@ export class RenderingSystem {
     private onSelectionChange: (index: number) => void = () => {};
     private animationFrameCounter: number = 0;
     private modelLoader: ModelLoader;
-    private loadedModel: THREE.Group | THREE.Mesh | null = null;
-
-    // InstancedMesh renderer (for sphere/cube shapes)
-    private instancedRenderer: InstancedSatelliteRenderer | null = null;
-    private useInstancedRendering: boolean = false; // true if using InstancedMesh
+    private loadedModel: SatelliteObject | null = null;
 
     // Selection system
     private selectedSatelliteIndex: number = -1;
@@ -49,7 +76,6 @@ export class RenderingSystem {
         this.trailRenderer = new TrailRenderer(this.scene);
         this.celestialBodies = new CelestialBodies(this.scene);
         this.modelLoader = new ModelLoader();
-        this.instancedRenderer = new InstancedSatelliteRenderer(this.scene);
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
@@ -161,537 +187,86 @@ export class RenderingSystem {
      * @param options.showReference 基準衛星(index 0)も表示する（CSV再生では全衛星が実データ）
      */
     public createSatelliteMeshes(satellites: Satellite[], options: { showReference?: boolean } = {}): void {
-        // Clean up existing instanced meshes first
-        if (this.instancedRenderer) {
-            this.instancedRenderer.disposeAll();
-        }
+        this.disposeSatelliteMeshes();
 
-        // Clean up existing meshes
-        this.satelliteMeshes.forEach((meshOrGroup) => {
-            this.scene.remove(meshOrGroup);
+        const display = this.getDisplay();
+        const showReference = options.showReference ?? false;
+        satellites.forEach((sat, index) => {
+            const isReference = index === 0;
+            const object = createSatelliteObject(
+                resolveAppearance(sat, display),
+                isReference ? REFERENCE_COLOR : resolveSatelliteColor(sat, index, display),
+                isReference ? REFERENCE_EMISSIVE_INTENSITY : SATELLITE_EMISSIVE_INTENSITY,
+                this.loadedModel,
+            );
+            // 基準衛星は CSV 再生時のみ表示
+            if (isReference) object.visible = showReference;
 
-            // If it's a group (3D model), traverse and dispose all children
-            if (meshOrGroup instanceof THREE.Group) {
-                meshOrGroup.traverse((child) => {
-                    if ((child as THREE.Mesh).isMesh) {
-                        const mesh = child as THREE.Mesh;
-                        if (mesh.geometry) mesh.geometry.dispose();
-                        if (mesh.material) {
-                            if (Array.isArray(mesh.material)) {
-                                mesh.material.forEach((mat) => mat.dispose());
-                            } else {
-                                mesh.material.dispose();
-                            }
-                        }
-                    }
-                });
-            } else if ((meshOrGroup as THREE.Mesh).isMesh) {
-                // Standard mesh cleanup
-                const mesh = meshOrGroup as THREE.Mesh;
-                if (mesh.geometry) mesh.geometry.dispose();
-                if (mesh.material) {
-                    if (Array.isArray(mesh.material)) {
-                        mesh.material.forEach((mat) => mat.dispose());
-                    } else {
-                        mesh.material.dispose();
-                    }
-                }
-            }
+            this.scene.add(object);
+            this.satelliteMeshes.push(object);
         });
+    }
 
+    private disposeSatelliteMeshes(): void {
+        this.satelliteMeshes.forEach((object) => {
+            this.scene.remove(object);
+            disposeSatelliteObject(object);
+        });
         this.satelliteMeshes = [];
-
-        // Check if any satellite has metadata (formation mode)
-        const hasMetadata = satellites.some((sat) => FormationGenerator.getSatelliteMetadata(sat) !== undefined);
-
-        // Get satellite size and shape from UI controls (for non-formation mode)
-        const satelliteSize = this.getDisplay().satelliteSize;
-        const satelliteShape = this.getDisplay().satelliteShape;
-
-        // Determine rendering mode: InstancedMesh only for non-formation mode with sphere/cube
-        // CSV再生ではクォータニオン姿勢を反映するため個別メッシュを使う
-        this.useInstancedRendering =
-            !options.showReference &&
-            !hasMetadata &&
-            (satelliteShape === 'sphere' || satelliteShape === 'cube') &&
-            satellites.length > 1;
-
-        if (this.useInstancedRendering) {
-            // Use InstancedMesh for sphere/cube shapes
-            this.createSatelliteMeshesInstanced(satellites, satelliteSize, satelliteShape);
-        } else {
-            // Fallback to traditional individual meshes for formation mode, 3D files, or single satellite
-            this.createSatelliteMeshesTraditional(
-                satellites,
-                satelliteSize,
-                satelliteShape,
-                options.showReference ?? false,
-            );
-        }
-    }
-
-    /**
-     * InstancedMeshを使用した衛星メッシュ作成（球体・立方体専用）
-     */
-    private createSatelliteMeshesInstanced(
-        satellites: Satellite[],
-        satelliteSize: number,
-        satelliteShape: string,
-    ): void {
-        const useUniformColor = this.getDisplay().uniformSatelliteColor;
-        const uniformColor = this.getDisplay().satelliteColor;
-        const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
-
-        // 色配列を生成（基準衛星の色も含める）
-        const colorArray: number[] = [];
-
-        // 基準衛星（index=0）の色
-        if (useUniformColor) {
-            colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
-        } else {
-            colorArray.push(colors[0]); // 最初の色を基準衛星に割り当て
-        }
-
-        // 他の衛星の色
-        for (let i = 1; i < satellites.length; i++) {
-            if (useUniformColor) {
-                colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
-            } else {
-                colorArray.push(colors[i % colors.length]);
-            }
-        }
-
-        // InstancedSatelliteRendererを使用して衛星を作成
-        if (this.instancedRenderer) {
-            this.instancedRenderer.createSatellites(
-                satellites.length - 1, // 基準衛星を除く
-                satelliteSize,
-                satelliteShape as 'sphere' | 'cube',
-                colorArray,
-            );
-        }
-    }
-
-    /**
-     * 従来方式の個別メッシュ作成（3Dファイル用、またはフォールバック）
-     */
-    private createSatelliteMeshesTraditional(
-        satellites: Satellite[],
-        satelliteSize: number,
-        satelliteShape: string,
-        showReference: boolean,
-    ): void {
-        // Create center satellite
-        let centerMesh: THREE.Mesh | THREE.Group;
-
-        // Check if center satellite has metadata
-        const centerMetadata = FormationGenerator.getSatelliteMetadata(satellites[0]);
-        const centerShape = centerMetadata?.shape || satelliteShape;
-        const centerSize = centerMetadata?.size || satelliteSize;
-        const centerBoxRatios = centerMetadata?.boxRatios || { x: 1, y: 1, z: 1 };
-
-        if (centerShape === '3dfile' && this.loadedModel) {
-            // Clone the loaded model for the center satellite
-            centerMesh = this.loadedModel.clone();
-
-            // Apply white material to make it distinguishable
-            centerMesh.traverse((child) => {
-                if ((child as THREE.Mesh).isMesh) {
-                    const mesh = child as THREE.Mesh;
-                    mesh.material = new THREE.MeshPhongMaterial({
-                        color: 0xffffff,
-                        emissive: 0xffffff,
-                        emissiveIntensity: 0.3,
-                    });
-                }
-            });
-
-            // Scale the model based on satellite size
-            centerMesh.scale.setScalar(centerSize);
-        } else {
-            // Create standard geometry
-            let centerGeometry: THREE.BufferGeometry;
-            if (centerShape === 'cube') {
-                centerGeometry = new THREE.BoxGeometry(centerSize * 2, centerSize * 2, centerSize * 2);
-            } else if (centerShape === 'box') {
-                // Box geometry with ratios
-                centerGeometry = new THREE.BoxGeometry(
-                    centerSize * 2 * centerBoxRatios.x,
-                    centerSize * 2 * centerBoxRatios.y,
-                    centerSize * 2 * centerBoxRatios.z,
-                );
-            } else {
-                // centerSize is diameter, SphereGeometry expects radius
-                centerGeometry = new THREE.SphereGeometry(centerSize / 2, 32, 32);
-            }
-            const centerMaterial = new THREE.MeshPhongMaterial({
-                color: 0xffffff,
-                emissive: 0xffffff,
-                emissiveIntensity: 0.3,
-            });
-            centerMesh = new THREE.Mesh(centerGeometry, centerMaterial);
-        }
-
-        // Hide center satellite mesh (reference satellite)
-        centerMesh.visible = showReference;
-
-        this.scene.add(centerMesh);
-        this.satelliteMeshes.push(centerMesh);
-
-        // Create other satellites
-        const useUniformColor = this.getDisplay().uniformSatelliteColor;
-        const uniformColor = this.getDisplay().satelliteColor;
-        const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
-
-        for (let i = 1; i < satellites.length; i++) {
-            let satMesh: THREE.Mesh | THREE.Group;
-
-            // Check if satellite has metadata (from FormationGenerator)
-            const metadata = FormationGenerator.getSatelliteMetadata(satellites[i]);
-            const satShape = metadata?.shape || satelliteShape;
-            const satSize = metadata?.size || satelliteSize;
-            const boxRatios = metadata?.boxRatios || { x: 1, y: 1, z: 1 };
-
-            // Get color from metadata or UI
-            let materialColor: number;
-            if (metadata?.color) {
-                // Use color from metadata
-                const colorHex = metadata.color.replace('#', '');
-                materialColor = parseInt(colorHex, 16);
-            } else if (useUniformColor) {
-                materialColor = parseInt(uniformColor.replace('#', ''), 16);
-            } else {
-                materialColor = colors[(i - 1) % colors.length];
-            }
-
-            if (satShape === '3dfile' && this.loadedModel) {
-                // Clone the loaded model for each satellite
-                satMesh = this.loadedModel.clone();
-
-                // Apply colored material to the model
-                satMesh.traverse((child) => {
-                    if ((child as THREE.Mesh).isMesh) {
-                        const mesh = child as THREE.Mesh;
-                        mesh.material = new THREE.MeshPhongMaterial({
-                            color: materialColor,
-                            emissive: materialColor,
-                            emissiveIntensity: 0.2,
-                        });
-                    }
-                });
-
-                // Scale the model based on satellite size
-                satMesh.scale.setScalar(satSize);
-            } else {
-                // Create standard geometry
-                let satGeometry: THREE.BufferGeometry;
-                if (satShape === 'cube') {
-                    satGeometry = new THREE.BoxGeometry(satSize * 2, satSize * 2, satSize * 2);
-                } else if (satShape === 'box') {
-                    // Box geometry with custom ratios
-                    satGeometry = new THREE.BoxGeometry(
-                        satSize * 2 * boxRatios.x,
-                        satSize * 2 * boxRatios.y,
-                        satSize * 2 * boxRatios.z,
-                    );
-                } else {
-                    // satSize is diameter, SphereGeometry expects radius
-                    satGeometry = new THREE.SphereGeometry(satSize / 2, 32, 32);
-                }
-
-                const satMaterial = new THREE.MeshPhongMaterial({
-                    color: materialColor,
-                    emissive: materialColor,
-                    emissiveIntensity: 0.2,
-                });
-                satMesh = new THREE.Mesh(satGeometry, satMaterial);
-            }
-
-            this.scene.add(satMesh);
-            this.satelliteMeshes.push(satMesh);
-        }
     }
 
     public updateSatellitePositions(satellites: Satellite[]): void {
-        // Use InstancedMesh rendering if enabled
-        if (this.useInstancedRendering && this.instancedRenderer) {
-            this.updateSatellitePositionsInstanced(satellites);
-            return;
-        }
-
-        // Fallback to traditional rendering
-        this.updateSatellitePositionsTraditional(satellites);
-    }
-
-    /**
-     * InstancedMeshを使用した衛星位置更新
-     */
-    private updateSatellitePositionsInstanced(satellites: Satellite[]): void {
-        const satelliteShape = this.getDisplay().satelliteShape;
-        const isCube = satelliteShape === 'cube';
-
-        let rotationR = 0;
-        let rotationS = 0;
-
-        if (isCube) {
-            rotationR = (this.getDisplay().cubeRotationR * Math.PI) / 180;
-            rotationS = (this.getDisplay().cubeRotationS * Math.PI) / 180;
-        }
-
-        if (this.instancedRenderer) {
-            this.instancedRenderer.updateSatellitePositions(
-                satellites,
-                rotationR,
-                rotationS,
-                this.selectedSatelliteIndex,
-            );
-        }
-
-        // Update trails (same as traditional mode)
-        if (this.getDisplay().showTrails) {
-            const trailMax = this.getDisplay().trailLength;
-            const scale = 1;
-
-            for (let index = 1; index < satellites.length; index++) {
-                const sat = satellites[index];
-                const pos = sat.getPosition();
-
-                // Get color for this satellite
-                const useUniformColor = this.getDisplay().uniformSatelliteColor;
-                const uniformColor = this.getDisplay().satelliteColor;
-                const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
-
-                let color: THREE.Color;
-                if (useUniformColor) {
-                    color = new THREE.Color(parseInt(uniformColor.replace('#', ''), 16));
-                } else {
-                    color = new THREE.Color(colors[(index - 1) % colors.length]);
-                }
-
-                this.trailRenderer.updateTrail(sat, pos, scale, color, trailMax);
-            }
-        }
-    }
-
-    /**
-     * 従来方式の衛星位置更新
-     */
-    private updateSatellitePositionsTraditional(satellites: Satellite[]): void {
-        const satelliteShape: string = this.getDisplay().satelliteShape;
-
-        let defaultRotationR = 0;
-        let defaultRotationS = 0;
-
-        if (satelliteShape === 'cube' || satelliteShape === 'box') {
-            defaultRotationR = (this.getDisplay().cubeRotationR * Math.PI) / 180;
-            defaultRotationS = (this.getDisplay().cubeRotationS * Math.PI) / 180;
-        } else if (satelliteShape === '3dfile') {
-            defaultRotationR = (this.getDisplay().file3dRotationR * Math.PI) / 180;
-            defaultRotationS = (this.getDisplay().file3dRotationS * Math.PI) / 180;
-        }
+        const display = this.getDisplay();
+        // 既定の回転は UI の形状で決まる（衛星ごとの形状ではない）
+        const [defaultRotR, defaultRotS] = uiRotation(display);
 
         satellites.forEach((sat, index) => {
+            const object = this.satelliteMeshes[index];
             const pos = sat.getPosition();
-            const scale = 1; // 1m in Hill coords = 1 units in Three.js
-            // Convert Hill coordinates to Three.js coordinates
-            // pos.x = R (Radial), pos.y = S (Along-track), pos.z = W (Cross-track)
-            // Three.js: X = S (Along-track), Y = R (Radial), Z = W (Cross-track)
-            // this.satelliteMeshes[index].position.set(pos.y * scale, pos.x * scale, pos.z * scale);
-            this.satelliteMeshes[index].position.set(pos.z * scale, pos.x * scale, pos.y * scale);
+            setHillPosition(object.position, pos);
 
-            // Get satellite shape from metadata or UI
-            const metadata = FormationGenerator.getSatelliteMetadata(sat);
-            const satShape = metadata?.shape || satelliteShape;
-            const isCube = satShape === 'cube';
-            const isBox = satShape === 'box';
-            const is3DFile = satShape === '3dfile';
-
-            // Apply rotation for cubes, boxes and 3D files
-            if (isCube || isBox || is3DFile) {
-                // Reset rotation first
-                this.satelliteMeshes[index].rotation.set(0, 0, 0);
-
-                // Check if satellite has CSV quaternion data
-                const satelliteQuaternion = sat.quaternion;
-                if (satelliteQuaternion) {
-                    // Apply quaternion from CSV data (body2RSW rotation)
-                    // CSV quaternion: body frame to RSW frame rotation
-                    // RSW: X=R(radial), Y=S(along-track), Z=W(cross-track)
-                    // Three.js: X=W(cross-track), Y=R(radial), Z=S(along-track)
-
-                    // Transform quaternion from RSW to Three.js coordinate system
-                    // Mapping: RSW(x,y,z) -> Three.js(z,x,y)
-                    const transformedQuat = new THREE.Quaternion(
-                        satelliteQuaternion.z, // RSW Z -> Three.js X
-                        satelliteQuaternion.x, // RSW X -> Three.js Y
-                        satelliteQuaternion.y, // RSW Y -> Three.js Z
-                        satelliteQuaternion.w, // W component stays the same
-                    );
-
-                    this.satelliteMeshes[index].quaternion.copy(transformedQuat);
-                } else {
-                    // Get rotation from metadata or UI default
-                    let rotR = defaultRotationR;
-                    let rotS = defaultRotationS;
-
-                    if (metadata?.rotation) {
-                        rotR = (metadata.rotation.r * Math.PI) / 180;
-                        rotS = (metadata.rotation.s * Math.PI) / 180;
-                    }
-
-                    // Apply rotations in Hill coordinate frame
-                    // Hill to Three.js mapping: X=W, Y=R, Z=S
-                    // R axis rotation (Radial axis) -> Y axis in Three.js
-                    this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 1, 0), rotR);
-
-                    // S axis rotation (Along-track axis) -> Z axis in Three.js
-                    this.satelliteMeshes[index].rotateOnAxis(new THREE.Vector3(0, 0, 1), rotS);
-                }
+            // 姿勢は立方体・直方体・3Dモデルのみ（球は回転させない）
+            const shape = sat.metadata?.shape || display.satelliteShape;
+            if (shape === 'cube' || shape === 'box' || shape === '3dfile') {
+                const rotation = sat.metadata?.rotation;
+                setSatelliteAttitude(
+                    object.quaternion,
+                    sat,
+                    rotation ? degToRad(rotation.r) : defaultRotR,
+                    rotation ? degToRad(rotation.s) : defaultRotS,
+                );
             }
 
-            // Highlight selected satellite and collision feedback
-            const mesh = this.satelliteMeshes[index];
-            let intensity = index === this.selectedSatelliteIndex ? 0.8 : 0.2;
-            let emissiveColor: THREE.Color | null = null;
-
-            // Check if satellite has collided
-            const collided = sat.collided;
-            const collisionTime = sat.collisionTime;
-            if (collided && collisionTime) {
-                const elapsed = Date.now() - collisionTime;
-                if (elapsed < 500) {
-                    // Show collision feedback for 500ms
-                    intensity = 0.8;
-                    emissiveColor = new THREE.Color(0xff0000); // Red
+            // 選択ハイライトと衝突フィードバック（赤く発光）
+            const flashing = consumeCollisionFlash(sat);
+            const intensity = flashing || index === this.selectedSatelliteIndex ? 0.8 : 0.2;
+            forEachPhongMaterial(object, (material) => {
+                material.emissiveIntensity = intensity;
+                if (flashing) {
+                    material.emissive.setHex(COLLISION_COLOR);
                 } else {
-                    // Reset collision flag after feedback duration
-                    sat.collided = false;
+                    material.emissive.set(sat.color);
                 }
-            }
+            });
 
-            if (is3DFile && this.loadedModel) {
-                // For 3D models, traverse and update all materials
-                mesh.traverse((child) => {
-                    if ((child as THREE.Mesh).isMesh) {
-                        const meshChild = child as THREE.Mesh;
-                        if (
-                            meshChild.material &&
-                            (meshChild.material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined
-                        ) {
-                            const material = meshChild.material as THREE.MeshPhongMaterial;
-                            material.emissiveIntensity = intensity;
-                            if (emissiveColor) {
-                                material.emissive.copy(emissiveColor);
-                            } else {
-                                // Reset to original satellite color when not colliding
-                                material.emissive.set(sat.color);
-                            }
-                        }
-                    }
+            if (display.showTrails && index > 0) {
+                let color = WHITE;
+                forEachPhongMaterial(object, (material) => {
+                    color = material.color;
                 });
-            } else {
-                // For standard geometries
-                if (
-                    (mesh as THREE.Mesh).material &&
-                    ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissiveIntensity !== undefined
-                ) {
-                    const material = (mesh as THREE.Mesh).material as THREE.MeshPhongMaterial;
-                    material.emissiveIntensity = intensity;
-                    if (emissiveColor) {
-                        material.emissive.copy(emissiveColor);
-                    } else {
-                        // Reset to original satellite color when not colliding
-                        material.emissive.set(sat.color);
-                    }
-                }
-            }
-
-            // Update trails
-            if (this.getDisplay().showTrails && index > 0) {
-                const trailMax = this.getDisplay().trailLength;
-                let color: THREE.Color = new THREE.Color(0xffffff); // Initialize with default
-
-                if (is3DFile && this.loadedModel) {
-                    // For 3D models, get color from the first mesh child
-                    mesh.traverse((child) => {
-                        if ((child as THREE.Mesh).isMesh) {
-                            const meshChild = child as THREE.Mesh;
-                            if (meshChild.material && (meshChild.material as THREE.MeshPhongMaterial).color) {
-                                color = (meshChild.material as THREE.MeshPhongMaterial).color;
-                                return; // Exit traverse once we found a color
-                            }
-                        }
-                    });
-                } else {
-                    // For standard geometries
-                    color = ((this.satelliteMeshes[index] as THREE.Mesh).material as THREE.MeshPhongMaterial).color;
-                }
-
-                this.trailRenderer.updateTrail(sat, pos, scale, color, trailMax);
+                this.trailRenderer.updateTrail(sat, pos, 1, color, display.trailLength);
             }
         });
     }
 
     public updateAllSatelliteColors(): void {
-        const isUniform = this.getDisplay().uniformSatelliteColor;
-        const uniformColor = this.getDisplay().satelliteColor;
-        const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731, 0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff];
-
-        if (this.useInstancedRendering && this.instancedRenderer) {
-            // InstancedMesh mode: update colors through renderer
-            const colorArray: number[] = [];
-
-            // 基準衛星（index=0）の色
-            if (isUniform) {
-                colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
-            } else {
-                colorArray.push(colors[0]);
-            }
-
-            // 他の衛星の色
-            for (let i = 1; i < this.satelliteMeshes.length || i < 1000; i++) {
-                if (isUniform) {
-                    colorArray.push(parseInt(uniformColor.replace('#', ''), 16));
-                } else {
-                    colorArray.push(colors[i % colors.length]);
-                }
-                // Break if we've covered all satellites (approximation)
-                if (i > 500) break; // Safety limit
-            }
-            this.instancedRenderer.updateColors(colorArray);
-            return;
-        }
-
-        // Traditional mode
-        const is3DFile = this.getDisplay().satelliteShape === '3dfile';
-
+        const display = this.getDisplay();
         for (let i = 1; i < this.satelliteMeshes.length; i++) {
-            const mesh = this.satelliteMeshes[i];
-
-            let colorToSet: number;
-            if (isUniform) {
-                colorToSet = parseInt(uniformColor.replace('#', ''), 16);
-            } else {
-                const colorIndex = (i - 1) % colors.length;
-                colorToSet = colors[colorIndex];
-            }
-
-            if (is3DFile && this.loadedModel) {
-                // For 3D models, traverse and update all materials
-                mesh.traverse((child) => {
-                    if ((child as THREE.Mesh).isMesh) {
-                        const meshChild = child as THREE.Mesh;
-                        if (meshChild.material && (meshChild.material as THREE.MeshPhongMaterial).color) {
-                            (meshChild.material as THREE.MeshPhongMaterial).color.setHex(colorToSet);
-                            (meshChild.material as THREE.MeshPhongMaterial).emissive.setHex(colorToSet);
-                        }
-                    }
-                });
-            } else {
-                // For standard geometries
-                ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).color.setHex(colorToSet);
-                ((mesh as THREE.Mesh).material as THREE.MeshPhongMaterial).emissive.setHex(colorToSet);
-            }
+            const color = displayColor(display, i - 1);
+            forEachPhongMaterial(this.satelliteMeshes[i], (material) => {
+                material.color.setHex(color);
+                material.emissive.setHex(color);
+            });
         }
     }
 
@@ -705,75 +280,35 @@ export class RenderingSystem {
         try {
             this.raycaster.setFromCamera(this.mouse, this.camera);
 
-            if (this.useInstancedRendering && this.instancedRenderer) {
-                // InstancedMesh mode: check both center satellite and instanced mesh
-                const objectsToTest: THREE.Object3D[] = [];
+            // Groups (3D models) need recursive intersection
+            const intersects = this.raycaster.intersectObjects(this.satelliteMeshes, true);
 
-                const centerMesh = this.instancedRenderer.getCenterSatelliteMesh();
-                if (centerMesh) objectsToTest.push(centerMesh);
+            if (intersects.length > 0) {
+                const clickedObject = intersects[0].object;
 
-                const instancedMesh = this.instancedRenderer.getInstancedMesh();
-                if (instancedMesh) objectsToTest.push(instancedMesh);
-
-                const intersects = this.raycaster.intersectObjects(objectsToTest, true);
-
-                if (intersects.length > 0) {
-                    const intersection = intersects[0];
-
-                    // Check if it's the center satellite
-                    if (intersection.object === centerMesh) {
-                        this.selectedSatelliteIndex = 0;
-                        console.log(`Selected satellite 0 (center)`);
-                        this.updateSelectedSatelliteInfo();
+                // Find which satellite mesh/group contains the clicked object
+                let index = -1;
+                for (let i = 0; i < this.satelliteMeshes.length; i++) {
+                    const satelliteMesh = this.satelliteMeshes[i];
+                    if (
+                        satelliteMesh === clickedObject ||
+                        (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))
+                    ) {
+                        index = i;
+                        break;
                     }
-                    // Check if it's an instance from InstancedMesh
-                    else if (intersection.object === instancedMesh && intersection.instanceId !== undefined) {
-                        const satelliteIndex = this.instancedRenderer.getSatelliteIndexFromInstanceId(
-                            intersection.instanceId,
-                        );
-                        if (satelliteIndex >= 0) {
-                            this.selectedSatelliteIndex = satelliteIndex;
-                            console.log(
-                                `Selected satellite ${satelliteIndex} (instanceId: ${intersection.instanceId})`,
-                            );
-                            this.updateSelectedSatelliteInfo();
-                        }
-                    }
-                } else {
-                    this.selectedSatelliteIndex = -1;
+                }
+
+                if (index >= 0 && index < this.satelliteMeshes.length) {
+                    this.selectedSatelliteIndex = index;
+                    console.log(`Selected satellite ${index}`);
                     this.updateSelectedSatelliteInfo();
+                } else {
+                    console.warn(`Invalid satellite index: ${index}`);
                 }
             } else {
-                // Traditional mode: use recursive intersection to handle Groups
-                const intersects = this.raycaster.intersectObjects(this.satelliteMeshes, true);
-
-                if (intersects.length > 0) {
-                    const clickedObject = intersects[0].object;
-
-                    // Find which satellite mesh/group contains the clicked object
-                    let index = -1;
-                    for (let i = 0; i < this.satelliteMeshes.length; i++) {
-                        const satelliteMesh = this.satelliteMeshes[i];
-                        if (
-                            satelliteMesh === clickedObject ||
-                            (satelliteMesh instanceof THREE.Group && this.isChildOf(clickedObject, satelliteMesh))
-                        ) {
-                            index = i;
-                            break;
-                        }
-                    }
-
-                    if (index >= 0 && index < this.satelliteMeshes.length) {
-                        this.selectedSatelliteIndex = index;
-                        console.log(`Selected satellite ${index}`);
-                        this.updateSelectedSatelliteInfo();
-                    } else {
-                        console.warn(`Invalid satellite index: ${index}`);
-                    }
-                } else {
-                    this.selectedSatelliteIndex = -1;
-                    this.updateSelectedSatelliteInfo();
-                }
+                this.selectedSatelliteIndex = -1;
+                this.updateSelectedSatelliteInfo();
             }
         } catch (error) {
             console.error('Error in satellite selection:', error);
