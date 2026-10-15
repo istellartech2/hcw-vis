@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { FORMATION_SCENARIOS, type FormationScenario } from '@/formation/scenarios';
+import { circularMeanMotion } from '@/simulation/OrbitElements';
 import { appStore, useAppMode, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +20,8 @@ import { cn } from '@/lib/utils';
  * 一時停止したまま読み込むと t = 0 で止まって見えるので、再生を始めて動きを見せる。
  */
 function loadScenario(scenario: FormationScenario): void {
-    const config = scenario.build();
+    // 初速度を m/s で指定するシナリオがあるので、いまの軌道高度の平均運動を渡す
+    const config = scenario.build(circularMeanMotion(appStore.getState().orbit.altitudeKm));
     const undo = appStore.getState().replaceFormation({
         formation: config,
         formationFile: null,
