@@ -87,33 +87,37 @@ describe('学習シナリオは説明どおりに動く', () => {
         expect(sat.y).toBeCloseTo(-377, -1);
     });
 
-    it('格子は R-S 面だけに並び、R = 0 の行は動かない', () => {
+    it('立方格子は R = 0 の層だけ前後にずれない', () => {
         const [grid] = satellitesOf('grid-drift');
-        expect(grid).toHaveLength(24);
-        expect(grid.every((s) => s.z === 0)).toBe(true);
-        const still = grid.filter((s) => s.x === 0);
-        const before = still.map((s) => s.y);
+        expect(grid).toHaveLength(26);
+        const layer0 = grid.filter((s) => s.x === 0);
+        const before = layer0.map((s) => s.y);
         propagate(grid, period);
-        expect(still.map((s) => [s.x, s.y])).toEqual(before.map((y) => [0, y]));
+        layer0.forEach((s, i) => expect(s.y).toBeCloseTo(before[i], 6));
+        for (const s of grid.filter((s) => s.x !== 0)) expect(Math.abs(s.y)).toBeGreaterThan(300);
     });
 
-    it('ドリフト消失条件の 3 機は 1 周回で元の位置に戻る', () => {
-        const yellow = satellitesOf('drift-free').slice(3).flat();
-        const start = yellow.map((s) => [s.x, s.y]);
-        expect(start.map(([x]) => x)).toEqual([10, 5, -10]);
-        propagate(yellow, period);
-        yellow.forEach((s, i) => {
+    it('ドリフト消失条件の黄色と、W 軸上の青は 1 周回で元の位置に戻る', () => {
+        const layers = satellitesOf('drift-free');
+        const returning = [...layers.slice(3, 6), ...layers.slice(6)].flat();
+        const start = returning.map((s) => [s.x, s.y, s.z]);
+        expect(start.map(([x, , z]) => x + z)).toEqual([10, 5, -10, 10, 5, -10]);
+        propagate(returning, period);
+        returning.forEach((s, i) => {
             expect(s.x).toBeCloseTo(start[i][0], 3);
             expect(s.y).toBeCloseTo(start[i][1], 3);
+            expect(s.z).toBeCloseTo(start[i][2], 3);
         });
     });
 
-    it('±S に押すと 1 周回で約 94 m ドリフトし、±R に押すと出発点に戻る', () => {
-        const [front, back, up, down] = satellitesOf('delta-v').flat();
-        propagate([front, back, up, down], period);
+    it('±S に押すと 1 周回で約 94 m ドリフトし、±R・±W に押すと出発点に戻る', () => {
+        const sats = satellitesOf('delta-v').flat();
+        const [front, back, ...returning] = sats;
+        expect(sats).toHaveLength(6);
+        propagate(sats, period);
         expect(front.y).toBeCloseTo(-6 * Math.PI * 5, 0);
         expect(back.y).toBeCloseTo(6 * Math.PI * 5, 0);
-        for (const s of [up, down]) expect(Math.hypot(s.x, s.y, s.z)).toBeLessThan(1e-3);
+        for (const s of returning) expect(Math.hypot(s.x, s.y, s.z)).toBeLessThan(1e-3);
     });
 
     it('同じ形の楕円の 6 機は、どの 2 機も 12 m 以上離れている', () => {
@@ -148,5 +152,28 @@ describe('学習シナリオは説明どおりに動く', () => {
         });
         expect(minIn).toBeLessThan(0.5);
         expect(minQuad).toBeGreaterThanOrEqual(10 - 1e-6);
+    });
+
+    it('V-bar 上の待機点はとどまり、R-bar 上は前方へ離れていく', () => {
+        const sats = satellitesOf('hold-points').flat();
+        const [vbar, rbar] = [sats.slice(0, 3), sats.slice(3)];
+        propagate(sats, period);
+        expect(vbar.map((s) => s.y)).toEqual([-5, -10, -15]);
+        for (const s of rbar) expect(s.y).toBeGreaterThan(100);
+    });
+
+    it('R 方向のホップは半周回で、S 方向のホップは 1 周回で次の待機点に着く', () => {
+        const [, , [radial], [along]] = satellitesOf('vbar-hops');
+        propagate([radial, along], period / 2);
+        expect(radial.x).toBeCloseTo(0, 3);
+        expect(radial.y).toBeCloseTo(-5, 0);
+        propagate([radial, along], period / 2);
+        // R 方向のホップは到着時の噴射をしないと元の待機点へ戻り、S 方向のホップは前へ進み続ける
+        expect(radial.y).toBeCloseTo(-20, 3);
+        expect(along.x).toBeCloseTo(0, 3);
+        expect(along.y).toBeCloseTo(-5, 0);
+        propagate([radial, along], period);
+        expect(radial.y).toBeCloseTo(-20, 3);
+        expect(along.y).toBeCloseTo(10, 0);
     });
 });

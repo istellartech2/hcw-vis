@@ -27,6 +27,10 @@ const PURPLE = '#a55eea';
 // 符号が負の向きは軸の色を薄くして区別する
 const R_LIGHT = '#ffb3b3';
 const S_LIGHT = '#9ef0bd';
+const W_LIGHT = '#99e6ff';
+
+/** 編集欄で読みやすいよう、初速度を有効数字 3 桁に丸める */
+const roundVelocity = (v: number) => Number(v.toPrecision(3));
 
 type LayerSpec = Omit<FormationLayer, 'id' | 'enabled' | 'shape' | 'size' | 'colorMode'> &
     Partial<Pick<FormationLayer, 'shape' | 'size' | 'colorMode'>>;
@@ -106,23 +110,23 @@ export const FORMATION_SCENARIOS: readonly FormationScenario[] = [
     {
         id: 'grid-drift',
         title: '格子に並べると？',
-        summary: '格子を初速度 0 で置くと、R の値ごとにずれていく',
+        summary: '立方格子を初速度 0 で置くと、R の層ごとにずれていく',
         build: () =>
             formation(
                 '格子に並べると？',
-                'R-S 面（軌道面内）に 5 m 間隔の格子を作り、すべて初速度 0 で置いています。' +
-                    '同じ R の行はそろって同じ動きをし、輪を描きながらドリフトします。ドリフトの速さは R に比例し、' +
-                    'R = +10 m の行は 1 周回で約 380 m、+5 m の行は約 190 m 後方へ進み、R がマイナスの行は逆に前方へ進みます。' +
-                    'R = 0 の行（S 軸上）だけはその場にとどまります。' +
-                    'W 軸の方向（横）から見ると、格子が行ごとにずれて崩れていく様子がよくわかります。',
+                '10 m 間隔の 3×3×3 の立方格子を作り、すべて初速度 0 で置いています。' +
+                    'R の値が同じ層はそろって同じ動きをし、輪を描きながらドリフトします。' +
+                    'R = +10 m の層は 1 周回で約 380 m 後方へ、R = −10 m の層は同じだけ前方へ進みます。' +
+                    'R = 0 の層は前後にはずれず、W 方向にずれた衛星が軌道面をはさんで振動するだけです。' +
+                    'つまりドリフトするかどうかは R だけで決まり、S や W のずれは関係しません。' +
+                    'W 軸の方向（横）から見ると層ごとのずれが、S 軸の方向（真後ろ）から見ると W 方向の振動がよくわかります。',
                 [
                     {
-                        name: 'R-S 面の格子（5 m 間隔）',
+                        name: '立方格子（10 m 間隔）',
                         pattern: 'grid',
-                        gridPlane: 'rs',
                         placementMode: 'spacing',
-                        spacing: 5,
-                        satelliteCount: 2,
+                        spacing: 10,
+                        satelliteCount: 1,
                         color: TEAL,
                         size: 0.6,
                     },
@@ -132,7 +136,7 @@ export const FORMATION_SCENARIOS: readonly FormationScenario[] = [
     {
         id: 'drift-free',
         title: 'ドリフトしない条件',
-        summary: '3 つの高さで、初速度 0 と vS = −2n·R の衛星を比べる',
+        summary: 'R 軸上と W 軸上の 3 点ずつで、ドリフトするかを比べる',
         build: () =>
             formation(
                 'ドリフトしない条件',
@@ -141,7 +145,10 @@ export const FORMATION_SCENARIOS: readonly FormationScenario[] = [
                     '黄色には S 方向の初速度 vS = −2n·R（n は平均運動）を与えて周期を基準衛星とそろえてあるので、' +
                     'どれも 2:1 の楕円を描いて元の位置に戻ってきます。これが HCW のドリフト消失条件です。' +
                     '必要な初速度も R に比例し、R がマイナスなら向きが逆になります。' +
-                    'R = +10 m と −10 m の黄色は、同じ楕円の反対側を回っています。',
+                    'R = +10 m と −10 m の黄色は、同じ楕円の反対側を回っています。' +
+                    '青は Cross-track（W 軸）上の W = +10 m、+5 m、−10 m に初速度 0 で置いたものです。' +
+                    'R = 0 なので vS = −2n·R = 0 となり、初速度 0 のままでドリフト消失条件を満たしています。' +
+                    '軌道面をはさんで振動するだけで、前後にはずれていきません。',
                 [
                     single('R = +10 m（初速度 0）', GRAY, { r: 10 }),
                     single('R = +5 m（初速度 0）', GRAY, { r: 5 }),
@@ -149,29 +156,36 @@ export const FORMATION_SCENARIOS: readonly FormationScenario[] = [
                     periodic('R = +10 m（vS = −2n·R）', YELLOW, 1, { A: 10 }),
                     periodic('R = +5 m（vS = −2n·R）', YELLOW, 1, { A: 5 }),
                     periodic('R = −10 m（vS = −2n·R）', YELLOW, 1, { A: -10 }),
+                    single('W = +10 m（初速度 0）', W_COLOR, { w: 10 }),
+                    single('W = +5 m（初速度 0）', W_COLOR, { w: 5 }),
+                    single('W = −10 m（初速度 0）', W_COLOR, { w: -10 }),
                 ],
             ),
     },
     {
         id: 'delta-v',
         title: '押す向きで動きはどう変わる？',
-        summary: '基準衛星の位置から 4 方向へ、同じ速さで押し出す',
+        summary: '基準衛星の位置から 6 方向へ、同じ速さで押し出す',
         build: (n) => {
-            // R 方向に押したときの楕円の R 振幅が約 5 m になる速さ（編集欄で読みやすいよう有効数字 3 桁に丸める）
-            const v = Number((5 * n).toPrecision(3));
+            // R 方向に押したときの楕円の R 振幅が約 5 m になる速さ
+            const v = roundVelocity(5 * n);
             return formation(
                 '押す向きで動きはどう変わる？',
-                `4 機とも基準衛星と同じ位置から、同じ大きさの初速度（約 ${(v * 100).toFixed(2)} cm/s）で押し出しています。` +
-                    '緑は前（+S）、薄い緑は後ろ（−S）、赤は上（+R）、薄い赤は地球側（−R）への初速度です。' +
+                `6 機とも基準衛星と同じ位置から、同じ大きさの初速度（約 ${(v * 100).toFixed(2)} cm/s）で押し出しています。` +
+                    '緑は前（+S）、薄い緑は後ろ（−S）、赤は上（+R）、薄い赤は地球側（−R）、青と薄い青は ±W への初速度です。' +
                     '前へ押した緑は、速くなった分だけ高度が上がって周期が長くなるため、結果として後方へ下がっていきます（1 周回で約 94 m）。' +
                     '後ろへ押した薄い緑はその逆で、高度が下がって前方へ進みます。' +
                     '上下に押した赤の 2 機は周期が変わらないので、2:1 の楕円を描いて 1 周回ごとに出発点へ戻ってきます。' +
+                    '青と薄い青は軌道面の外（±W）へ押したもので、面内の運動とは無関係に W 方向に単振動し、' +
+                    '半周回で反対側へ振れて 1 周回で出発点に戻ってきます（軌道面がわずかに傾いただけです）。' +
                     '「前へ進みたければブレーキをかける」という、軌道上ならではの直感に反する動きです。',
                 [
                     single('前へ（+S）', S_COLOR, {}, { s: v }),
                     single('後ろへ（−S）', S_LIGHT, {}, { s: -v }),
                     single('上へ（+R）', R_COLOR, {}, { r: v }),
                     single('地球側へ（−R）', R_LIGHT, {}, { r: -v }),
+                    single('軌道面の外へ（+W）', W_COLOR, {}, { w: v }),
+                    single('軌道面の外へ（−W）', W_LIGHT, {}, { w: -v }),
                 ],
             );
         },
@@ -297,6 +311,59 @@ export const FORMATION_SCENARIOS: readonly FormationScenario[] = [
             ),
     },
     {
+        id: 'hold-points',
+        title: 'V-bar と R-bar の待機点',
+        summary: 'ISS へ向かう補給機が、どこで止まって待てるか',
+        build: () =>
+            formation(
+                'V-bar と R-bar の待機点',
+                'ランデブーでは、基準衛星（ISS など）の真後ろの直線を V-bar（−S 軸）、真下の直線を R-bar（−R 軸）と呼びます。' +
+                    'どちらにも 3 機ずつ、初速度 0 で置いています。' +
+                    '緑（V-bar 上）は基準衛星と同じ軌道の少し後ろにいるだけなので、推力を使わなくてもその場にとどまります。' +
+                    'そのため、ドッキング方式の宇宙船（欧州の ATV など）は V-bar 上にいくつかの待機点を設け、' +
+                    '止まって状態を確認しながら段階的に近づきます。' +
+                    '赤（R-bar 上）は基準衛星より低い軌道にいて周期が短いので、止まっていられずに前方へドリフトし、' +
+                    '下に離れるほど速く離れていきます。R-bar 上で止まり続けるには推力で支え続ける必要があります。' +
+                    'その代わり、故障で推力が止まっても自然に基準衛星から離れていく安全な性質があるため、' +
+                    'ロボットアームでつかまえてもらう補給機（日本の HTV「こうのとり」など）は R-bar の下からゆっくり近づきます。',
+                [
+                    single('V-bar −5 m', S_COLOR, { s: -5 }),
+                    single('V-bar −10 m', S_COLOR, { s: -10 }),
+                    single('V-bar −15 m', S_COLOR, { s: -15 }),
+                    single('R-bar −5 m', R_COLOR, { r: -5 }),
+                    single('R-bar −10 m', R_COLOR, { r: -10 }),
+                    single('R-bar −15 m', R_COLOR, { r: -15 }),
+                ],
+            ),
+    },
+    {
+        id: 'vbar-hops',
+        title: 'V-bar 上を進むホップ',
+        summary: '待機点から次の待機点へ、2 種類の噴射で移る',
+        build: (n) => {
+            // −20 m の待機点から 15 m 前の −5 m の待機点へ移る初速度（初期視点に収まる距離）
+            const radial = roundVelocity((-n * 15) / 4); // 半周回で S 方向に −4·vR/n 進む
+            const along = roundVelocity((-n * 15) / (6 * Math.PI)); // 1 周回で S 方向に −6π·vS/n 進む
+            return formation(
+                'V-bar 上を進むホップ',
+                'V-bar 上の −20 m の待機点（灰色）から、15 m 前の −5 m の待機点（灰色）へ移る 2 つの方法を比べます。' +
+                    `赤は地球側（−R）へ約 ${(Math.abs(radial) * 100).toFixed(2)} cm/s 押したもので、少し下にふくらみながら前へ進み、` +
+                    'ちょうど半周回で次の待機点に着きます（ここで同じ大きさだけ上向きに噴射すれば止まります）。' +
+                    `緑は後ろ（−S）へ約 ${(Math.abs(along) * 100).toFixed(2)} cm/s 押したもので、高度が下がって前へ進み、1 周回で次の待機点に着きます。` +
+                    '着いたあとの噴射をしないとどうなるかも見てください。' +
+                    '赤は 1 周回で元の待機点に戻ってくるので、到着時の噴射に失敗しても基準衛星には近づきません。' +
+                    '緑はそのまま前へ進み続け、基準衛星へ向かってしまいます。' +
+                    '実際の接近でも、安全のために R 方向の噴射によるホップがよく使われます。',
+                [
+                    single('待機点 −20 m', GRAY, { s: -20 }),
+                    single('待機点 −5 m', GRAY, { s: -5 }),
+                    single('R 方向のホップ（半周回）', R_COLOR, { s: -20 }, { r: radial }),
+                    single('S 方向のホップ（1 周回）', S_COLOR, { s: -20 }, { s: along }),
+                ],
+            );
+        },
+    },
+    {
         id: 'disk',
         title: '円盤状の衛星群',
         summary: '多数の衛星が崩れずに回り続ける配置',
@@ -317,37 +384,6 @@ export const FORMATION_SCENARIOS: readonly FormationScenario[] = [
                         colorMode: 'random',
                         color: '#4ecdc4',
                         size: 0.6,
-                    },
-                ],
-            ),
-    },
-    {
-        id: 'approach',
-        title: 'V-bar と R-bar からの接近',
-        summary: '進行方向の後ろと地球側からの接近の違い',
-        build: () =>
-            formation(
-                'V-bar と R-bar からの接近',
-                '緑は進行方向の後方（V-bar, −S）、赤は地球側（R-bar, −R）から、基準衛星へ向かう速度を与えています。' +
-                    '同じように「近づく向き」に押しても、HCW の R・S 方向の結合（コリオリ力に相当する項）によって' +
-                    '経路は直線にならず、それぞれ違う向きに曲がっていきます。' +
-                    'ここでの初速度は目安の値で、ちょうど基準衛星に到達するように計算したものではありません。',
-                [
-                    {
-                        name: 'V-bar（後方）',
-                        pattern: 'vbar_approach',
-                        placementMode: 'radius',
-                        radius: 30,
-                        satelliteCount: 3,
-                        color: S_COLOR,
-                    },
-                    {
-                        name: 'R-bar（地球側）',
-                        pattern: 'rbar_approach',
-                        placementMode: 'radius',
-                        radius: 30,
-                        satelliteCount: 3,
-                        color: R_COLOR,
                     },
                 ],
             ),
