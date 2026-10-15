@@ -212,3 +212,24 @@ describe('OrbitInitializer 性質', () => {
         }
     });
 });
+
+describe('OrbitInitializer 単独配置の初速度・格子の面', () => {
+    it('origin は rswVelocity を初速度にする', () => {
+        const [p] = create().generatePositions('origin', 1, 10, {
+            rswOffset: { r: 1, s: 2, w: 3 },
+            rswVelocity: { r: 0.1, s: -0.2, w: 0.3 },
+        });
+        expect(p).toEqual({ x0: 1, y0: 2, z0: 3, vx0: 0.1, vy0: -0.2, vz0: 0.3 });
+    });
+
+    it.each([
+        ['rs', 'z0'],
+        ['rw', 'y0'],
+        ['sw', 'x0'],
+    ] as const)('grid を %s 面に並べると、残りの軸は 0 で (2n+1)² − 1 機', (gridPlane, zeroAxis) => {
+        const positions = create().generatePositions('grid', 2, 10, { spacing: 5, gridPlane });
+        expect(positions).toHaveLength(24);
+        expect(positions.every((p) => p[zeroAxis] === 0)).toBe(true);
+        expect(new Set(positions.map((p) => `${p.x0},${p.y0},${p.z0}`)).size).toBe(24);
+    });
+});

@@ -6,6 +6,7 @@
 import {
     isHexColor,
     type FormationLayer,
+    type GridPlane,
     type PatternType,
     type PlacementMode,
     type ShapeType,
@@ -15,7 +16,7 @@ import { MAX_GENERATED_SATELLITES, layerSatelliteCount } from './formationConfig
 export const PATTERN_LABELS: Record<PatternType, string> = {
     origin: '単独（1 機）',
     axis: '軸上',
-    grid: '立方格子',
+    grid: '格子',
     random_position: 'ランダム位置',
     random_position_velocity: 'ランダム位置・速度',
     random_periodic: 'ランダム周期軌道',
@@ -30,9 +31,9 @@ export const PATTERN_LABELS: Record<PatternType, string> = {
 
 /** パターン選択時に表示する 1 行説明 */
 export const PATTERN_DESCRIPTIONS: Record<PatternType, string> = {
-    origin: '指定した位置に 1 機だけ置きます。',
+    origin: '指定した位置に 1 機だけ置きます。初速度も指定できます。',
     axis: 'R・S・W の 3 軸上に、原点の両側へ等間隔に並べます。',
-    grid: '原点を中心とした 3 次元の格子点に並べます。',
+    grid: '原点を中心とした格子点に並べます。立方格子のほか、R-S・R-W・S-W の面だけにも並べられます。',
     random_position: '±範囲の立方体の中にランダムに置きます。',
     random_position_velocity: '位置も速度もランダム。多くはドリフトして離れていきます。',
     random_periodic: 'ランダムな位置・速度のうち、ドリフトしない条件を満たすものを置きます。',
@@ -104,6 +105,11 @@ export interface LayerFormValues {
     offsetR: string;
     offsetS: string;
     offsetW: string;
+    velocityR: string;
+    velocityS: string;
+    velocityW: string;
+    /** 格子を並べる面。'3d' は立方格子 */
+    gridPlane: GridPlane | '3d';
 }
 
 export function layerToForm(layer: FormationLayer): LayerFormValues {
@@ -136,6 +142,10 @@ export function layerToForm(layer: FormationLayer): LayerFormValues {
         offsetR: String(layer.rswOffset?.r ?? 0),
         offsetS: String(layer.rswOffset?.s ?? 0),
         offsetW: String(layer.rswOffset?.w ?? 0),
+        velocityR: String(layer.rswVelocity?.r ?? 0),
+        velocityS: String(layer.rswVelocity?.s ?? 0),
+        velocityW: String(layer.rswVelocity?.w ?? 0),
+        gridPlane: layer.gridPlane ?? '3d',
     };
 }
 
@@ -155,8 +165,9 @@ export interface LayerFieldVisibility {
     positiveZ: boolean;
     /** 軸上パターン: 折りたたみ表示のオフセット */
     axisOffset: boolean;
-    /** 原点配置: 初期位置としてのオフセット */
+    /** 原点配置: 初期位置としてのオフセットと初速度 */
     originOffset: boolean;
+    gridPlane: boolean;
 }
 
 export function getLayerFieldVisibility(values: LayerFormValues): LayerFieldVisibility {
@@ -178,6 +189,7 @@ export function getLayerFieldVisibility(values: LayerFormValues): LayerFieldVisi
         positiveZ: pattern === 'circular_orbit',
         axisOffset: pattern === 'axis',
         originOffset: isOrigin,
+        gridPlane: pattern === 'grid',
     };
 }
 
@@ -232,6 +244,12 @@ export function getCountLabel(pattern: PatternType): string {
     }
 }
 
+/** フォームの内容で生成される衛星数（count は検証済みの「衛星数」欄の値） */
+export function formSatelliteCount(values: LayerFormValues, count: number): number {
+    const gridPlane = values.gridPlane === '3d' ? undefined : values.gridPlane;
+    return layerSatelliteCount({ pattern: values.pattern, satelliteCount: count, gridPlane });
+}
+
 /**
  * フォームの入力内容をチェックし、問題があれば利用者向けのメッセージを返す。
  * 問題がなければ null（このときだけシミュレーションに反映する）。
@@ -248,7 +266,7 @@ export function checkLayerForm(values: LayerFormValues): string | null {
         const count = Number(values.satelliteCount);
         if (!Number.isInteger(count) || count < 1)
             return `${getCountLabel(values.pattern)}は 1 以上の整数で入力してください`;
-        const generated = layerSatelliteCount({ pattern: values.pattern, satelliteCount: count });
+        const generated = formSatelliteCount(values, count);
         if (generated > MAX_GENERATED_SATELLITES) {
             return `衛星が ${generated.toLocaleString()} 機になります（上限 ${MAX_GENERATED_SATELLITES.toLocaleString()} 機）`;
         }
@@ -263,6 +281,7 @@ export function checkLayerForm(values: LayerFormValues): string | null {
     if (visible.color && !isHexColor(values.color)) return '色は #RRGGBB の形式で入力してください';
     const numericKeys: Array<keyof LayerFormValues> = [];
     if (visible.originOffset || visible.axisOffset) numericKeys.push('offsetR', 'offsetS', 'offsetW');
+    if (visible.originOffset) numericKeys.push('velocityR', 'velocityS', 'velocityW');
     if (visible.periodicParams) numericKeys.push('ratioB', 'ratioD', 'ratioE', 'ratioF', 'zAmplitude');
     if (visible.rotation) numericKeys.push('rotationR', 'rotationS');
     if (numericKeys.some((key) => !finite(values[key] as string))) return '数値を入力してください';
@@ -353,6 +372,16 @@ export function formToLayerUpdates(values: LayerFormValues): Partial<FormationLa
     } else {
         updates.rswOffset = undefined;
     }
+
+    if (pattern === 'origin') {
+        const velocity = { r: num(values.velocityR, 0), s: num(values.velocityS, 0), w: num(values.velocityW, 0) };
+        // 初速度 0 は項目ごと省いて、保存する JSON を以前と同じ形に保つ
+        updates.rswVelocity = velocity.r || velocity.s || velocity.w ? velocity : undefined;
+    } else {
+        updates.rswVelocity = undefined;
+    }
+
+    updates.gridPlane = pattern === 'grid' && values.gridPlane !== '3d' ? values.gridPlane : undefined;
 
     return updates;
 }
