@@ -14,6 +14,8 @@ export interface DisplaySettings {
     showLatLongGrid: boolean;
     showEarth: boolean;
     showTrails: boolean;
+    /** 右上のミニマップ（基準衛星の地上軌跡） */
+    showMiniMap: boolean;
     trailLength: number;
     earthTexture: string;
     earthBrightness: EarthBrightness;
@@ -48,6 +50,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
     showLatLongGrid: true,
     showEarth: true,
     showTrails: true,
+    showMiniMap: true,
     trailLength: 200,
     earthTexture: 'earth00.webp',
     earthBrightness: 'normal',

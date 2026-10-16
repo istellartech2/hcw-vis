@@ -43,6 +43,15 @@ function SceneSection() {
                 onCheckedChange={(showAxes) => setDisplay({ showAxes })}
             />
             <ToggleRow
+                label={
+                    <>
+                        ミニマップ <Kbd className="ml-1">M</Kbd>
+                    </>
+                }
+                checked={display.showMiniMap}
+                onCheckedChange={(showMiniMap) => setDisplay({ showMiniMap })}
+            />
+            <ToggleRow
                 label="軌跡"
                 checked={display.showTrails}
                 onCheckedChange={(showTrails) => setDisplay({ showTrails })}

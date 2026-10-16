@@ -9,6 +9,7 @@ import { useEngine } from '@/engine/EngineContext';
 import { orbitPeriodMinutes } from '@/simulation/OrbitElements';
 import { appStore, useAppStore } from '@/store/appStore';
 import type { OrbitInputs } from '@/store/settings';
+import { formatLatLon } from '@/lib/geoFormat';
 import { cn } from '@/lib/utils';
 
 /** 軌道・力学: 基準軌道、力学モデル、外乱と衝突 */
@@ -48,9 +49,7 @@ function OrbitSection() {
     const orbit = useAppStore((s) => s.orbit);
     // 文字列で購読して、表示が変わらない更新では再描画しない
     const position = useAppStore(
-        (s) =>
-            s.referenceInfo &&
-            `${formatLatitude(s.referenceInfo.latitude)} ${formatLongitude(s.referenceInfo.longitude)}`,
+        (s) => s.referenceInfo && formatLatLon(s.referenceInfo.latitude, s.referenceInfo.longitude),
     );
     const [draft, setDraft] = useState<Draft>(() => toDraft(orbit));
     const [invalid, setInvalid] = useState<ReadonlySet<keyof OrbitInputs>>(new Set());
@@ -139,14 +138,6 @@ function OrbitSection() {
             </form>
         </PanelSection>
     );
-}
-
-function formatLatitude(deg: number): string {
-    return `${Math.abs(deg).toFixed(1)}°${deg >= 0 ? 'N' : 'S'}`;
-}
-
-function formatLongitude(deg: number): string {
-    return `${Math.abs(deg).toFixed(1)}°${deg >= 0 ? 'E' : 'W'}`;
 }
 
 /** 軌道周期（分）を表示用に整形する */
