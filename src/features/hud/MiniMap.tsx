@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { formatLatLon } from '@/lib/geoFormat';
 import { useUiTheme } from '@/lib/uiTheme';
 import { useAppMode, useAppStore } from '@/store/appStore';
 import type { GroundTrack, LatLon } from '@/simulation/groundTrack';
@@ -75,7 +74,7 @@ function drawMap(canvas: HTMLCanvasElement, image: HTMLImageElement | null, trac
             }
         };
         ctx.strokeStyle = token('--brand');
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1.1;
         // これまでの 1 周は実線、これからの 1 周は破線
         ctx.globalAlpha = 0.9;
         ctx.setLineDash([]);
@@ -101,13 +100,6 @@ function ReferenceMarker() {
             <span className="absolute inset-0 rounded-full border-[1.5px] border-fg bg-brand" />
         </span>
     );
-}
-
-function ReferenceLatLon() {
-    const text = useAppStore(
-        (s) => s.referenceInfo && formatLatLon(s.referenceInfo.latitude, s.referenceInfo.longitude),
-    );
-    return <span className="num text-fg">{text ?? '—'}</span>;
 }
 
 /** 右上のミニマップ。基準衛星の直下点と前後 1 周ずつの地上軌跡を世界地図上に示す（CSV 再生とスマホでは出さない） */
@@ -142,10 +134,6 @@ function MiniMapCard() {
             <div className="relative aspect-[2/1] overflow-hidden rounded-[7px]">
                 <canvas ref={canvasRef} className="block size-full" />
                 <ReferenceMarker />
-            </div>
-            <div className="flex items-center justify-between gap-2 px-1 pt-1.5 pb-0.5 text-[11px]">
-                <span className="text-fg-muted">基準衛星の直下点</span>
-                <ReferenceLatLon />
             </div>
         </section>
     );
