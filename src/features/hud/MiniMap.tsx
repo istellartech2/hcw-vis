@@ -110,7 +110,7 @@ function ReferenceLatLon() {
     return <span className="num text-fg">{text ?? '—'}</span>;
 }
 
-/** 右上のミニマップ。基準衛星の直下点と前後 1 周ずつの地上軌跡を世界地図上に示す（CSV 再生では使わない） */
+/** 右上のミニマップ。基準衛星の直下点と前後 1 周ずつの地上軌跡を世界地図上に示す（CSV 再生とスマホでは出さない） */
 export function MiniMap() {
     const mode = useAppMode();
     const show = useAppStore((s) => s.display.showMiniMap);
@@ -137,14 +137,14 @@ function MiniMapCard() {
     return (
         <section
             aria-label="ミニマップ（基準衛星の地上軌跡）"
-            className="glass fixed top-[calc(60px+env(safe-area-inset-top,0px))] right-3 z-10 w-60 rounded-[12px] p-1.5 max-md:w-40"
+            className="glass fixed top-[calc(60px+env(safe-area-inset-top,0px))] right-3 z-10 w-60 rounded-[12px] p-1.5 max-md:hidden"
         >
             <div className="relative aspect-[2/1] overflow-hidden rounded-[7px]">
                 <canvas ref={canvasRef} className="block size-full" />
                 <ReferenceMarker />
             </div>
-            <div className="flex items-center justify-between gap-2 px-1 pt-1.5 pb-0.5 text-[11px] max-md:justify-center">
-                <span className="text-fg-muted max-md:hidden">基準衛星の直下点</span>
+            <div className="flex items-center justify-between gap-2 px-1 pt-1.5 pb-0.5 text-[11px]">
+                <span className="text-fg-muted">基準衛星の直下点</span>
                 <ReferenceLatLon />
             </div>
         </section>
