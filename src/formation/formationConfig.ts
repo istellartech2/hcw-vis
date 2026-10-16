@@ -95,7 +95,9 @@ export function moveLayer(config: FormationConfig, layerId: string, offset: -1 |
  * `satelliteCount` の意味はパターンごとに違う（軸上は各軸の片側の機数、格子は片側の格子数）ので、
  * 表示にはこちらを使う。OrbitInitializer の生成ロジックと一致させること。
  */
-export function layerSatelliteCount(layer: Pick<FormationLayer, 'pattern' | 'satelliteCount'>): number {
+export function layerSatelliteCount(
+    layer: Pick<FormationLayer, 'pattern' | 'satelliteCount'> & Partial<Pick<FormationLayer, 'gridPlane'>>,
+): number {
     const n = Math.max(0, Math.floor(layer.satelliteCount));
     switch (layer.pattern) {
         case 'origin':
@@ -103,7 +105,7 @@ export function layerSatelliteCount(layer: Pick<FormationLayer, 'pattern' | 'sat
         case 'axis':
             return n * 6;
         case 'grid':
-            return (2 * n + 1) ** 3 - 1;
+            return (2 * n + 1) ** (layer.gridPlane ? 2 : 3) - 1;
         default:
             return n;
     }

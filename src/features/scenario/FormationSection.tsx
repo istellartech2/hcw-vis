@@ -14,7 +14,7 @@ import {
     parseFormation,
     serializeFormation,
 } from '@/formation/formationConfig';
-import { appStore, useAppStore } from '@/store/appStore';
+import { appStore, selectCurrentScenarioId, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 import { LayerCard } from './LayerCard';
 import { LayerEditor } from './LayerEditor';
@@ -111,6 +111,7 @@ export function FormationSection() {
     const config = useAppStore((s) => s.formation);
     const formationFile = useAppStore((s) => s.formationFile);
     const updateFormation = useAppStore((s) => s.updateFormation);
+    const showsScenarioGuide = useAppStore(selectCurrentScenarioId) !== null;
     const [editing, setEditing] = useState<{ layerId: string; before?: FormationConfig } | null>(null);
     const importRef = useRef<HTMLInputElement>(null);
 
@@ -227,7 +228,8 @@ export function FormationSection() {
                 </IconAction>
             </div>
 
-            {config.description && (
+            {/* 学習シナリオの説明は画面右上の ScenarioGuide に出すので、編集するまではここに出さない */}
+            {config.description && !showsScenarioGuide && (
                 <p className="flex gap-2 rounded-md border border-line bg-sunken px-2.5 py-2 text-xs leading-relaxed text-fg-muted">
                     <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-warning" />
                     <span>{config.description}</span>

@@ -2,7 +2,7 @@
  * アプリ全体の状態ストア。
  *
  * - settings 系（display / simulation）と formation は UI が書き込み、エンジンが購読して反映する
- * - telemetry 系（simTime, referenceInfo, selected, playback, orbit）はエンジンが書き込み、UI が描画する
+ * - telemetry 系（simTime, referenceInfo, groundTrack, selected, playback, orbit）はエンジンが書き込み、UI が描画する
  * - ui 系はパネルやダイアログの開閉状態で、React 側だけが使う
  *
  * zustand の vanilla store なので React 以外（エンジン）からも利用できる。
@@ -12,6 +12,7 @@ import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
 import type { FormationConfig } from '@/formation/FormationTypes';
 import { createDefaultFormation } from '@/formation/formationConfig';
+import type { GroundTrack } from '@/simulation/groundTrack';
 import {
     DEFAULT_DISPLAY_SETTINGS,
     DEFAULT_ORBIT_INPUTS,
@@ -79,6 +80,8 @@ export interface AppState {
     simTime: number;
     paused: boolean;
     referenceInfo: ReferenceSatelliteInfo | null;
+    /** 基準衛星の前後 1 周ずつの地上軌跡（ミニマップ用。時刻が進むと間隔をおいて更新する） */
+    groundTrack: GroundTrack | null;
     selected: SelectedSatelliteInfo | null;
     playback: PlaybackStatus;
     /** フォーメーション設定（唯一の正）。layers が変わるとエンジンが衛星を再配置する（時刻は t = 0 に戻る） */
@@ -138,6 +141,7 @@ export const appStore = createStore<AppStore>()((set, get) => ({
     simTime: 0,
     paused: false,
     referenceInfo: null,
+    groundTrack: null,
     selected: null,
     playback: { ...INITIAL_PLAYBACK },
     formation: createDefaultFormation(),
@@ -165,6 +169,11 @@ export const appStore = createStore<AppStore>()((set, get) => ({
     patch: (patch) => set(patch),
     patchPlayback: (patch) => set((s) => ({ playback: { ...s.playback, ...patch } })),
 }));
+
+/** 読み込んだ学習シナリオを編集せずに使っている間はその id、それ以外は null */
+export function selectCurrentScenarioId(state: AppState): string | null {
+    return state.loadedScenario && state.loadedScenario.config === state.formation ? state.loadedScenario.id : null;
+}
 
 /** CSV 再生モードを選んだが、まだファイルを読み込んでいない状態か */
 export function isCsvModeWithoutFile(state: AppState = appStore.getState()): boolean {

@@ -26,6 +26,10 @@ export const ALL_PATTERNS = [
 export type PatternType = (typeof ALL_PATTERNS)[number];
 export type PlacementMode = 'radius' | 'spacing';
 
+/** 格子パターンを並べる面（省略時は 3 次元の立方格子） */
+export const GRID_PLANES = ['rs', 'rw', 'sw'] as const;
+export type GridPlane = (typeof GRID_PLANES)[number];
+
 /**
  * 直方体の3辺の比率
  */
@@ -88,6 +92,8 @@ export interface FormationLayer {
     periodicParams?: PeriodicParams; // 楕円軌道パラメータ
     positiveZ?: boolean; // 円軌道で+Z方向に回転するか
     rswOffset?: RSWOffset; // 軸上パターン用のRSWオフセット
+    rswVelocity?: RSWOffset; // 単独配置の初速度 (m/s)
+    gridPlane?: GridPlane; // 格子を並べる面（省略時は立方格子）
 }
 
 /** 保存する JSON のファイル形式バージョン。読み込みは同じメジャーバージョンだけ受け付ける */

@@ -27,6 +27,7 @@ export const SHORTCUT_GROUPS: ReadonlyArray<{ title: string; items: Array<{ keys
             { keys: ['V'], label: '視点をリセット' },
             { keys: ['G'], label: 'グリッド表示の切り替え' },
             { keys: ['E'], label: '地球表示の切り替え' },
+            { keys: ['M'], label: 'ミニマップの切り替え' },
             { keys: ['H'], label: 'このヘルプを表示' },
         ],
     },
@@ -90,6 +91,9 @@ export function useKeyboardShortcuts(engine: SimulationEngine | null): void {
                     break;
                 case 'e':
                     store.setDisplay({ showEarth: !store.display.showEarth });
+                    break;
+                case 'm':
+                    store.setDisplay({ showMiniMap: !store.display.showMiniMap });
                     break;
                 case '+':
                 case '=':

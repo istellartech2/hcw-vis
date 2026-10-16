@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { FORMATION_SCENARIOS, type FormationScenario } from '@/formation/scenarios';
-import { appStore, useAppMode, useAppStore } from '@/store/appStore';
+import { circularMeanMotion } from '@/simulation/OrbitElements';
+import { appStore, selectCurrentScenarioId, useAppMode, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 
 /**
@@ -19,7 +20,8 @@ import { cn } from '@/lib/utils';
  * 一時停止したまま読み込むと t = 0 で止まって見えるので、再生を始めて動きを見せる。
  */
 function loadScenario(scenario: FormationScenario): void {
-    const config = scenario.build();
+    // 初速度を m/s で指定するシナリオがあるので、いまの軌道高度の平均運動を渡す
+    const config = scenario.build(circularMeanMotion(appStore.getState().orbit.altitudeKm));
     const undo = appStore.getState().replaceFormation({
         formation: config,
         formationFile: null,
@@ -35,9 +37,7 @@ function loadScenario(scenario: FormationScenario): void {
  */
 export function ScenarioButton() {
     const mode = useAppMode();
-    const currentId = useAppStore((s) =>
-        s.loadedScenario && s.loadedScenario.config === s.formation ? s.loadedScenario.id : null,
-    );
+    const currentId = useAppStore(selectCurrentScenarioId);
     const [open, setOpen] = useState(false);
     const picked = useRef(false);
 
@@ -75,7 +75,7 @@ export function ScenarioButton() {
                     <DialogTitle>学習シナリオ</DialogTitle>
                     <DialogDescription>
                         HCW 方程式の性質を 1
-                        つずつ確かめられる配置です。選ぶと現在の配置が置き換わり、観察のポイントが衛星配置タブに表示されます。
+                        つずつ確かめられる配置です。選ぶと現在の配置が置き換わり、観察のポイントが画面右上に表示されます。
                     </DialogDescription>
                 </DialogHeader>
                 <ol className="-mx-2 max-h-[60vh] space-y-0.5 overflow-y-auto">

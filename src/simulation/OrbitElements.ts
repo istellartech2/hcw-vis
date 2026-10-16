@@ -21,9 +21,14 @@ export interface OrbitalElements {
     meanMotion: number; // 平均運動 (rad/s)
 }
 
+/** 高度 altitudeKm の円軌道の平均運動 (rad/s) */
+export function circularMeanMotion(altitudeKm: number): number {
+    return Math.sqrt(EARTH_MU / (EARTH_RADIUS + altitudeKm * 1000) ** 3);
+}
+
 /** 高度 altitudeKm の円軌道の周期（分） */
 export function orbitPeriodMinutes(altitudeKm: number): number {
-    return (2 * Math.PI * Math.sqrt((EARTH_RADIUS + altitudeKm * 1000) ** 3 / EARTH_MU)) / 60;
+    return (2 * Math.PI) / circularMeanMotion(altitudeKm) / 60;
 }
 
 /** 軌道要素ごとの SGP4 レコード（初期化は重いので一度だけ行う） */

@@ -42,6 +42,18 @@ function SceneSection() {
                 checked={display.showAxes}
                 onCheckedChange={(showAxes) => setDisplay({ showAxes })}
             />
+            {/* ミニマップはスマホでは出さないので、切り替えも隠す */}
+            <div className="max-md:hidden">
+                <ToggleRow
+                    label={
+                        <>
+                            ミニマップ <Kbd className="ml-1">M</Kbd>
+                        </>
+                    }
+                    checked={display.showMiniMap}
+                    onCheckedChange={(showMiniMap) => setDisplay({ showMiniMap })}
+                />
+            </div>
             <ToggleRow
                 label="軌跡"
                 checked={display.showTrails}

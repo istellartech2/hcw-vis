@@ -44,4 +44,21 @@ describe('layerForm', () => {
         expect(form.radius).toBe('10');
         expect(formToLayerUpdates({ ...form, radius: '30' }).radius).toBe(15);
     });
+
+    it('単独配置の初速度と格子の面をフォームで保持する', () => {
+        const origin = { ...structuredClone(DEFAULT_LAYER), id: 'o', name: 'O', pattern: 'origin' as const };
+        const velocity = { r: 0.01, s: -0.02, w: 0 };
+        const form = layerToForm({ ...origin, rswVelocity: velocity });
+        expect(formToLayerUpdates(form).rswVelocity).toEqual(velocity);
+        expect(formToLayerUpdates({ ...form, velocityR: '0', velocityS: '0' }).rswVelocity).toBeUndefined();
+        expect(checkLayerForm({ ...form, velocityS: '' })).toMatch('数値');
+
+        const grid = layerToForm({ ...origin, pattern: 'grid', gridPlane: 'rs' });
+        expect(grid.gridPlane).toBe('rs');
+        expect(formToLayerUpdates(grid).gridPlane).toBe('rs');
+        expect(formToLayerUpdates({ ...grid, gridPlane: '3d' }).gridPlane).toBeUndefined();
+        expect(formToLayerUpdates({ ...grid, pattern: 'axis' }).gridPlane).toBeUndefined();
+        // 平面格子は (2n+1)² − 1 機なので、立方格子では上限を超える数でも通る
+        expect(checkLayerForm({ ...grid, satelliteCount: '20' })).toBeNull();
+    });
 });

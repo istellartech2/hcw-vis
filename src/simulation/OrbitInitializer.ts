@@ -22,6 +22,10 @@ export interface PatternOptions {
     spacing?: number;
     /** 原点・軸上パターンの RSW オフセット (m) */
     rswOffset?: { r: number; s: number; w: number };
+    /** 原点パターンの初速度 (m/s) */
+    rswVelocity?: { r: number; s: number; w: number };
+    /** 格子パターンを並べる面（省略時は 3 次元の立方格子） */
+    gridPlane?: 'rs' | 'rw' | 'sw';
 }
 
 const at = (x0: number, y0: number, z0: number): InitialCondition => ({ x0, y0, z0, vx0: 0, vy0: 0, vz0: 0 });
@@ -54,15 +58,22 @@ export class OrbitInitializer {
         radius: number, // m
         options: PatternOptions = {},
     ): InitialCondition[] {
-        const { spacing, rswOffset } = options;
+        const { spacing, rswOffset, rswVelocity } = options;
         // ディスク系パターン用: J2安定配置が無効なら c = 1.0
         const disk = { n: this.n, ssCoefficient: this.useJ2StableArrangement ? this.ssCoefficient : 1.0 };
 
         switch (pattern) {
             case 'origin':
-                return [at(rswOffset?.r || 0, rswOffset?.s || 0, rswOffset?.w || 0)];
+                return [
+                    {
+                        ...at(rswOffset?.r || 0, rswOffset?.s || 0, rswOffset?.w || 0),
+                        vx0: rswVelocity?.r || 0,
+                        vy0: rswVelocity?.s || 0,
+                        vz0: rswVelocity?.w || 0,
+                    },
+                ];
             case 'grid':
-                return this.generateGridPositions(count, radius, spacing);
+                return this.generateGridPositions(count, radius, spacing, options.gridPlane);
             case 'random_position':
                 return Array.from({ length: count }, () =>
                     at(randomSigned(radius), randomSigned(radius), randomSigned(radius)),
@@ -117,17 +128,23 @@ export class OrbitInitializer {
         ];
     }
 
-    /** 3D 格子（原点を除く）。各軸 -count..count */
-    private generateGridPositions(count: number, radius: number, spacing?: number): InitialCondition[] {
+    /** 格子（原点を除く）。各軸 -count..count。plane を指定すると残りの軸は 0 の平面格子 */
+    private generateGridPositions(
+        count: number,
+        radius: number,
+        spacing?: number,
+        plane?: 'rs' | 'rw' | 'sw',
+    ): InitialCondition[] {
         const gridValues: number[] = [];
         for (let i = -count; i <= count; i++) {
             gridValues.push(spacing !== undefined ? i * spacing : (i * radius) / count);
         }
+        const valuesOn = (axis: 'r' | 's' | 'w') => (plane && !plane.includes(axis) ? [0] : gridValues);
 
         const positions: InitialCondition[] = [];
-        for (const x of gridValues) {
-            for (const y of gridValues) {
-                for (const z of gridValues) {
+        for (const x of valuesOn('r')) {
+            for (const y of valuesOn('s')) {
+                for (const z of valuesOn('w')) {
                     if (x === 0 && y === 0 && z === 0) continue;
                     positions.push(at(x, y, z));
                 }

@@ -21,7 +21,7 @@ import {
     type PlacementMode,
     type ShapeType,
 } from '@/formation/FormationTypes';
-import { layerSatelliteCount, updateLayer } from '@/formation/formationConfig';
+import { updateLayer } from '@/formation/formationConfig';
 import {
     PATTERN_DESCRIPTIONS,
     PATTERN_GROUPS,
@@ -30,6 +30,7 @@ import {
     checkLayerForm,
     computeEccentricity,
     formToLayerUpdates,
+    formSatelliteCount,
     getCountLabel,
     getLayerFieldVisibility,
     getRadiusLabel,
@@ -99,7 +100,7 @@ export function LayerEditor({ layer, restoreOnCancel, onClose }: LayerEditorProp
     const count = Number(values.satelliteCount);
     const total = getLayerFieldVisibility(values).satelliteCount
         ? Number.isInteger(count) && count > 0
-            ? layerSatelliteCount({ ...values, satelliteCount: count })
+            ? formSatelliteCount(values, count)
             : null
         : 1;
 
@@ -294,7 +295,7 @@ function PlacementGroup({ values, onChange }: SectionProps) {
 
     return (
         <Group
-            title={visible.originOffset ? '位置' : '数と大きさ'}
+            title={visible.originOffset ? '位置と初速度' : '数と大きさ'}
             action={
                 visible.placementMode && (
                     <div className="w-40">
@@ -365,14 +366,41 @@ function PlacementGroup({ values, onChange }: SectionProps) {
                 </div>
             )}
 
+            {visible.gridPlane && (
+                <div className="flex items-center gap-2">
+                    <span className="w-16 shrink-0 text-xs text-fg-muted">並べる面</span>
+                    <SegmentedControl<LayerFormValues['gridPlane']>
+                        ariaLabel="格子を並べる面"
+                        value={values.gridPlane}
+                        options={[
+                            { value: '3d', label: '立方' },
+                            { value: 'rs', label: 'R-S' },
+                            { value: 'rw', label: 'R-W' },
+                            { value: 'sw', label: 'S-W' },
+                        ]}
+                        onChange={(gridPlane) => onChange({ gridPlane })}
+                    />
+                </div>
+            )}
+
             {visible.originOffset && (
-                <Vec3Input
-                    label="基準から (m)"
-                    keys={['offsetR', 'offsetS', 'offsetW']}
-                    axes={['R', 'S', 'W']}
-                    values={values}
-                    onChange={onChange}
-                />
+                <>
+                    <Vec3Input
+                        label="基準から (m)"
+                        keys={['offsetR', 'offsetS', 'offsetW']}
+                        axes={['R', 'S', 'W']}
+                        values={values}
+                        onChange={onChange}
+                    />
+                    <Vec3Input
+                        label="初速度 (m/s)"
+                        keys={['velocityR', 'velocityS', 'velocityW']}
+                        axes={['R', 'S', 'W']}
+                        step={0.001}
+                        values={values}
+                        onChange={onChange}
+                    />
+                </>
             )}
             {visible.axisOffset &&
                 (showOffset ? (

@@ -11,6 +11,7 @@
 
 import {
     ALL_PATTERNS,
+    GRID_PLANES,
     DEFAULT_LAYER,
     FORMATION_FILE_VERSION,
     type FormationConfig,
@@ -130,6 +131,8 @@ function decodeLayer(raw: unknown, index: number, errors: string[]): FormationLa
         periodicParams: r.numbers('periodicParams', ['A', 'B', 'D', 'E', 'F']),
         positiveZ: r.boolean('positiveZ'),
         rswOffset: r.numbers('rswOffset', ['r', 's', 'w']),
+        rswVelocity: r.numbers('rswVelocity', ['r', 's', 'w']),
+        gridPlane: r.oneOf('gridPlane', GRID_PLANES),
     };
     if (errors.length > before) return null;
 

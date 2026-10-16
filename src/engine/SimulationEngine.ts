@@ -3,6 +3,7 @@ import { Satellite } from '@/simulation/Satellite';
 import { HillEquationSolver } from '@/simulation/HillEquationSolver';
 import { OrbitElementsCalculator, type OrbitalElements } from '@/simulation/OrbitElements';
 import { applyElasticCollisions, detectCollisions } from '@/simulation/collision';
+import { computeGroundTrack } from '@/simulation/groundTrack';
 import { RenderingSystem } from '@/visualization/RenderingSystem';
 import { CelestialBodies } from '@/visualization/CelestialBodies';
 import { FormationGenerator } from '@/formation/FormationGenerator';
@@ -46,6 +47,8 @@ export class SimulationEngine {
     private simulationStartTime = new Date();
     private frameCounter = 0;
     private orbitElements!: OrbitalElements;
+    /** 最後に地上軌跡を計算したときの軌道要素と時刻 (s)。どちらかが変わったら計算し直す */
+    private groundTrackKey: { elements: OrbitalElements; time: number } | null = null;
     /** 衝突判定に使う衛星の半径 (m) */
     private collisionRadius = DEFAULT_COLLISION_DIAMETER / 2;
 
@@ -230,10 +233,22 @@ export class SimulationEngine {
     // ------------------------------------------------------------------
 
     private publishReferenceInfo(): void {
-        const eci = OrbitElementsCalculator.getECIPosition(this.orbitElements, this.currentDate());
+        const date = this.currentDate();
+        const eci = OrbitElementsCalculator.getECIPosition(this.orbitElements, date);
         appStore.getState().patch({
             referenceInfo: eci ? { latitude: eci.geodetic.latitude, longitude: eci.geodetic.longitude } : null,
         });
+        this.publishGroundTrack(date);
+    }
+
+    /** 地上軌跡は重いので、軌道が変わったときと、時刻が 1/16 周以上動いたときだけ計算し直す */
+    private publishGroundTrack(date: Date): void {
+        const time = this.currentTime();
+        const key = this.groundTrackKey;
+        const refreshInterval = (this.orbitElements.period * 60) / 16;
+        if (key && key.elements === this.orbitElements && Math.abs(time - key.time) < refreshInterval) return;
+        this.groundTrackKey = { elements: this.orbitElements, time };
+        appStore.getState().patch({ groundTrack: computeGroundTrack(this.orbitElements, date) });
     }
 
     private publishSelectedSatellite(index?: number): void {
@@ -465,6 +480,7 @@ export class SimulationEngine {
         this.satellites = satellites;
         this.time = 0;
         this.unintegratedTime = 0;
+        this.publishReferenceInfo();
 
         const mass = appStore.getState().simulation.satelliteMass;
         let maxSize = 0;
