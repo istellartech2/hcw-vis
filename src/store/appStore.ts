@@ -170,6 +170,11 @@ export const appStore = createStore<AppStore>()((set, get) => ({
     patchPlayback: (patch) => set((s) => ({ playback: { ...s.playback, ...patch } })),
 }));
 
+/** 読み込んだ学習シナリオを編集せずに使っている間はその id、それ以外は null */
+export function selectCurrentScenarioId(state: AppState): string | null {
+    return state.loadedScenario && state.loadedScenario.config === state.formation ? state.loadedScenario.id : null;
+}
+
 /** CSV 再生モードを選んだが、まだファイルを読み込んでいない状態か */
 export function isCsvModeWithoutFile(state: AppState = appStore.getState()): boolean {
     return !state.playback.active && state.ui.mode === 'csv';

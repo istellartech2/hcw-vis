@@ -102,7 +102,7 @@ function ReferenceMarker() {
     );
 }
 
-/** 右上のミニマップ。基準衛星の直下点と前後 1 周ずつの地上軌跡を世界地図上に示す（CSV 再生とスマホでは出さない） */
+/** ミニマップ。基準衛星の直下点と前後 1 周ずつの地上軌跡を世界地図上に示す（CSV 再生とスマホでは出さない）。位置は RightStack が決める */
 export function MiniMap() {
     const mode = useAppMode();
     const show = useAppStore((s) => s.display.showMiniMap);
@@ -129,7 +129,7 @@ function MiniMapCard() {
     return (
         <section
             aria-label="ミニマップ（基準衛星の地上軌跡）"
-            className="glass fixed top-[calc(60px+env(safe-area-inset-top,0px))] right-3 z-10 w-60 rounded-[12px] p-1.5 max-md:hidden"
+            className="glass pointer-events-auto rounded-[12px] p-1.5 max-md:hidden"
         >
             <div className="relative aspect-[2/1] overflow-hidden rounded-[7px]">
                 <canvas ref={canvasRef} className="block size-full" />

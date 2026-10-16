@@ -12,7 +12,7 @@ import {
 import { toast } from 'sonner';
 import { FORMATION_SCENARIOS, type FormationScenario } from '@/formation/scenarios';
 import { circularMeanMotion } from '@/simulation/OrbitElements';
-import { appStore, useAppMode, useAppStore } from '@/store/appStore';
+import { appStore, selectCurrentScenarioId, useAppMode, useAppStore } from '@/store/appStore';
 import { cn } from '@/lib/utils';
 
 /**
@@ -37,9 +37,7 @@ function loadScenario(scenario: FormationScenario): void {
  */
 export function ScenarioButton() {
     const mode = useAppMode();
-    const currentId = useAppStore((s) =>
-        s.loadedScenario && s.loadedScenario.config === s.formation ? s.loadedScenario.id : null,
-    );
+    const currentId = useAppStore(selectCurrentScenarioId);
     const [open, setOpen] = useState(false);
     const picked = useRef(false);
 
@@ -77,7 +75,7 @@ export function ScenarioButton() {
                     <DialogTitle>学習シナリオ</DialogTitle>
                     <DialogDescription>
                         HCW 方程式の性質を 1
-                        つずつ確かめられる配置です。選ぶと現在の配置が置き換わり、観察のポイントが衛星配置タブに表示されます。
+                        つずつ確かめられる配置です。選ぶと現在の配置が置き換わり、観察のポイントが画面右上に表示されます。
                     </DialogDescription>
                 </DialogHeader>
                 <ol className="-mx-2 max-h-[60vh] space-y-0.5 overflow-y-auto">
