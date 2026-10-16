@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Globe2 } from 'lucide-react';
 import { useUiTheme } from '@/lib/uiTheme';
 import { useAppMode, useAppStore } from '@/store/appStore';
 import type { GroundTrack, LatLon } from '@/simulation/groundTrack';
@@ -129,9 +130,19 @@ function MiniMapCard() {
     return (
         <section
             aria-label="ミニマップ（基準衛星の地上軌跡）"
-            className="glass pointer-events-auto rounded-[12px] p-1.5 max-md:hidden"
+            className="glass pointer-events-auto overflow-hidden rounded-2xl p-2 max-md:hidden"
         >
-            <div className="relative aspect-[2/1] overflow-hidden rounded-[7px]">
+            <div className="flex items-center justify-between px-1 pt-0.5 pb-2 text-[10px] text-fg-muted">
+                <span className="flex items-center gap-1.5">
+                    <Globe2 className="size-3" />
+                    地上軌跡
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <span className="size-1.5 rounded-full bg-brand" />
+                    基準衛星
+                </span>
+            </div>
+            <div className="relative aspect-[2/1] overflow-hidden rounded-lg">
                 <canvas ref={canvasRef} className="block size-full" />
                 <ReferenceMarker />
             </div>

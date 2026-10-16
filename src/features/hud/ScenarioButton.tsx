@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { FORMATION_SCENARIOS, type FormationScenario } from '@/formation/scenarios';
 import { circularMeanMotion } from '@/simulation/OrbitElements';
 import { appStore, selectCurrentScenarioId, useAppMode, useAppStore } from '@/store/appStore';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 /**
@@ -46,23 +47,30 @@ export function ScenarioButton() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button
-                    variant="ghost"
-                    aria-label={current ? `学習シナリオ: ${current.title}` : '学習シナリオ'}
-                    className="glass h-10 gap-2 rounded-[10px] px-3 text-[13px] text-fg hover:bg-raised-hover hover:text-brand-text max-md:size-10 max-md:px-0"
-                >
-                    <GraduationCap className="size-4 text-brand-text" />
-                    <span className="shrink-0 font-medium max-md:hidden">学習シナリオ</span>
-                    {current && (
-                        <>
-                            <span aria-hidden className="h-4 w-px shrink-0 bg-line-strong max-lg:hidden" />
-                            <span className="max-w-56 truncate text-fg-muted max-lg:hidden">{current.title}</span>
-                        </>
-                    )}
-                    <ChevronDown className="size-3.5 text-fg-subtle max-md:hidden" />
-                </Button>
-            </DialogTrigger>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            aria-label={current ? `学習シナリオ: ${current.title}` : '学習シナリオ'}
+                            className="h-9 gap-2 rounded-xl px-3 text-xs font-medium text-fg-muted hover:bg-raised-hover hover:text-fg max-md:size-9 max-md:px-0"
+                        >
+                            <GraduationCap className="size-4" />
+                            <span className="shrink-0 font-medium max-md:hidden">学習シナリオ</span>
+                            {current && (
+                                <>
+                                    <span aria-hidden className="h-4 w-px shrink-0 bg-line-strong max-xl:hidden" />
+                                    <span className="max-w-56 truncate text-fg-muted max-xl:hidden">
+                                        {current.title}
+                                    </span>
+                                </>
+                            )}
+                            <ChevronDown className="size-3.5 text-fg-subtle max-md:hidden" />
+                        </Button>
+                    </DialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">学習シナリオ{current ? `: ${current.title}` : 'を選ぶ'}</TooltipContent>
+            </Tooltip>
             <DialogContent
                 className="sm:max-w-lg"
                 // 選んで閉じたときはトリガーにフォーカスを戻さない。戻すと Space（再生／一時停止）がボタン操作に取られる
@@ -78,7 +86,7 @@ export function ScenarioButton() {
                         つずつ確かめられる配置です。選ぶと現在の配置が置き換わり、観察のポイントが画面右上に表示されます。
                     </DialogDescription>
                 </DialogHeader>
-                <ol className="-mx-2 max-h-[60vh] space-y-0.5 overflow-y-auto">
+                <ol className="max-h-[60vh] space-y-2 overflow-y-auto">
                     {FORMATION_SCENARIOS.map((scenario, index) => {
                         const selected = scenario.id === currentId;
                         return (
@@ -92,16 +100,18 @@ export function ScenarioButton() {
                                         setOpen(false);
                                     }}
                                     className={cn(
-                                        'group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-raised focus-visible:bg-raised focus-visible:outline-none',
-                                        selected && 'bg-raised',
+                                        'group flex w-full items-center gap-3 rounded-xl border border-line px-3 py-3 text-left transition-colors hover:border-line-strong hover:bg-raised focus-visible:outline-2 focus-visible:outline-brand',
+                                        selected && 'border-brand/30 bg-brand-soft',
                                     )}
                                 >
-                                    <span className="num w-4 shrink-0 text-center text-xs text-fg-subtle">
-                                        {index + 1}
+                                    <span className="num flex size-8 shrink-0 items-center justify-center rounded-lg bg-raised text-xs text-fg-muted">
+                                        {String(index + 1).padStart(2, '0')}
                                     </span>
                                     <span className="min-w-0 flex-1">
                                         <span className="block text-sm font-medium text-fg">{scenario.title}</span>
-                                        <span className="block text-xs text-fg-muted">{scenario.summary}</span>
+                                        <span className="mt-1 block text-xs leading-relaxed text-fg-muted">
+                                            {scenario.summary}
+                                        </span>
                                     </span>
                                     {selected && <Check className="size-4 shrink-0 text-brand-text" />}
                                 </button>

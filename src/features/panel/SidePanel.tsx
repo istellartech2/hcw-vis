@@ -62,7 +62,7 @@ function ModeSwitch({ mode }: { mode: AppMode }) {
                         onClick={() => change(value)}
                         className={cn(
                             'inline-flex h-8 items-center justify-center gap-1.5 rounded-md text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-brand',
-                            selected ? 'bg-brand text-brand-fg shadow-sm' : 'text-fg-muted hover:text-fg',
+                            selected ? 'bg-seg-active text-fg shadow-sm' : 'text-fg-muted hover:text-fg',
                         )}
                     >
                         <Icon className="size-3.5" />
@@ -88,7 +88,6 @@ export function SidePanel() {
 
     const tabs = TABS[mode];
     const tab = tabs.some((t) => t.value === storedTab) ? storedTab : tabs[0].value;
-    const ModeIcon = MODE_ICONS[mode];
 
     useEffect(() => {
         const root = document.documentElement;
@@ -106,18 +105,15 @@ export function SidePanel() {
     return (
         <>
             {!open && (
-                <Button
-                    variant="ghost"
+                <button
+                    type="button"
                     aria-label={`メニューを開く（${MODE_LABELS[mode]}モード）`}
-                    className="glass fixed top-[calc(12px+env(safe-area-inset-top,0px))] left-3 z-30 h-10 gap-2 rounded-[10px] pr-3.5 pl-2.5 text-fg hover:bg-raised-hover hover:text-brand-text"
+                    aria-expanded={open}
+                    className="glass fixed top-[calc(16px+env(safe-area-inset-top,0px))] left-4 z-30 flex size-12 items-center justify-center rounded-2xl text-fg transition-colors hover:bg-raised-hover focus-visible:outline-2 focus-visible:outline-brand max-md:left-3"
                     onClick={() => setUI({ panelOpen: true })}
                 >
-                    <Menu className="size-5" />
-                    <span className="flex items-center gap-1 text-[13px] font-medium">
-                        <ModeIcon className={cn('size-3.5', mode === 'csv' ? 'text-brand-text' : 'text-fg-subtle')} />
-                        {MODE_LABELS[mode]}
-                    </span>
-                </Button>
+                    <Menu className="size-5 text-fg-muted" />
+                </button>
             )}
 
             <aside

@@ -243,7 +243,7 @@ export function PlaybackBar() {
         <div
             role="group"
             aria-label="再生コントロール"
-            className="hud-bottom-center glass flex items-center justify-between gap-1.5 rounded-full py-[5px] pr-2 pl-[5px] text-fg select-none max-md:justify-between"
+            className="hud-bottom-center glass flex items-center justify-between gap-2 rounded-2xl py-2 pr-3 pl-2 text-fg select-none max-md:justify-between"
         >
             {csvActive ? <CsvBar /> : mode === 'csv' ? <CsvEmptyBar /> : <SimulationBar />}
         </div>

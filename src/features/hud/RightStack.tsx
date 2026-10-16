@@ -7,7 +7,7 @@ import { ScenarioGuide } from './ScenarioGuide';
  */
 export function RightStack() {
     return (
-        <div className="pointer-events-none fixed top-[calc(60px+env(safe-area-inset-top,0px))] right-3 z-10 flex w-64 flex-col gap-2 max-md:w-[min(20rem,calc(100vw-24px))]">
+        <div className="pointer-events-none fixed top-[calc(76px+env(safe-area-inset-top,0px))] right-4 z-10 flex w-64 flex-col gap-3 max-md:right-3 max-md:w-[min(20rem,calc(100vw-24px))]">
             <MiniMap />
             <ScenarioGuide />
         </div>

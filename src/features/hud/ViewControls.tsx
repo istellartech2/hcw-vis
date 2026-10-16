@@ -8,21 +8,21 @@ import { ScenarioButton } from './ScenarioButton';
 
 /**
  * 右上の学習シナリオ、カメラ操作、ヘルプ。
- * 再生バーの「t = 0 に戻す」と混同しないよう、視点リセットは文字付きで表示する（スマホはアイコンのみ）。
+ * 同じ高さ・配色のツールバーでまとめる。スマホではツールチップ付きのアイコン表示。
  */
 export function ViewControls() {
     const engine = useEngine();
     return (
-        <div className="fixed top-[calc(12px+env(safe-area-inset-top,0px))] right-3 z-10 flex items-center gap-2">
+        <div className="glass fixed top-[calc(16px+env(safe-area-inset-top,0px))] right-4 z-10 flex h-12 items-center gap-1 rounded-2xl p-1.5 max-md:right-3">
             <ScenarioButton />
-            <div className="glass flex items-center gap-0.5 rounded-[10px] p-1">
+            <div className="flex items-center gap-1">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button
                             variant="ghost"
                             size="sm"
                             aria-label="視点をリセット"
-                            className="text-fg-muted hover:text-brand-text max-md:size-8 max-md:px-0"
+                            className="h-9 gap-2 rounded-xl px-3 text-xs font-medium text-fg-muted hover:text-fg max-md:size-9 max-md:px-0"
                             onClick={() => engine.resetView()}
                         >
                             <Focus />
@@ -37,12 +37,13 @@ export function ViewControls() {
                     <TooltipTrigger asChild>
                         <Button
                             variant="ghost"
-                            size="icon"
+                            size="sm"
                             aria-label="ヘルプ"
-                            className="size-8 text-fg-muted hover:text-brand-text"
+                            className="h-9 gap-2 rounded-xl px-3 text-xs font-medium text-fg-muted hover:text-fg max-md:size-9 max-md:px-0"
                             onClick={() => appStore.getState().setUI({ helpOpen: true })}
                         >
                             <CircleHelp />
+                            <span className="max-md:hidden">ヘルプ</span>
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
